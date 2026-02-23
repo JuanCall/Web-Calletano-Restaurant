@@ -94,6 +94,16 @@ if (path.includes("index.html") || path === "/") {
         if (cierreForzado === fechaHoy) {
             estaAbierto = false;
             mensaje = "HOY NO ATENDEMOS";
+            
+            // DISPARAR EL MODAL EMERGENTE
+            const modalEl = document.getElementById('modalCerrado');
+            if(modalEl) {
+                // Le damos un ligero retraso de medio segundo para que se vea la animación
+                setTimeout(() => {
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                }, 500);
+            }
         } else {
             if (horaActual >= apertura && horaActual < cierre) {
                 estaAbierto = true;
