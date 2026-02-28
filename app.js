@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // --- TU CONFIGURACIÓN ---
@@ -30,7 +30,7 @@ if (path.includes("carta.html")) {
     const navContainer = document.getElementById('nav-categorias');
     const mainContainer = document.getElementById('menu-render');
 
-    onSnapshot(doc(db, "contenido", "cartaCompleta"), (docSnap) => {
+    getDoc(doc(db, "contenido", "cartaCompleta"), (docSnap) => {
         if (!docSnap.exists() || !docSnap.data().categorias) {
             if (mainContainer) mainContainer.innerHTML = "<p style='text-align:center; padding:20px;'>Cargando menú...</p>";
             return;
@@ -170,7 +170,7 @@ if (path.includes("index.html") || path === "/") {
     const group1 = document.getElementById('reviews-group-1');
     const group2 = document.getElementById('reviews-group-2');
     if (group1 && group2) {
-        onSnapshot(query(collection(db, "resenas"), where("aprobada", "==", true)), (snapshot) => {
+        getDoc(query(collection(db, "resenas"), where("aprobada", "==", true)), (snapshot) => {
             if (snapshot.empty) {
                 group1.innerHTML = `<div class="review-card"><p>Aún no hay reseñas.</p></div>`;
                 group2.innerHTML = "";
@@ -304,7 +304,7 @@ if (path.includes("admin")) {
         }
         const listContainer = document.getElementById('admin-reviews-list');
         if (listContainer) {
-            onSnapshot(collection(db, "resenas"), (snap) => {
+            getDoc(collection(db, "resenas"), (snap) => {
                 listContainer.innerHTML = "";
                 let reviews = [];
                 snap.forEach(doc => reviews.push({ id: doc.id, ...doc.data() }));
