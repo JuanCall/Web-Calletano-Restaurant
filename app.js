@@ -1,6 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-// Agregamos getDocs y quitamos onSnapshot
 import { getFirestore, doc, getDoc, getDocs, setDoc, collection, addDoc, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -20,7 +19,7 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-console.log("Sistema Calletano V17 (Optimizado con getDocs)");
+console.log("Sistema Calletano V18 (Prevención de BD Vacía)");
 
 const path = window.location.pathname;
 
@@ -31,10 +30,9 @@ if (path.includes("carta.html")) {
     const navContainer = document.getElementById('nav-categorias');
     const mainContainer = document.getElementById('menu-render');
 
-    // Cambiado a getDoc con .then()
     getDoc(doc(db, "contenido", "cartaCompleta")).then((docSnap) => {
         if (!docSnap.exists() || !docSnap.data().categorias) {
-            if (mainContainer) mainContainer.innerHTML = "<p style='text-align:center; padding:20px;'>Cargando menú...</p>";
+            if (mainContainer) mainContainer.innerHTML = "<p style='text-align:center; padding:20px;' class='text-muted'>Estamos armando nuestra carta virtual. ¡Vuelve pronto!</p>";
             return;
         }
         const categorias = docSnap.data().categorias;
@@ -147,26 +145,59 @@ if (path.includes("index.html") || path === "/") {
         }
     });
 
+    // NUEVA FUNCIÓN CARGAR LISTA: Más inteligente
+    const cargarLista = (docId, containerId, cols) => {
+        const el = document.getElementById(containerId);
+        if(el) {
+            let skeletonHTML = "";
+            for(let i=0; i<cols; i++) {
+                skeletonHTML += `<div class="${cols === 4 ? 'col-md-3' : 'col-md-4'} mb-4"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text mt-2" style="width: 60%"></div><div class="skeleton skeleton-text" style="width: 80%"></div></div>`;
+            }
+            el.innerHTML = skeletonHTML;
+        }
+        cargarDocumento(docId, (data) => {
+            if (el) {
+                if (data.lista && data.lista.length > 0) {
+                    el.innerHTML = "";
+                    data.lista.forEach(p => el.innerHTML += crearTarjetaPlato(p, cols));
+                } else {
+                    // Si no hay datos, quita el esqueleto y avisa.
+                    el.innerHTML = `<div class="col-12 text-center mt-4"><p class="text-muted fst-italic"><i class="fas fa-utensils"></i> Actualizando nuestra lista de platos...</p></div>`;
+                }
+            }
+        });
+    };
     cargarLista("favoritos", "favoritos-container", 4);
     cargarLista("domingo", "domingo-container", 3);
 
-    // Reseñas en el inicio con getDocs
+    // NUEVA FUNCIÓN RESEÑAS: Busca múltiples contenedores por si acaso
     const group1 = document.getElementById('reviews-group-1');
     const group2 = document.getElementById('reviews-group-2');
-    if (group1 && group2) {
+    // Buscamos contenedores genéricos en caso de que tus IDs en el index.html sean diferentes
+    const genericReviewContainer = document.getElementById('reviews-container') || document.getElementById('resenas-container') || document.querySelector('.reviews-section');
+
+    const renderContenedorResenas = (html) => {
+        if (group1 && group2) { group1.innerHTML = html; group2.innerHTML = html; } 
+        else if (group1) { group1.innerHTML = html; }
+        else if (genericReviewContainer) { genericReviewContainer.innerHTML = html; }
+    };
+
+    if (group1 || genericReviewContainer) {
         getDocs(query(collection(db, "resenas"), where("aprobada", "==", true))).then((snapshot) => {
             if (snapshot.empty) {
-                group1.innerHTML = `<div class="review-card"><p>Aún no hay reseñas.</p></div>`;
-                group2.innerHTML = "";
+                renderContenedorResenas(`<div class="w-100 text-center p-4"><p class="text-muted fst-italic">Aún no hay reseñas publicadas. ¡Sé el primero en visitarnos!</p></div>`);
             } else {
                 let htmlResenas = "";
                 snapshot.forEach((doc) => {
                     const d = doc.data();
                     htmlResenas += `<div class="review-card"><div class="mb-2 fs-5 text-center">${generarEstrellasHTML(d.estrellas || 5)}</div><p class="fst-italic text-muted text-center small">"${d.mensaje}"</p><div class="mt-auto pt-2 border-top text-center"><strong class="text-dark small">${d.autor}</strong></div></div>`;
                 });
-                group1.innerHTML = htmlResenas; group2.innerHTML = htmlResenas;
+                renderContenedorResenas(htmlResenas);
             }
-        }).catch(e => console.error(e));
+        }).catch(e => {
+            console.error("Error obteniendo reseñas:", e);
+            renderContenedorResenas(`<div class="w-100 text-center"><p class="text-danger">Error al cargar opiniones.</p></div>`);
+        });
     }
 }
 
@@ -268,7 +299,6 @@ if (path.includes("admin")) {
         // --- RESEÑAS (ADMIN) ---
         const listContainer = document.getElementById('admin-reviews-list');
         
-        // Creamos una función para cargar y refrescar la lista con getDocs
         const cargarResenasAdmin = () => {
             if (!listContainer) return;
             getDocs(collection(db, "resenas")).then((snap) => {
@@ -292,7 +322,7 @@ if (path.includes("admin")) {
                         li.querySelector('.btn-delete').onclick = async () => { 
                             if(confirm("¿Eliminar?")) {
                                 await deleteDoc(doc(db, "resenas", r.id)); 
-                                cargarResenasAdmin(); // Refrescar lista
+                                cargarResenasAdmin(); 
                             }
                         };
                         li.querySelector('.btn-toggle-status').onchange = async (e) => { 
@@ -311,7 +341,7 @@ if (path.includes("admin")) {
                                 mensaje: li.querySelector('.edit-msg').value, 
                                 estrellas: parseInt(li.querySelector('.edit-stars').value) 
                             }); 
-                            cargarResenasAdmin(); // Refrescar lista
+                            cargarResenasAdmin(); 
                         };
                     };
                     renderDisplay();
@@ -320,10 +350,8 @@ if (path.includes("admin")) {
             });
         };
 
-        // Cargar las reseñas al iniciar el panel
         cargarResenasAdmin();
 
-        // Guardar reseña manual
         const btnManual = document.getElementById('btn-add-manual-review');
         if (btnManual) {
             const newBtn = btnManual.cloneNode(true);
@@ -338,7 +366,7 @@ if (path.includes("admin")) {
                     await addDoc(collection(db, "resenas"), { autor: autor, mensaje: msg, estrellas: parseInt(stars), aprobada: true, fecha: new Date() });
                     alert("✅ Reseña publicada!");
                     document.getElementById('manual-author').value = ""; document.getElementById('manual-msg').value = "";
-                    cargarResenasAdmin(); // Actualizamos la lista automáticamente al guardar
+                    cargarResenasAdmin(); 
                 } catch (e) { alert("Error: " + e.message); }
                 finally { newBtn.disabled = false; newBtn.innerHTML = '<i class="fas fa-save"></i> Publicar'; }
             });
