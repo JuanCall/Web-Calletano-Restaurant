@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+// Agregamos getDocs y quitamos onSnapshot
+import { getFirestore, doc, getDoc, getDocs, setDoc, collection, addDoc, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 // --- TU CONFIGURACIÓN ---
@@ -19,7 +20,7 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-console.log("Sistema Calletano V16 (Título Automático)");
+console.log("Sistema Calletano V17 (Optimizado con getDocs)");
 
 const path = window.location.pathname;
 
@@ -30,7 +31,8 @@ if (path.includes("carta.html")) {
     const navContainer = document.getElementById('nav-categorias');
     const mainContainer = document.getElementById('menu-render');
 
-    getDoc(doc(db, "contenido", "cartaCompleta"), (docSnap) => {
+    // Cambiado a getDoc con .then()
+    getDoc(doc(db, "contenido", "cartaCompleta")).then((docSnap) => {
         if (!docSnap.exists() || !docSnap.data().categorias) {
             if (mainContainer) mainContainer.innerHTML = "<p style='text-align:center; padding:20px;'>Cargando menú...</p>";
             return;
@@ -67,7 +69,7 @@ if (path.includes("carta.html")) {
         });
         if (navContainer) navContainer.innerHTML = navHTML;
         if (mainContainer) mainContainer.innerHTML = bodyHTML;
-    });
+    }).catch(e => console.error("Error cargando carta:", e));
 }
 
 // =========================================================
@@ -75,7 +77,6 @@ if (path.includes("carta.html")) {
 // =========================================================
 if (path.includes("index.html") || path === "/") {
     
-    // 1. CARGA DE CONFIGURACIÓN (Horario Inteligente)
     cargarDocumento("configuracion", (config) => {
         const statusDiv = document.getElementById('status-restaurante');
         if (!statusDiv) return;
@@ -95,10 +96,8 @@ if (path.includes("index.html") || path === "/") {
             estaAbierto = false;
             mensaje = "HOY NO ATENDEMOS";
             
-            // DISPARAR EL MODAL EMERGENTE
             const modalEl = document.getElementById('modalCerrado');
             if(modalEl) {
-                // Le damos un ligero retraso de medio segundo para que se vea la animación
                 setTimeout(() => {
                     const modal = new bootstrap.Modal(modalEl);
                     modal.show();
@@ -148,29 +147,14 @@ if (path.includes("index.html") || path === "/") {
         }
     });
 
-    const cargarLista = (docId, containerId, cols) => {
-        const el = document.getElementById(containerId);
-        if(el) {
-            let skeletonHTML = "";
-            for(let i=0; i<cols; i++) {
-                skeletonHTML += `<div class="${cols === 4 ? 'col-md-3' : 'col-md-4'} mb-4"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text mt-2" style="width: 60%"></div><div class="skeleton skeleton-text" style="width: 80%"></div></div>`;
-            }
-            el.innerHTML = skeletonHTML;
-        }
-        cargarDocumento(docId, (data) => {
-            if (el && data.lista) {
-                el.innerHTML = "";
-                data.lista.forEach(p => el.innerHTML += crearTarjetaPlato(p, cols));
-            }
-        });
-    };
     cargarLista("favoritos", "favoritos-container", 4);
     cargarLista("domingo", "domingo-container", 3);
 
+    // Reseñas en el inicio con getDocs
     const group1 = document.getElementById('reviews-group-1');
     const group2 = document.getElementById('reviews-group-2');
     if (group1 && group2) {
-        getDoc(query(collection(db, "resenas"), where("aprobada", "==", true)), (snapshot) => {
+        getDocs(query(collection(db, "resenas"), where("aprobada", "==", true))).then((snapshot) => {
             if (snapshot.empty) {
                 group1.innerHTML = `<div class="review-card"><p>Aún no hay reseñas.</p></div>`;
                 group2.innerHTML = "";
@@ -182,7 +166,7 @@ if (path.includes("index.html") || path === "/") {
                 });
                 group1.innerHTML = htmlResenas; group2.innerHTML = htmlResenas;
             }
-        });
+        }).catch(e => console.error(e));
     }
 }
 
@@ -206,7 +190,6 @@ if (path.includes("admin")) {
     document.getElementById('btn-logout')?.addEventListener('click', () => signOut(auth));
 
     function iniciarPanelAdmin() {
-        
         // --- HORARIOS ---
         const btnAbierto = document.getElementById('btn-abierto');
         const btnCerrado = document.getElementById('btn-cerrado');
@@ -250,7 +233,6 @@ if (path.includes("admin")) {
             if (document.getElementById('check-modo-domingo')) document.getElementById('check-modo-domingo').checked = d.modoDomingo || false;
         });
 
-        // NUEVA LÓGICA: CAMBIO AUTOMÁTICO DE TÍTULO
         const checkDomingo = document.getElementById('check-modo-domingo');
         const inputTitulo = document.getElementById('input-titulo-menu');
         if (checkDomingo && inputTitulo) {
@@ -283,7 +265,65 @@ if (path.includes("admin")) {
         generarEditorPlatosBase64('editor-domingo', 'domingo', 4, 'btn-save-domingo');
         iniciarEditorCartaCompleta();
 
-        // --- RESEÑAS ---
+        // --- RESEÑAS (ADMIN) ---
+        const listContainer = document.getElementById('admin-reviews-list');
+        
+        // Creamos una función para cargar y refrescar la lista con getDocs
+        const cargarResenasAdmin = () => {
+            if (!listContainer) return;
+            getDocs(collection(db, "resenas")).then((snap) => {
+                listContainer.innerHTML = "";
+                let reviews = [];
+                snap.forEach(doc => reviews.push({ id: doc.id, ...doc.data() }));
+                reviews.sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+                
+                if (reviews.length === 0) { 
+                    listContainer.innerHTML = "<p class='text-muted text-center'>No hay reseñas.</p>"; 
+                    return; 
+                }
+                
+                reviews.forEach(r => {
+                    const li = document.createElement('li');
+                    li.className = "list-group-item p-3 mb-2 border rounded";
+                    
+                    const renderDisplay = () => {
+                        li.innerHTML = `<div class="d-flex justify-content-between align-items-start mb-2"><div><strong class="text-dark">${r.autor}</strong><div class="text-warning small">${"⭐".repeat(r.estrellas)}</div></div><div><button class="btn btn-sm btn-outline-primary btn-edit me-1"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger btn-delete"><i class="fas fa-trash"></i></button></div></div><p class="text-muted small mb-0 fst-italic">"${r.mensaje}"</p><div class="form-check form-switch mt-2"><input class="form-check-input btn-toggle-status" type="checkbox" ${r.aprobada ? 'checked' : ''}><label class="form-check-label small text-muted">Visible en la web</label></div>`;
+                        
+                        li.querySelector('.btn-delete').onclick = async () => { 
+                            if(confirm("¿Eliminar?")) {
+                                await deleteDoc(doc(db, "resenas", r.id)); 
+                                cargarResenasAdmin(); // Refrescar lista
+                            }
+                        };
+                        li.querySelector('.btn-toggle-status').onchange = async (e) => { 
+                            await updateDoc(doc(db, "resenas", r.id), { aprobada: e.target.checked }); 
+                        };
+                        li.querySelector('.btn-edit').onclick = renderEditForm;
+                    };
+                    
+                    const renderEditForm = () => {
+                        li.innerHTML = `<div class="mb-2"><input type="text" class="form-control form-control-sm mb-1 edit-author" value="${r.autor}"><select class="form-select form-select-sm mb-1 edit-stars"><option value="5" ${r.estrellas==5?'selected':''}>5</option><option value="4" ${r.estrellas==4?'selected':''}>4</option><option value="3" ${r.estrellas==3?'selected':''}>3</option></select><textarea class="form-control form-control-sm edit-msg">${r.mensaje}</textarea></div><div class="text-end"><button class="btn btn-sm btn-secondary btn-cancel me-1">Cancel</button><button class="btn btn-sm btn-success btn-save">Guardar</button></div>`;
+                        
+                        li.querySelector('.btn-cancel').onclick = renderDisplay;
+                        li.querySelector('.btn-save').onclick = async () => { 
+                            await updateDoc(doc(db, "resenas", r.id), { 
+                                autor: li.querySelector('.edit-author').value, 
+                                mensaje: li.querySelector('.edit-msg').value, 
+                                estrellas: parseInt(li.querySelector('.edit-stars').value) 
+                            }); 
+                            cargarResenasAdmin(); // Refrescar lista
+                        };
+                    };
+                    renderDisplay();
+                    listContainer.appendChild(li);
+                });
+            });
+        };
+
+        // Cargar las reseñas al iniciar el panel
+        cargarResenasAdmin();
+
+        // Guardar reseña manual
         const btnManual = document.getElementById('btn-add-manual-review');
         if (btnManual) {
             const newBtn = btnManual.cloneNode(true);
@@ -298,35 +338,9 @@ if (path.includes("admin")) {
                     await addDoc(collection(db, "resenas"), { autor: autor, mensaje: msg, estrellas: parseInt(stars), aprobada: true, fecha: new Date() });
                     alert("✅ Reseña publicada!");
                     document.getElementById('manual-author').value = ""; document.getElementById('manual-msg').value = "";
+                    cargarResenasAdmin(); // Actualizamos la lista automáticamente al guardar
                 } catch (e) { alert("Error: " + e.message); }
                 finally { newBtn.disabled = false; newBtn.innerHTML = '<i class="fas fa-save"></i> Publicar'; }
-            });
-        }
-        const listContainer = document.getElementById('admin-reviews-list');
-        if (listContainer) {
-            getDoc(collection(db, "resenas"), (snap) => {
-                listContainer.innerHTML = "";
-                let reviews = [];
-                snap.forEach(doc => reviews.push({ id: doc.id, ...doc.data() }));
-                reviews.sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
-                if (reviews.length === 0) { listContainer.innerHTML = "<p class='text-muted text-center'>No hay reseñas.</p>"; return; }
-                reviews.forEach(r => {
-                    const li = document.createElement('li');
-                    li.className = "list-group-item p-3 mb-2 border rounded";
-                    const renderDisplay = () => {
-                        li.innerHTML = `<div class="d-flex justify-content-between align-items-start mb-2"><div><strong class="text-dark">${r.autor}</strong><div class="text-warning small">${"⭐".repeat(r.estrellas)}</div></div><div><button class="btn btn-sm btn-outline-primary btn-edit me-1"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger btn-delete"><i class="fas fa-trash"></i></button></div></div><p class="text-muted small mb-0 fst-italic">"${r.mensaje}"</p><div class="form-check form-switch mt-2"><input class="form-check-input btn-toggle-status" type="checkbox" ${r.aprobada ? 'checked' : ''}><label class="form-check-label small text-muted">Visible en la web</label></div>`;
-                        li.querySelector('.btn-delete').onclick = () => { if(confirm("¿Eliminar?")) deleteDoc(doc(db, "resenas", r.id)); };
-                        li.querySelector('.btn-toggle-status').onchange = (e) => { updateDoc(doc(db, "resenas", r.id), { aprobada: e.target.checked }); };
-                        li.querySelector('.btn-edit').onclick = renderEditForm;
-                    };
-                    const renderEditForm = () => {
-                        li.innerHTML = `<div class="mb-2"><input type="text" class="form-control form-control-sm mb-1 edit-author" value="${r.autor}"><select class="form-select form-select-sm mb-1 edit-stars"><option value="5" ${r.estrellas==5?'selected':''}>5</option><option value="4" ${r.estrellas==4?'selected':''}>4</option><option value="3" ${r.estrellas==3?'selected':''}>3</option></select><textarea class="form-control form-control-sm edit-msg">${r.mensaje}</textarea></div><div class="text-end"><button class="btn btn-sm btn-secondary btn-cancel me-1">Cancel</button><button class="btn btn-sm btn-success btn-save">Guardar</button></div>`;
-                        li.querySelector('.btn-cancel').onclick = renderDisplay;
-                        li.querySelector('.btn-save').onclick = async () => { await updateDoc(doc(db, "resenas", r.id), { autor: li.querySelector('.edit-author').value, mensaje: li.querySelector('.edit-msg').value, estrellas: parseInt(li.querySelector('.edit-stars').value) }); };
-                    };
-                    renderDisplay();
-                    listContainer.appendChild(li);
-                });
             });
         }
     }
@@ -408,13 +422,22 @@ window.addItem = (catIdx) => {
     }
 };
 
-async function cargarDocumento(id, cb) { try { const s = await getDoc(doc(db, "contenido", id)); cb(s.exists() ? s.data() : {}); } catch (e) { console.error(e); } }
+async function cargarDocumento(id, cb) { 
+    try { 
+        const s = await getDoc(doc(db, "contenido", id)); 
+        cb(s.exists() ? s.data() : {}); 
+    } catch (e) { 
+        console.error(e); 
+    } 
+}
 function setHref(id, v) { const e = document.getElementById(id); if (e && v) e.href = v; }
 function crearTarjetaPlato(p, c) { return `<div class="${c === 4 ? 'col-md-4' : 'col-md-3'} mb-4"><div class="card h-100 shadow-sm border-0"><img src="${p.img}" class="card-img-top" style="height:${c === 4 ? '200px' : '150px'};object-fit:cover;"><div class="card-body text-center"><h5 class="fw-bold">${p.titulo}</h5><p class="text-muted small">${p.desc}</p></div></div></div>`; }
 function generarEstrellasHTML(pts) { let h = ""; for (let i = 1; i <= 5; i++)h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star text-warning"></i>`; return h; }
+
 async function generarEditorPlatosBase64(contId, docId, cant, btnId) { 
     const cont = document.getElementById(contId); if (!cont) return; const snap = await getDoc(doc(db, "contenido", docId)); let list = snap.exists() ? (snap.data().lista || []) : []; while (list.length < cant) list.push({ titulo: "", desc: "", img: "plato1.png" }); let html = ""; list.forEach((it, i) => { if (i < cant) html += `<div class="card p-3 mb-3 item-plato-${docId} border-0 shadow-sm bg-white"><div class="row align-items-center"><div class="col-md-2 text-center"><strong class="d-block mb-2 text-muted">Plato #${i + 1}</strong><div class="upload-box justify-content-center"><img src="${it.img}" class="current-img img-preview-tag"><label class="btn-upload-custom"><i class="fas fa-plus"></i><span>Subir</span><input type="file" class="img-file-input" accept="image/*" onchange="previsualizar(this)"></label><input type="hidden" class="img-url-hidden" value="${it.img}"></div></div><div class="col-md-10"><div class="row g-2"><div class="col-md-6"><label class="small text-muted">Título</label><input type="text" class="form-control title-input" value="${it.titulo}"></div><div class="col-md-6"><label class="small text-muted">Descripción</label><input type="text" class="form-control desc-input" value="${it.desc}"></div></div></div></div></div>`; }); cont.innerHTML = html; const btn = document.getElementById(btnId); if (btn) { const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn); newBtn.addEventListener('click', async () => { newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; newBtn.disabled = true; const items = cont.querySelectorAll(`.item-plato-${docId}`); const newList = []; for (const div of items) { const fileInput = div.querySelector('.img-file-input'); const hiddenInput = div.querySelector('.img-url-hidden'); let finalImg = hiddenInput.value; if (fileInput.files.length > 0) finalImg = await comprimirImagen(fileInput.files[0]); newList.push({ img: finalImg, titulo: div.querySelector('.title-input').value, desc: div.querySelector('.desc-input').value }); } await setDoc(doc(db, "contenido", docId), { lista: newList }); alert("✅ Guardado"); generarEditorPlatosBase64(contId, docId, cant, btnId); newBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Todo'; newBtn.disabled = false; }); }
 }
+
 window.previsualizar = function (i) { if (i.files && i.files[0]) { const r = new FileReader(); r.onload = function (e) { i.closest('.upload-box').querySelector('.current-img').src = e.target.result; }; r.readAsDataURL(i.files[0]); } }
 function comprimirImagen(f) { return new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'); const s = 500 / i.width; c.width = 500; c.height = i.height * s; c.getContext('2d').drawImage(i, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', 0.7)); }; }; r.onerror = rej; }); }
 function asignarGuardado(btnId, docId, getDataCallback) { const btn = document.getElementById(btnId); if (!btn) return; const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn); newBtn.addEventListener('click', async (e) => { e.preventDefault(); const originalText = newBtn.innerHTML; newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; newBtn.disabled = true; try { const datos = getDataCallback(); await updateDoc(doc(db, "contenido", docId), datos); alert("✅ Guardado"); } catch (error) { console.error(error); alert("Error: " + error.message); } finally { newBtn.innerHTML = originalText; newBtn.disabled = false; } }); }
