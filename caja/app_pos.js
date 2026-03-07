@@ -34,6 +34,14 @@ let modalProductosInstance = null;
 //  1. ESCUCHAR MESAS EN TIEMPO REAL
 // =========================================================
 function iniciarSistemaPOS() {
+    // --- Detectar si es Domingo para cambiar precios ---
+    const esDomingo = new Date().getDay() === 0; // 0 significa Domingo en JavaScript
+    const precioRefresco = esDomingo ? 3.00 : 2.00;
+    
+    // Sobrescribimos el botón de Refresco del HTML
+    btnRefresco.innerHTML = `<i class="fas fa-glass-whiskey"></i> Refresco (S/ ${precioRefresco})`;
+    btnRefresco.setAttribute('onclick', `agregarAlPedido('Refresco', ${precioRefresco})`);
+
     const mesasRef = collection(db, "mesas_pos");
     
     onSnapshot(mesasRef, (snapshot) => {
@@ -155,24 +163,39 @@ async function cargarCartaDesdeWeb() {
         // 2. OPCIONES DEL MENÚ DESGLOSADAS
         if(snapMenu.exists() && snapMenu.data().titulo) {
             const tituloMenu = snapMenu.data().titulo || "Menú del Día";
-            html += `<h5 class="mt-3 fw-bold text-dark border-bottom pb-2"><i class="fas fa-utensils text-warning"></i> ${tituloMenu}</h5>`;
-            html += `<div class="row g-2 mb-3">
-                        <div class="col-12">
-                            <button class="btn btn-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('${tituloMenu} (Completo)', 15)">
-                                <i class="fas fa-star"></i> Completo (S/ 15.00)
-                            </button>
-                        </div>
-                        <div class="col-6">
-                            <button class="btn btn-outline-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Solo Entrada', 6)">
-                                <i class="fas fa-angle-right"></i> Solo Entrada (S/ 6.00)
-                            </button>
-                        </div>
-                        <div class="col-6">
-                            <button class="btn btn-outline-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Solo Segundo', 15)">
-                                <i class="fas fa-angle-right"></i> Solo Segundo (S/ 15.00)
-                            </button>
-                        </div>
-                     </div>`;
+            const esDomingo = new Date().getDay() === 0;
+
+            if (esDomingo) {
+                // Interfaz para los Domingos
+                html += `<h5 class="mt-3 fw-bold text-dark border-bottom pb-2"><i class="fas fa-utensils text-warning"></i> Especial de Domingo</h5>`;
+                html += `<div class="row g-2 mb-3">
+                            <div class="col-12">
+                                <button class="btn btn-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Almuerzo', 30)">
+                                    <i class="fas fa-star"></i> Almuerzo (S/ 30.00)
+                                </button>
+                            </div>
+                         </div>`;
+            } else {
+                // Interfaz para Lunes a Sábado
+                html += `<h5 class="mt-3 fw-bold text-dark border-bottom pb-2"><i class="fas fa-utensils text-warning"></i> ${tituloMenu}</h5>`;
+                html += `<div class="row g-2 mb-3">
+                            <div class="col-12">
+                                <button class="btn btn-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('${tituloMenu} (Completo)', 15)">
+                                    <i class="fas fa-star"></i> Completo (S/ 15.00)
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Solo Entrada', 6)">
+                                    <i class="fas fa-angle-right"></i> Solo Entrada (S/ 6.00)
+                                </button>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-outline-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Solo Segundo', 15)">
+                                    <i class="fas fa-angle-right"></i> Solo Segundo (S/ 15.00)
+                                </button>
+                            </div>
+                         </div>`;
+            }
         }
 
         // 3. LA CARTA NORMAL (Intacta)
