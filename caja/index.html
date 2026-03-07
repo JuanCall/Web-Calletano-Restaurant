@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POS - Restaurante Calletano</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Estilos rápidos para que parezca una app de escritorio, no una web normal */
+        body { background-color: #f4f6f9; height: 100vh; overflow: hidden; }
+        .mesas-container { height: 100vh; overflow-y: auto; padding: 20px; }
+        .comandera-container { height: 100vh; background: #fff; box-shadow: -2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+        
+        /* Diseño de las mesitas */
+        .mesa-card { height: 200px; cursor: pointer; transition: transform 0.2s; border-radius: 15px; border: none; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .mesa-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
+        .mesa-libre { background-color: #d1e7dd; color: #0f5132; border: 2px solid #badbcc; }
+        .mesa-ocupada { background-color: #f8d7da; color: #842029; border: 2px solid #f5c2c7; }
+        .mesa-seleccionada { border: 4px solid #0d6efd !important; transform: scale(1.02); }
+        
+        .lista-pedidos { flex-grow: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; }
+    </style>
+</head>
+<body>
+
+<div id="login-section" class="d-flex align-items-center justify-content-center vh-100 bg-dark">
+    <div class="card p-4 shadow-lg border-0" style="width: 380px; border-radius: 15px;">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold text-dark"><i class="fas fa-store text-primary"></i> Calletano</h2>
+            <p class="text-muted">Sistema de Caja (POS)</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-muted small fw-bold">Usuario Administrador</label>
+            <input type="email" id="pos-email" class="form-control form-control-lg bg-light" placeholder="correo@ejemplo.com">
+        </div>
+        <div class="mb-4">
+            <label class="form-label text-muted small fw-bold">Contraseña</label>
+            <input type="password" id="pos-pass" class="form-control form-control-lg bg-light" placeholder="••••••••">
+        </div>
+        <button id="btn-login" class="btn btn-primary btn-lg w-100 fw-bold shadow-sm">
+            <i class="fas fa-sign-in-alt"></i> Abrir Caja
+        </button>
+    </div>
+</div>
+
+<div id="pos-section" class="container-fluid p-0 d-none">
+    <div class="row g-0">
+        
+        <div class="col-md-7 col-lg-7 mesas-container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-dark"><i class="fas fa-store text-primary"></i> Salón Calletano</h2>
+                <div>
+                    <button class="btn btn-outline-info me-2 fw-bold text-dark" id="btn-reportes">
+                        <i class="fas fa-chart-line"></i> Reportes
+                    </button>
+                    <button class="btn btn-outline-warning me-2 fw-bold text-dark" id="btn-nuevo-gasto">
+                        <i class="fas fa-file-invoice-dollar"></i> Registrar Gasto
+                    </button>
+                    <button class="btn btn-outline-danger me-2 fw-bold" id="btn-arqueo">
+                        <i class="fas fa-cash-register"></i> Arqueo
+                    </button>
+                    <button class="btn btn-dark fw-bold" id="btn-logout" title="Cerrar Sesión">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-3" id="contenedor-mesas">
+                <div class="col-12 text-center text-muted mt-5">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <h5>Conectando con la base de datos...</h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5 col-lg-5 comandera-container">
+            
+            <div class="p-3 bg-dark text-white text-center">
+                <h4 class="m-0 fw-bold" id="titulo-mesa">Seleccione una mesa</h4>
+                <span id="estado-mesa" class="badge bg-secondary mt-2">Esperando...</span>
+            </div>
+
+            <div class="p-3 border-bottom text-center bg-light">
+                <button class="btn btn-outline-primary w-100 fw-bold" id="btn-agregar-producto" disabled>
+                    <i class="fas fa-plus"></i> Agregar Pedido
+                </button>
+            </div>
+
+            <div class="lista-pedidos" id="lista-pedidos">
+                <div class="text-center text-muted mt-5">
+                    <i class="fas fa-receipt fa-3x mb-3 opacity-25"></i>
+                    <p>No hay productos registrados en esta mesa.</p>
+                </div>
+            </div>
+
+            <div class="p-3 bg-white border-top shadow-lg">
+                
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <button class="btn btn-outline-warning w-100 fw-bold shadow-sm" id="btn-taper" onclick="agregarAlPedido('Taper', 2.00)" disabled>
+                            <i class="fas fa-box"></i> Taper (S/ 2)
+                        </button>
+                    </div>
+                    <div class="col-6">
+                        <button class="btn btn-outline-info w-100 fw-bold shadow-sm" id="btn-refresco" onclick="agregarAlPedido('Refresco', 2.00)" disabled>
+                            <i class="fas fa-glass-whiskey"></i> Refresco (S/ 2)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="m-0 text-muted">Total:</h5>
+                    <h2 class="m-0 fw-bold text-success" id="total-cuenta">S/ 0.00</h2>
+                </div>
+                <button class="btn btn-success btn-lg w-100 fw-bold shadow" id="btn-cobrar" disabled>
+                    <i class="fas fa-hand-holding-usd"></i> COBRAR MESA
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="modalProductos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-book-open text-warning"></i> Nuestra Carta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div id="catalogo-productos">
+                    <div class="text-center mt-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 text-muted">Cargando platos desde la web...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCobrar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-hand-holding-usd"></i> Cobrar Cuenta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <h2 class="text-center fw-bold mb-4 text-success" id="modal-cobrar-total">Total: S/ 0.00</h2>
+                
+                <p class="text-muted small fw-bold mb-2">Ingrese los montos por método de pago:</p>
+                
+                <div class="input-group mb-2 shadow-sm">
+                    <span class="input-group-text bg-white" style="width: 110px;"><i class="fas fa-coins text-warning me-2"></i> Efectivo</span>
+                    <span class="input-group-text bg-light border-start-0">S/</span>
+                    <input type="number" class="form-control fw-bold fs-5 pago-input text-end" id="pago-efectivo" value="0" min="0" step="0.1">
+                </div>
+                
+                <div class="input-group mb-2 shadow-sm">
+                    <span class="input-group-text bg-white" style="width: 110px;"><i class="fas fa-mobile-alt text-purple me-2"></i> Yape</span>
+                    <span class="input-group-text bg-light border-start-0">S/</span>
+                    <input type="number" class="form-control fw-bold fs-5 pago-input text-end" id="pago-yape" value="0" min="0" step="0.1">
+                </div>
+                
+                <div class="input-group mb-2 shadow-sm">
+                    <span class="input-group-text bg-white" style="width: 110px;"><i class="fas fa-mobile-alt text-info me-2"></i> Plin</span>
+                    <span class="input-group-text bg-light border-start-0">S/</span>
+                    <input type="number" class="form-control fw-bold fs-5 pago-input text-end" id="pago-plin" value="0" min="0" step="0.1">
+                </div>
+                
+                <div class="input-group mb-3 shadow-sm">
+                    <span class="input-group-text bg-white" style="width: 110px;"><i class="fas fa-credit-card text-secondary me-2"></i> Tarjeta</span>
+                    <span class="input-group-text bg-light border-start-0">S/</span>
+                    <input type="number" class="form-control fw-bold fs-5 pago-input text-end" id="pago-tarjeta" value="0" min="0" step="0.1">
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between align-items-center bg-white">
+                <h5 class="m-0 fw-bold text-muted" id="modal-cobrar-restante">Falta: S/ 0.00</h5>
+                <button type="button" class="btn btn-success btn-lg fw-bold px-4 shadow-sm" id="btn-confirmar-cobro">
+                    <i class="fas fa-check-circle"></i> Confirmar Pago
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalGasto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="fas fa-shopping-basket"></i> Registrar Gasto del Día</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted">¿En qué se gastó?</label>
+                    <input type="text" class="form-control" id="gasto-concepto" placeholder="Ej: Pescado, Limones, Luz...">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-muted">Categoría</label>
+                    <select class="form-select" id="gasto-categoria">
+                        <option value="Insumos">Insumos (Mercado, Bebidas)</option>
+                        <option value="Servicios">Servicios (Luz, Agua, Gas)</option>
+                        <option value="Otros">Otros (Movilidad, Reparaciones)</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-muted">Monto Gastado (S/)</label>
+                    <input type="number" class="form-control fw-bold fs-4 text-danger text-end" id="gasto-monto" value="0" min="0" step="0.1">
+                </div>
+                <button type="button" class="btn btn-warning w-100 fw-bold btn-lg shadow-sm" id="btn-guardar-gasto">
+                    <i class="fas fa-save"></i> Guardar Gasto
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalArqueo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-chart-pie"></i> Balance del Día</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6 class="text-muted fw-bold mb-3 border-bottom pb-2">Desglose de Ingresos</h6>
+                        <div class="d-flex justify-content-between mb-2"><span class="text-muted"><i class="fas fa-coins text-warning"></i> Efectivo</span><strong id="arq-efectivo">S/ 0.00</strong></div>
+                        <div class="d-flex justify-content-between mb-2"><span class="text-muted"><i class="fas fa-mobile-alt text-purple"></i> Yape</span><strong id="arq-yape">S/ 0.00</strong></div>
+                        <div class="d-flex justify-content-between mb-2"><span class="text-muted"><i class="fas fa-mobile-alt text-info"></i> Plin</span><strong id="arq-plin">S/ 0.00</strong></div>
+                        <div class="d-flex justify-content-between mb-2"><span class="text-muted"><i class="fas fa-credit-card text-secondary"></i> Tarjeta</span><strong id="arq-tarjeta">S/ 0.00</strong></div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="p-3 bg-white rounded shadow-sm text-center border border-success mb-3">
+                            <h6 class="text-muted mb-1">Total Ingresos</h6>
+                            <h3 class="text-success fw-bold m-0" id="arq-ingresos">S/ 0.00</h3>
+                        </div>
+                        <div class="p-3 bg-white rounded shadow-sm text-center border border-danger mb-3">
+                            <h6 class="text-muted mb-1">Total Gastos (Salidas)</h6>
+                            <h3 class="text-danger fw-bold m-0" id="arq-gastos">S/ 0.00</h3>
+                        </div>
+                        <div class="p-3 bg-dark rounded shadow-sm text-center">
+                            <h6 class="text-white-50 mb-1">Ganancia Neta</h6>
+                            <h2 class="text-white fw-bold m-0" id="arq-neta">S/ 0.00</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalReportes" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="height: 90vh;">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-chart-line text-info"></i> Dashboard Financiero y Ventas</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body bg-light d-flex flex-column" style="overflow-y: auto;">
+                
+                <div class="row mb-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold text-muted small"><i class="fas fa-calendar-alt"></i> Filtrar por Mes y Año:</label>
+                        <input type="month" class="form-control form-control-lg fw-bold shadow-sm" id="filtro-mes-reporte">
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-3 d-flex flex-column gap-3">
+                        <div class="p-3 bg-white rounded shadow-sm border-start border-4 border-success">
+                            <h6 class="text-muted mb-1 small">Total Ingresos del Mes</h6>
+                            <h3 class="text-success fw-bold m-0" id="rep-ingresos">S/ 0.00</h3>
+                        </div>
+                        <div class="p-3 bg-white rounded shadow-sm border-start border-4 border-danger">
+                            <h6 class="text-muted mb-1 small">Total Gastos del Mes</h6>
+                            <h3 class="text-danger fw-bold m-0" id="rep-gastos">S/ 0.00</h3>
+                        </div>
+                        <div class="p-3 bg-dark rounded shadow-sm border-start border-4 border-info mt-auto">
+                            <h6 class="text-white-50 mb-1 small">Ingreso Neto Total</h6>
+                            <h2 class="text-white fw-bold m-0" id="rep-neta">S/ 0.00</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-9">
+                        <div class="bg-white p-3 rounded shadow-sm w-100 h-100 position-relative" style="min-height: 300px;">
+                            <canvas id="graficoFinanciero"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="bg-white p-3 rounded shadow-sm w-100">
+                            <h6 class="text-muted fw-bold mb-3 border-bottom pb-2"><i class="fas fa-star text-warning"></i> Ranking: Lo más y menos vendido del mes (Cantidades)</h6>
+                            <div class="position-relative" style="height: 350px;">
+                                <canvas id="graficoRanking"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="app_pos.js"></script>
+
+</body>
+</html>
