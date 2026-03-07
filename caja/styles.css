@@ -1,0 +1,383 @@
+/* ============================================================
+   CALLETANO POS — styles.css
+   Fuente: Google Fonts (Playfair Display + DM Sans)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;700&display=swap');
+
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+  --brand-dark:    #1a1209;
+  --brand-primary: #c0392b;
+  --brand-accent:  #e67e22;
+  --brand-gold:    #d4a843;
+  --bg-app:        #f0ede8;
+  --bg-sidebar:    #ffffff;
+  --bg-header:     #1a1209;
+  --mesa-libre:    #d5ede2;
+  --mesa-libre-borde: #7ec8a4;
+  --mesa-libre-text:  #0f5132;
+  --mesa-ocupada:  #fde8e8;
+  --mesa-ocupada-borde: #e57373;
+  --mesa-ocupada-text:  #922b21;
+  --shadow-card:   0 4px 20px rgba(0,0,0,0.10);
+  --shadow-hover:  0 10px 30px rgba(0,0,0,0.18);
+  --radius:        14px;
+  --font-display:  'Playfair Display', serif;
+  --font-body:     'DM Sans', sans-serif;
+  --transition:    0.22s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── Reset base ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-app);
+  height: 100vh;
+  overflow: hidden;
+  color: var(--brand-dark);
+}
+
+/* ── Keyframes ──────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.25); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+/* ── LOGIN ──────────────────────────────────────────────────── */
+#login-section {
+  background: radial-gradient(ellipse at 60% 40%, #2c1810 0%, #1a1209 70%);
+  animation: fadeIn 0.5s ease both;
+}
+
+.login-card {
+  border-radius: 20px;
+  border: 1px solid rgba(212,168,67,0.25);
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(16px);
+  padding: 2.5rem 2rem;
+  animation: scaleIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.login-logo {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--brand-gold);
+  box-shadow: 0 0 0 6px rgba(212,168,67,0.15);
+  margin-bottom: 0.75rem;
+  transition: box-shadow var(--transition);
+}
+.login-logo:hover {
+  box-shadow: 0 0 0 10px rgba(212,168,67,0.25);
+}
+
+.login-title {
+  font-family: var(--font-display);
+  color: #fff;
+  font-size: 1.9rem;
+  letter-spacing: 0.02em;
+}
+.login-subtitle {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-card .form-label {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.login-card .form-control {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  transition: border-color var(--transition), background var(--transition);
+}
+.login-card .form-control::placeholder { color: rgba(255,255,255,0.3); }
+.login-card .form-control:focus {
+  background: rgba(255,255,255,0.12);
+  border-color: var(--brand-gold);
+  box-shadow: 0 0 0 3px rgba(212,168,67,0.2);
+  color: #fff;
+}
+
+.btn-login-cta {
+  background: linear-gradient(135deg, var(--brand-primary), #a93226);
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.8rem;
+  transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+}
+.btn-login-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(192,57,43,0.45);
+  filter: brightness(1.08);
+}
+.btn-login-cta:active { transform: translateY(0); }
+
+/* ── LAYOUT POS ─────────────────────────────────────────────── */
+#pos-section { animation: fadeIn 0.35s ease both; }
+
+.mesas-container {
+  height: 100vh;
+  overflow-y: auto;
+  padding: 20px 24px;
+  scroll-behavior: smooth;
+}
+.mesas-container::-webkit-scrollbar { width: 6px; }
+.mesas-container::-webkit-scrollbar-track { background: transparent; }
+.mesas-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+
+.comandera-container {
+  height: 100vh;
+  background: var(--bg-sidebar);
+  box-shadow: -3px 0 24px rgba(0,0,0,0.10);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER SALÓN ───────────────────────────────────────────── */
+.salon-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  animation: fadeUp 0.4s ease both;
+}
+.salon-titulo {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header-logo {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--brand-gold);
+}
+
+.salon-header .btn {
+  border-radius: 9px;
+  font-weight: 600;
+  font-size: 0.82rem;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.salon-header .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card);
+}
+
+/* ── MESAS ──────────────────────────────────────────────────── */
+.mesa-card {
+  height: 160px;
+  cursor: pointer;
+  border-radius: var(--radius);
+  border: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+  animation: fadeUp 0.4s ease both;
+  position: relative;
+  overflow: hidden;
+}
+/* stagger de aparición para cada mesa */
+.mesa-card:nth-child(1)  { animation-delay: 0.04s; }
+.mesa-card:nth-child(2)  { animation-delay: 0.08s; }
+.mesa-card:nth-child(3)  { animation-delay: 0.12s; }
+.mesa-card:nth-child(4)  { animation-delay: 0.16s; }
+.mesa-card:nth-child(5)  { animation-delay: 0.20s; }
+.mesa-card:nth-child(6)  { animation-delay: 0.24s; }
+.mesa-card:nth-child(7)  { animation-delay: 0.28s; }
+.mesa-card:nth-child(8)  { animation-delay: 0.32s; }
+.mesa-card:nth-child(9)  { animation-delay: 0.36s; }
+.mesa-card:nth-child(10) { animation-delay: 0.40s; }
+
+.mesa-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background var(--transition);
+}
+.mesa-card:hover::after { background: rgba(255,255,255,0.15); }
+.mesa-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+.mesa-card:active { transform: translateY(-1px) scale(0.98); }
+
+.mesa-libre {
+  background-color: var(--mesa-libre);
+  color: var(--mesa-libre-text);
+  border-color: var(--mesa-libre-borde);
+}
+.mesa-ocupada {
+  background-color: var(--mesa-ocupada);
+  color: var(--mesa-ocupada-text);
+  border-color: var(--mesa-ocupada-borde);
+}
+.mesa-seleccionada {
+  border: 3px solid #0d6efd !important;
+  box-shadow: 0 0 0 4px rgba(13,110,253,0.18) !important;
+  transform: scale(1.03) !important;
+}
+
+/* Dot indicador de ocupada */
+.mesa-ocupada::before {
+  content: '';
+  position: absolute;
+  top: 10px; right: 12px;
+  width: 9px; height: 9px;
+  background: var(--brand-primary);
+  border-radius: 50%;
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+.mesa-nombre {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.mesa-icono { font-size: 1.6rem; opacity: 0.75; }
+
+/* ── COMANDERA HEADER ────────────────────────────────────────── */
+.comandera-top {
+  background: var(--bg-header);
+  color: #fff;
+  text-align: center;
+  padding: 14px 16px;
+}
+.comandera-top h4 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* ── LISTA PEDIDOS ──────────────────────────────────────────── */
+.lista-pedidos {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 14px;
+  background: #f8f6f2;
+}
+.lista-pedidos::-webkit-scrollbar { width: 4px; }
+.lista-pedidos::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 2px; }
+
+/* Item de pedido animado */
+.pedido-item {
+  animation: fadeUp 0.3s ease both;
+  border-radius: 10px;
+}
+
+/* ── BOTONES RÁPIDOS (Taper / Refresco) ──────────────────────── */
+.btn-rapido {
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.82rem;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.btn-rapido:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+.btn-rapido:active { transform: scale(0.96); }
+
+/* ── BTN COBRAR ──────────────────────────────────────────────── */
+#btn-cobrar {
+  border-radius: 12px;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  transition: transform var(--transition), box-shadow var(--transition), filter var(--transition);
+}
+#btn-cobrar:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(25,135,84,0.40);
+  filter: brightness(1.07);
+}
+#btn-cobrar:not(:disabled):active { transform: translateY(0); }
+
+/* ── BTN AGREGAR ─────────────────────────────────────────────── */
+#btn-agregar-producto {
+  border-radius: 10px;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+#btn-agregar-producto:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(13,110,253,0.25);
+}
+
+/* ── MODALES ─────────────────────────────────────────────────── */
+.modal-content {
+  border-radius: 18px;
+  overflow: hidden;
+  animation: scaleIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.modal-header { border-bottom: none; }
+.modal-footer { border-top: none; }
+
+/* Productos en el catálogo */
+.producto-btn {
+  border-radius: 12px;
+  transition: transform var(--transition), box-shadow var(--transition);
+  border: none;
+}
+.producto-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+.producto-btn:active { transform: scale(0.97); }
+
+/* ── BADGES / PILLS ─────────────────────────────────────────── */
+.badge { font-family: var(--font-body); font-size: 0.75rem; }
+
+/* ── SCROLLBAR GLOBAL ────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+
+/* ── SPINNER ─────────────────────────────────────────────────── */
+.spinner-border {
+  width: 2rem; height: 2rem;
+  border-width: 3px;
+}
+
+/* ── MEDIA: pantallas pequeñas ───────────────────────────────── */
+@media (max-width: 768px) {
+  body { overflow: auto; }
+  .mesas-container, .comandera-container { height: auto; }
+  .mesa-card { height: 130px; }
+}
