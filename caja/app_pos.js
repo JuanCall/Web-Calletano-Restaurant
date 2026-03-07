@@ -142,18 +142,40 @@ async function cargarCartaDesdeWeb() {
         
         let html = "";
 
+        // 1. BOTÓN PARA PLATOS FUERA DE CARTA (PERSONALIZADOS)
+        html += `<h5 class="mt-2 fw-bold text-danger border-bottom pb-2"><i class="fas fa-edit"></i> Pedidos Especiales</h5>`;
+        html += `<div class="row g-2 mb-3">
+                    <div class="col-12">
+                        <button class="btn btn-outline-danger w-100 text-start fw-bold shadow-sm" onclick="agregarPlatoPersonalizado()">
+                            <i class="fas fa-keyboard"></i> Escribir plato fuera de carta...
+                        </button>
+                    </div>
+                 </div>`;
+
+        // 2. OPCIONES DEL MENÚ DESGLOSADAS
         if(snapMenu.exists() && snapMenu.data().titulo) {
             const tituloMenu = snapMenu.data().titulo || "Menú del Día";
-            html += `<h5 class="mt-3 fw-bold text-dark border-bottom pb-2"><i class="fas fa-utensils text-warning"></i> Especiales</h5>`;
+            html += `<h5 class="mt-3 fw-bold text-dark border-bottom pb-2"><i class="fas fa-utensils text-warning"></i> ${tituloMenu}</h5>`;
             html += `<div class="row g-2 mb-3">
                         <div class="col-12">
-                            <button class="btn btn-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('${tituloMenu}', 15)">
-                                <i class="fas fa-plus-circle"></i> Agregar ${tituloMenu} (S/ 15.00)
+                            <button class="btn btn-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('${tituloMenu} (Completo)', 15)">
+                                <i class="fas fa-star"></i> Completo (S/ 15.00)
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-outline-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Solo Entrada', 6)">
+                                <i class="fas fa-angle-right"></i> Solo Entrada (S/ 6.00)
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-outline-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Solo Segundo', 15)">
+                                <i class="fas fa-angle-right"></i> Solo Segundo (S/ 15.00)
                             </button>
                         </div>
                      </div>`;
         }
 
+        // 3. LA CARTA NORMAL (Intacta)
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach(cat => {
                 html += `<h5 class="mt-4 fw-bold text-primary border-bottom pb-1">${cat.nombre}</h5>`;
@@ -177,6 +199,23 @@ async function cargarCartaDesdeWeb() {
         document.getElementById('catalogo-productos').innerHTML = "<p class='text-danger'>Error al cargar el menú.</p>";
     }
 }
+
+// Funcion ara cobrar platos que no existen
+window.agregarPlatoPersonalizado = () => {
+    const nombre = prompt("¿Qué plato o antojo especial están pidiendo?");
+    if (!nombre || nombre.trim() === "") return;
+    
+    const precioStr = prompt(`¿A cuánto vas a cobrar el/la "${nombre}"? (Escribe solo el número, ej: 12.50)`);
+    const precio = parseFloat(precioStr);
+    
+    if (isNaN(precio) || precio <= 0) {
+        alert("El precio ingresado no es válido. Inténtalo de nuevo.");
+        return;
+    }
+    
+    // Le agregamos la etiqueta "(Extra)" para que en tus reportes sepas que fue inventado
+    agregarAlPedido(`${nombre} (Extra)`, precio);
+};
 
 btnAgregarProducto.addEventListener('click', () => {
     if (!modalProductosInstance) modalProductosInstance = new bootstrap.Modal(document.getElementById('modalProductos'));
