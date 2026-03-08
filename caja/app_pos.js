@@ -198,7 +198,7 @@ async function cargarCartaDesdeWeb() {
             }
         }
 
-        // 3. LA CARTA NORMAL (Intacta)
+        // 3. LA CARTA NORMAL
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach(cat => {
                 html += `<h5 class="mt-4 fw-bold text-primary border-bottom pb-1">${cat.nombre}</h5>`;
@@ -223,7 +223,7 @@ async function cargarCartaDesdeWeb() {
     }
 }
 
-// Funcion ara cobrar platos que no existen
+// Funcion para cobrar platos que no existen
 window.agregarPlatoPersonalizado = () => {
     const nombre = prompt("¿Qué plato o antojo especial están pidiendo?");
     if (!nombre || nombre.trim() === "") return;
@@ -236,7 +236,7 @@ window.agregarPlatoPersonalizado = () => {
         return;
     }
     
-    // Le agregamos la etiqueta "(Extra)" para que en tus reportes sepas que fue inventado
+    // Le agregamos la etiqueta "(Extra)" para que en los reportes saber que fue inventado
     agregarAlPedido(`${nombre} (Extra)`, precio);
 };
 
@@ -502,7 +502,7 @@ async function cargarDatosDashboard(anioMes) {
 
             if (data.items && Array.isArray(data.items)) {
                 data.items.forEach(item => {
-                    // AQUÍ ESTÁ EL FILTRO: Ignorar "Taper" y "Refresco"
+                    // Ignorar "Taper" y "Refresco"
                     if (item.nombre !== 'Taper' && item.nombre !== 'Refresco') {
                         if (conteoPlatos[item.nombre]) {
                             conteoPlatos[item.nombre] += item.cantidad;
@@ -611,7 +611,7 @@ const btnLogout = document.getElementById('btn-logout');
 // Escuchar cambios: Si entra, mostramos POS. Si sale, mostramos Login.
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // ¡Contraseña correcta!
+        // Contraseña correcta
         loginSection.classList.add('d-none');
         posSection.classList.remove('d-none');
         iniciarSistemaPOS(); // Arrancamos el motor de mesas

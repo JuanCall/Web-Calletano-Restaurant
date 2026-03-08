@@ -3,7 +3,7 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase
 import { getFirestore, doc, getDoc, getDocs, setDoc, collection, addDoc, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- TU CONFIGURACIÓN ---
+// --- CONFIGURACIÓN ---
 const firebaseConfig = {
     apiKey: "AIzaSyC2RKkuY_aEQaHVDvAt_-T_29sPQ6HUp50",
     authDomain: "calletano-restaurant.firebaseapp.com",
@@ -145,7 +145,7 @@ if (path.includes("index.html") || path === "/") {
         }
     });
 
-    // NUEVA FUNCIÓN CARGAR LISTA: Más inteligente
+    // FUNCIÓN CARGAR LISTA
     const cargarLista = (docId, containerId, cols) => {
         const el = document.getElementById(containerId);
         if(el) {
@@ -170,10 +170,10 @@ if (path.includes("index.html") || path === "/") {
     cargarLista("favoritos", "favoritos-container", 4);
     cargarLista("domingo", "domingo-container", 3);
 
-    // NUEVA FUNCIÓN RESEÑAS: Busca múltiples contenedores por si acaso
+    // FUNCIÓN RESEÑAS: Busca múltiples contenedores por si acaso
     const group1 = document.getElementById('reviews-group-1');
     const group2 = document.getElementById('reviews-group-2');
-    // Buscamos contenedores genéricos en caso de que tus IDs en el index.html sean diferentes
+    // Buscamos contenedores genéricos en caso de que los IDs en el index.html sean diferentes
     const genericReviewContainer = document.getElementById('reviews-container') || document.getElementById('resenas-container') || document.querySelector('.reviews-section');
 
     const renderContenedorResenas = (html) => {
@@ -458,14 +458,63 @@ async function cargarDocumento(id, cb) {
         console.error(e); 
     } 
 }
-function setHref(id, v) { const e = document.getElementById(id); if (e && v) e.href = v; }
-function crearTarjetaPlato(p, c) { return `<div class="${c === 4 ? 'col-md-4' : 'col-md-3'} mb-4"><div class="card h-100 shadow-sm border-0"><img src="${p.img}" class="card-img-top" style="height:${c === 4 ? '200px' : '150px'};object-fit:cover;"><div class="card-body text-center"><h5 class="fw-bold">${p.titulo}</h5><p class="text-muted small">${p.desc}</p></div></div></div>`; }
-function generarEstrellasHTML(pts) { let h = ""; for (let i = 1; i <= 5; i++)h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star text-warning"></i>`; return h; }
+function setHref(id, v) { 
+    const e = document.getElementById(id); 
+    if (e && v) 
+        e.href = v; 
+}
+
+function crearTarjetaPlato(p, c) { 
+    return `<div class="${c === 4 ? 'col-md-4' : 'col-md-3'} mb-4"><div class="card h-100 shadow-sm border-0"><img src="${p.img}" class="card-img-top" style="height:${c === 4 ? '200px' : '150px'};object-fit:cover;"><div class="card-body text-center"><h5 class="fw-bold">${p.titulo}</h5><p class="text-muted small">${p.desc}</p></div></div></div>`; 
+}
+function generarEstrellasHTML(pts) { 
+    let h = ""; 
+    for (let i = 1; i <= 5; i++)
+        h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star text-warning"></i>`; 
+    return h; 
+}
 
 async function generarEditorPlatosBase64(contId, docId, cant, btnId) { 
     const cont = document.getElementById(contId); if (!cont) return; const snap = await getDoc(doc(db, "contenido", docId)); let list = snap.exists() ? (snap.data().lista || []) : []; while (list.length < cant) list.push({ titulo: "", desc: "", img: "plato1.png" }); let html = ""; list.forEach((it, i) => { if (i < cant) html += `<div class="card p-3 mb-3 item-plato-${docId} border-0 shadow-sm bg-white"><div class="row align-items-center"><div class="col-md-2 text-center"><strong class="d-block mb-2 text-muted">Plato #${i + 1}</strong><div class="upload-box justify-content-center"><img src="${it.img}" class="current-img img-preview-tag"><label class="btn-upload-custom"><i class="fas fa-plus"></i><span>Subir</span><input type="file" class="img-file-input" accept="image/*" onchange="previsualizar(this)"></label><input type="hidden" class="img-url-hidden" value="${it.img}"></div></div><div class="col-md-10"><div class="row g-2"><div class="col-md-6"><label class="small text-muted">Título</label><input type="text" class="form-control title-input" value="${it.titulo}"></div><div class="col-md-6"><label class="small text-muted">Descripción</label><input type="text" class="form-control desc-input" value="${it.desc}"></div></div></div></div></div>`; }); cont.innerHTML = html; const btn = document.getElementById(btnId); if (btn) { const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn); newBtn.addEventListener('click', async () => { newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; newBtn.disabled = true; const items = cont.querySelectorAll(`.item-plato-${docId}`); const newList = []; for (const div of items) { const fileInput = div.querySelector('.img-file-input'); const hiddenInput = div.querySelector('.img-url-hidden'); let finalImg = hiddenInput.value; if (fileInput.files.length > 0) finalImg = await comprimirImagen(fileInput.files[0]); newList.push({ img: finalImg, titulo: div.querySelector('.title-input').value, desc: div.querySelector('.desc-input').value }); } await setDoc(doc(db, "contenido", docId), { lista: newList }); alert("✅ Guardado"); generarEditorPlatosBase64(contId, docId, cant, btnId); newBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Todo'; newBtn.disabled = false; }); }
 }
 
 window.previsualizar = function (i) { if (i.files && i.files[0]) { const r = new FileReader(); r.onload = function (e) { i.closest('.upload-box').querySelector('.current-img').src = e.target.result; }; r.readAsDataURL(i.files[0]); } }
-function comprimirImagen(f) { return new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'); const s = 500 / i.width; c.width = 500; c.height = i.height * s; c.getContext('2d').drawImage(i, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', 0.7)); }; }; r.onerror = rej; }); }
-function asignarGuardado(btnId, docId, getDataCallback) { const btn = document.getElementById(btnId); if (!btn) return; const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn); newBtn.addEventListener('click', async (e) => { e.preventDefault(); const originalText = newBtn.innerHTML; newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; newBtn.disabled = true; try { const datos = getDataCallback(); await updateDoc(doc(db, "contenido", docId), datos); alert("✅ Guardado"); } catch (error) { console.error(error); alert("Error: " + error.message); } finally { newBtn.innerHTML = originalText; newBtn.disabled = false; } }); }
+function comprimirImagen(f) { 
+    return new Promise((res, rej) => { const r = new FileReader(); 
+        r.readAsDataURL(f); 
+        r.onload = (e) => { 
+            const i = new Image(); 
+            i.src = e.target.result; 
+            i.onload = () => { const c = document.createElement('canvas'); 
+                const s = 500 / i.width; 
+                c.width = 500; 
+                c.height = i.height * s; 
+                c.getContext('2d').drawImage(i, 0, 0, c.width, c.height); 
+                res(c.toDataURL('image/jpeg', 0.7)); 
+            }; 
+        }; 
+        r.onerror = rej; 
+    }); 
+}
+function asignarGuardado(btnId, docId, getDataCallback) { 
+    const btn = document.getElementById(btnId); 
+    if (!btn) return; 
+    const newBtn = btn.cloneNode(true); 
+    btn.parentNode.replaceChild(newBtn, btn); 
+    newBtn.addEventListener('click', async (e) => { 
+        e.preventDefault(); 
+        const originalText = newBtn.innerHTML; 
+        newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; 
+        newBtn.disabled = true; 
+        try { 
+            const datos = getDataCallback(); 
+            await updateDoc(doc(db, "contenido", docId), datos); 
+            alert("✅ Guardado"); 
+        } catch (error) { 
+            console.error(error); 
+            alert("Error: " + error.message); 
+        } finally { 
+            newBtn.innerHTML = originalText; newBtn.disabled = false; 
+        } 
+    }); 
+}
