@@ -302,16 +302,21 @@ if (path.includes("admin")) {
             const container = document.getElementById('admin-segundos-container');
             const row = document.createElement('div');
             row.className = "border border-danger-subtle rounded p-2 mb-2 bg-white segundo-item animate__animated animate__fadeIn";
+            
+            // Detectamos si es domingo para el precio por defecto del admin
+            const esHoyDomingo = new Date().getDay() === 0;
+            const precioSugerido = esHoyDomingo ? 30 : 15;
+
             row.innerHTML = `
                 <div class="d-flex gap-2 mb-2">
                     <input type="text" class="form-control form-control-sm seg-nombre fw-bold" placeholder="Plato de fondo" value="${nombre}">
                     <div class="input-group input-group-sm" style="width: 100px; flex-shrink:0;">
                         <span class="input-group-text bg-danger text-white border-danger">S/</span>
-                        <input type="number" class="form-control seg-precio text-center fw-bold text-danger border-danger bg-light" value="15" disabled>
+                        <input type="number" class="form-control seg-precio text-center fw-bold text-danger border-danger bg-light" value="${precioSugerido}" disabled>
                     </div>
                     <button class="btn btn-sm text-danger border-0 px-1" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
                 </div>
-                <input type="text" class="form-control form-control-sm text-muted fst-italic seg-acomp" placeholder="Acompañamiento (Ej: Porción de arroz y ensalada)" value="${acomp}">
+                <input type="text" class="form-control form-control-sm text-muted fst-italic seg-acomp" placeholder="Acompañamiento..." value="${acomp}">
             `;
             container.appendChild(row);
         };
