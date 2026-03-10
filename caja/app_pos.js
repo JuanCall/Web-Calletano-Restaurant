@@ -31,6 +31,41 @@ const listaPedidos = document.getElementById('lista-pedidos');
 
 let modalProductosInstance = null; 
 
+// SISTEMA DE FILTRADO INTELIGENTE PARA RANKING---
+let itemsProhibidosDeCarta = []; 
+
+async function cargarItemsProhibidos() {
+    try {
+        const snapCarta = await getDoc(doc(db, "contenido", "cartaCompleta"));
+        if (snapCarta.exists() && snapCarta.data().categorias) {
+            // Estas son las categorías que NO queremos en el ranking
+            const categoriasProhibidas = ['Guarniciones', 'Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza'];
+            
+            snapCarta.data().categorias.forEach(cat => {
+                if (categoriasProhibidas.includes(cat.nombre)) {
+                    cat.items.forEach(item => {
+                        itemsProhibidosDeCarta.push(item.nombre); // Ejemplo: "Chicha Morada"
+                        // Si tienen tamaños (Jarra/Vaso), también los agregamos a la lista negra
+                        if (cat.col1) itemsProhibidosDeCarta.push(`${item.nombre} (${cat.col1})`);
+                        if (cat.col2) itemsProhibidosDeCarta.push(`${item.nombre} (${cat.col2})`);
+                    });
+                }
+            });
+        }
+    } catch (e) { console.error("Error al leer categorías prohibidas:", e); }
+}
+
+function esPlatoParaRanking(nombre) {
+    // Palabras base que siempre se ignoran (Tapers, Extras y las Entradas genéricas)
+    const terminosBase = ['Taper', 'Refresco', '(Extra)', 'Humita', 'Entrada', 'Segundo'];
+    if (terminosBase.some(t => nombre.includes(t))) return false;
+    
+    // Filtro dinámico: Si el plato es una bebida o guarnición, lo ignora
+    if (itemsProhibidosDeCarta.includes(nombre)) return false;
+
+    return true; // Si pasa todos los filtros, sí va al ranking
+}
+
 // =========================================================
 //  1. ESCUCHAR MESAS Y CONFIGURAR DÍA
 // =========================================================
@@ -52,6 +87,7 @@ function iniciarSistemaPOS() {
         dibujarMesas();
         actualizarComandera(); 
     });
+    cargarItemsProhibidos();
     cargarCartaDesdeWeb();
 }
 
@@ -156,7 +192,7 @@ window.modificarCantidad = async (index, cambio) => {
 };
 
 // =========================================================
-//  4. CATÁLOGO (HUMITA DOMINGOS)
+//  4. CATÁLOGO COMPLETO
 // =========================================================
 async function cargarCartaDesdeWeb() {
     try {
@@ -165,42 +201,65 @@ async function cargarCartaDesdeWeb() {
         const esDomingo = new Date().getDay() === 0;
         let html = "";
 
-        // Botón especial para platos fuera de carta
         html += `<button class="btn btn-outline-danger w-100 mb-3 fw-bold" onclick="agregarPlatoPersonalizado()"><i class="fas fa-keyboard"></i> Plato fuera de carta</button>`;
 
-        // Lógica de Menú / Almuerzo Dominical
+        // 1. LÓGICA DE MENÚ DIARIO / ALMUERZOS
         if(snapMenu.exists()) {
+            const d = snapMenu.data();
+
             if (esDomingo) {
-                html += `<h5 class="fw-bold text-warning border-bottom">Especial Dominical</h5>
-                         <button class="btn btn-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('Almuerzo', 30)">
-                            <i class="fas fa-star"></i> Almuerzo (S/ 30.00)
-                         </button>
-                         <button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start" onclick="agregarAlPedido('Humita', 3)">
+                html += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical (S/ 30)</h5>`;
+                if (d.segundos && d.segundos.length > 0) {
+                    d.segundos.forEach(s => {
+                        html += `
+                        <button class="btn btn-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30)">
+                            <i class="fas fa-star"></i> ${s.nombre}
+                        </button>`;
+                    });
+                }
+                html += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start" onclick="agregarAlPedido('Humita', 3)">
                             <i class="fas fa-plus-circle"></i> Humita (S/ 3.00)
                          </button>`;
             } else {
-                html += `<h5 class="fw-bold text-warning border-bottom">Menú del Día</h5>
-                         <button class="btn btn-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('Menú Completo', 15)">Completo (S/ 15)</button>
-                         <div class="row g-2 mb-3">
-                            <div class="col-6"><button class="btn btn-outline-warning w-100 fw-bold" onclick="agregarAlPedido('Solo Entrada', 6)">Entrada (S/ 6)</button></div>
-                            <div class="col-6"><button class="btn btn-outline-warning w-100 fw-bold" onclick="agregarAlPedido('Solo Segundo', 15)">Segundo (S/ 15)</button></div>
-                         </div>`;
+                html += `<h5 class="fw-bold text-warning border-bottom">Opciones de Entrada</h5>`;
+                if (d.entradas && d.entradas.length > 0) {
+                    const precios = d.entradas.map(e => e.precio);
+                    const todosIguales = precios.every(p => p === precios[0]);
+
+                    if (todosIguales) {
+                        html += `<button class="btn btn-outline-warning w-100 mb-2 fw-bold" onclick="agregarAlPedido('Entrada', ${precios[0]})">
+                                    Entrada (S/ ${precios[0]})
+                                 </button>`;
+                    } else {
+                        d.entradas.forEach(e => {
+                            html += `<button class="btn btn-outline-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('${e.nombre}', ${e.precio})">
+                                        ${e.nombre} (S/ ${e.precio})
+                                     </button>`;
+                        });
+                    }
+                }
+
+                html += `<h5 class="fw-bold text-danger border-bottom mt-3">Segundos (S/ 15)</h5>`;
+                if (d.segundos && d.segundos.length > 0) {
+                    d.segundos.forEach(s => {
+                        html += `<button class="btn btn-danger w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('${s.nombre}', 15)">
+                                    ${s.nombre}
+                                 </button>`;
+                    });
+                }
             }
         }
 
-        // Resto de la carta normal...
+        // 2. LA CARTA COMPLETA (Platos de fondo, bebidas, etc)
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach(cat => {
-                html += `<h6 class="mt-3 fw-bold text-primary border-bottom">${cat.nombre}</h6><div class="row g-2">`;
+                html += `<h6 class="mt-4 fw-bold text-primary border-bottom">${cat.nombre}</h6><div class="row g-2">`;
                 
                 cat.items.forEach(item => {
                     const precio1 = parseFloat(String(item.precio).replace(/[^0-9.]/g, '')) || 0;
                     
-                    // Verificamos si existe un segundo precio (Ej: Fuente)
                     if (item.precio2 && String(item.precio2).trim() !== "" && item.precio2 !== "-") {
                         const precio2 = parseFloat(String(item.precio2).replace(/[^0-9.]/g, '')) || 0;
-                        
-                        // Si hay dos precios, dibujamos DOS botones (Personal y Fuente)
                         html += `
                         <div class="col-6">
                             <button class="btn btn-outline-secondary w-100 text-start small" onclick="agregarAlPedido('${item.nombre} (${cat.col1})', ${precio1})">
@@ -213,7 +272,6 @@ async function cargarCartaDesdeWeb() {
                             </button>
                         </div>`;
                     } else {
-                        // Si solo hay un precio, dibujamos UN botón normal
                         html += `
                         <div class="col-6">
                             <button class="btn btn-outline-secondary w-100 text-start small" onclick="agregarAlPedido('${item.nombre}', ${precio1})">
@@ -225,8 +283,13 @@ async function cargarCartaDesdeWeb() {
                 html += `</div>`;
             });
         }
+        
         document.getElementById('catalogo-productos').innerHTML = html;
-    } catch (e) { console.error(e); }
+        
+    } catch (error) { 
+        console.error("Error cargando carta:", error); 
+        document.getElementById('catalogo-productos').innerHTML = "<p class='text-danger text-center'>Error al cargar el menú.</p>";
+    }
 }
 
 // Abrir el modal del catálogo al hacer clic en "Agregar Pedido"
@@ -430,6 +493,31 @@ btnArqueo.addEventListener('click', async () => {
         document.getElementById('arq-neta').innerText = `S/ ${(totalIngresos - totalGastos).toFixed(2)}`;
         
         document.getElementById('arq-neta').className = (totalIngresos - totalGastos) < 0 ? "text-danger fw-bold m-0" : "text-white fw-bold m-0";
+        
+        let conteoPlatosHoy = {};
+        ventasSnap.forEach((doc) => {
+            const data = doc.data();
+            if (data.items) {
+                data.items.forEach(item => {
+                    // FILTRO APLICADO AQUÍ
+                    if (esPlatoParaRanking(item.nombre)) {
+                        conteoPlatosHoy[item.nombre] = (conteoPlatosHoy[item.nombre] || 0) + item.cantidad;
+                    }
+                });
+            }
+        });
+
+        // Ordenar y sacar Top 3
+        let rankingHoy = Object.keys(conteoPlatosHoy)
+            .map(n => ({ nombre: n, cant: conteoPlatosHoy[n] }))
+            .sort((a, b) => b.cant - a.cant)
+            .slice(0, 5);
+
+        const containerTop = document.getElementById('arq-top-platos');
+        containerTop.innerHTML = rankingHoy.length > 0 
+            ? rankingHoy.map((p, i) => `<div>${i+1}. ${p.nombre} (${p.cant})</div>`).join("")
+            : "Sin ventas registradas hoy.";
+
         modalArqueoInstance.show();
     } catch (error) { console.error("Error:", error); }
 });
@@ -492,7 +580,7 @@ async function cargarDatosDashboard(anioMes) {
             if (data.items && Array.isArray(data.items)) {
                 data.items.forEach(item => {
                     // Ignorar "Taper" y "Refresco"
-                    if (!item.nombre.includes('Taper') && item.nombre !== 'Refresco') {
+                    if (esPlatoParaRanking(item.nombre)) {
                         if (conteoPlatos[item.nombre]) {
                             conteoPlatos[item.nombre] += item.cantidad;
                         } else {
