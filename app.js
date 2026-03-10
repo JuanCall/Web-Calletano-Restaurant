@@ -126,22 +126,48 @@ if (path.includes("index.html") || path === "/") {
     
     cargarDocumento("menuDiario", (d) => {
         const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt || "No disponible"; };
-        setTxt('menu-entrada', d.entrada);
-        setTxt('menu-segundo', d.segundo);
         setTxt('menu-refresco', d.refresco);
+        
         const titleEl = document.getElementById('main-menu-title');
         const colEntradas = document.getElementById('col-entradas');
         const colSegundos = document.getElementById('col-segundos');
         const headerSegundos = document.getElementById('header-segundos');
+        const listaEntradas = document.getElementById('menu-entradas-list');
+        const listaSegundos = document.getElementById('menu-segundos-list');
         
         if (titleEl) titleEl.innerText = d.titulo || "Menú del Día 🍽️";
 
+        // DIBUJAR ENTRADAS (Lista)
+        if (listaEntradas) {
+            if (d.entradas && Array.isArray(d.entradas) && d.entradas.length > 0) {
+                listaEntradas.innerHTML = d.entradas.map(e => `<li class="fs-5 fw-bold text-dark border-bottom border-warning-subtle py-2"><i class="fas fa-check text-warning me-2 small"></i>${e.nombre}</li>`).join("");
+            } else {
+                // Compatibilidad por si hay texto antiguo
+                listaEntradas.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${d.entrada || "Por definir"}</li>`;
+            }
+        }
+
+        // DIBUJAR SEGUNDOS (Lista + Guarnición)
+        if (listaSegundos) {
+            if (d.segundos && Array.isArray(d.segundos) && d.segundos.length > 0) {
+                listaSegundos.innerHTML = d.segundos.map(s => `
+                    <li class="border-bottom border-danger-subtle py-2">
+                        <div class="fs-5 fw-bold text-dark"><i class="fas fa-check text-danger me-2 small"></i>${s.nombre}</div>
+                        ${s.acomp ? `<span class="d-block small text-muted fw-normal fst-italic ps-4">Con: ${s.acomp}</span>` : ''}
+                    </li>
+                `).join("");
+            } else {
+                listaSegundos.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${d.segundo || "Por definir"}</li>`;
+            }
+        }
+
+        // MODO DOMINGO
         if (d.modoDomingo) {
             if (colEntradas) colEntradas.style.display = 'none';
-            if (colSegundos) { colSegundos.className = "col-md-8 mb-4"; if (headerSegundos) headerSegundos.innerText = "PLATOS DISPONIBLES"; }
+            if (colSegundos) { colSegundos.className = "col-md-8 mb-4 mx-auto"; if (headerSegundos) headerSegundos.innerHTML = "<h3>PLATOS ESPECIALES</h3>"; }
         } else {
             if (colEntradas) colEntradas.style.display = 'block';
-            if (colSegundos) { colSegundos.className = "col-md-5 mb-4"; if (headerSegundos) headerSegundos.innerText = "SEGUNDOS"; }
+            if (colSegundos) { colSegundos.className = "col-md-5 mb-4"; if (headerSegundos) headerSegundos.innerHTML = "<h3>SEGUNDOS</h3>"; }
         }
     });
 
@@ -256,33 +282,111 @@ if (path.includes("admin")) {
         btnAbierto?.addEventListener('click', async () => { await guardarHorario(); });
 
         // --- MENÚ DIARIO ---
+        // Funciones Globales para añadir filas
+        window.addEntradaRow = (nombre = "", precio = 6) => {
+            const container = document.getElementById('admin-entradas-container');
+            const row = document.createElement('div');
+            row.className = "d-flex gap-2 mb-2 entrada-item animate__animated animate__fadeIn";
+            row.innerHTML = `
+                <input type="text" class="form-control form-control-sm ent-nombre border-warning" placeholder="Nombre (Ej: Ceviche)" value="${nombre}">
+                <div class="input-group input-group-sm" style="width: 100px; flex-shrink:0;">
+                    <span class="input-group-text bg-warning text-dark fw-bold border-warning">S/</span>
+                    <input type="number" class="form-control ent-precio border-warning text-center fw-bold" value="${precio}">
+                </div>
+                <button class="btn btn-sm btn-outline-danger border-0" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+            `;
+            container.appendChild(row);
+        };
+
+        window.addSegundoRow = (nombre = "", acomp = "") => {
+            const container = document.getElementById('admin-segundos-container');
+            const row = document.createElement('div');
+            row.className = "border border-danger-subtle rounded p-2 mb-2 bg-white segundo-item animate__animated animate__fadeIn";
+            row.innerHTML = `
+                <div class="d-flex gap-2 mb-2">
+                    <input type="text" class="form-control form-control-sm seg-nombre fw-bold" placeholder="Plato de fondo" value="${nombre}">
+                    <div class="input-group input-group-sm" style="width: 100px; flex-shrink:0;">
+                        <span class="input-group-text bg-danger text-white border-danger">S/</span>
+                        <input type="number" class="form-control seg-precio text-center fw-bold text-danger border-danger bg-light" value="15" disabled>
+                    </div>
+                    <button class="btn btn-sm text-danger border-0 px-1" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
+                </div>
+                <input type="text" class="form-control form-control-sm text-muted fst-italic seg-acomp" placeholder="Acompañamiento (Ej: Porción de arroz y ensalada)" value="${acomp}">
+            `;
+            container.appendChild(row);
+        };
+
+        window.aplicarAcompGlobal = () => {
+            const text = document.getElementById('batch-acomp').value;
+            document.querySelectorAll('.seg-acomp').forEach(input => input.value = text);
+        };
+
+        // Cargar datos al abrir el panel
         cargarDocumento("menuDiario", (d) => {
-            if (document.getElementById('input-entrada')) document.getElementById('input-entrada').value = d.entrada || "";
-            if (document.getElementById('input-segundo')) document.getElementById('input-segundo').value = d.segundo || "";
             if (document.getElementById('input-refresco')) document.getElementById('input-refresco').value = d.refresco || "";
             if (document.getElementById('input-titulo-menu')) document.getElementById('input-titulo-menu').value = d.titulo || "Menú del Día 🍽️";
-            if (document.getElementById('check-modo-domingo')) document.getElementById('check-modo-domingo').checked = d.modoDomingo || false;
+            const isDomingo = d.modoDomingo || false;
+            if (document.getElementById('check-modo-domingo')) document.getElementById('check-modo-domingo').checked = isDomingo;
+            
+            // Aplicar visibilidad inicial según el estado guardado
+            if (colEntradasAdmin) {
+                colEntradasAdmin.style.display = isDomingo ? 'none' : 'block';
+            }
+            
+            // Renderizar Entradas
+            document.getElementById('admin-entradas-container').innerHTML = "";
+            if (d.entradas && d.entradas.length > 0) {
+                d.entradas.forEach(e => addEntradaRow(e.nombre, e.precio));
+            } else { addEntradaRow("", 6); } // Fila vacía por defecto
+            
+            // Renderizar Segundos
+            document.getElementById('admin-segundos-container').innerHTML = "";
+            if (d.segundos && d.segundos.length > 0) {
+                d.segundos.forEach(s => addSegundoRow(s.nombre, s.acomp));
+            } else { addSegundoRow("", ""); } // Fila vacía por defecto
         });
 
         const checkDomingo = document.getElementById('check-modo-domingo');
         const inputTitulo = document.getElementById('input-titulo-menu');
+        const colEntradasAdmin = document.getElementById('admin-col-entradas'); // Referencia a la columna
+
         if (checkDomingo && inputTitulo) {
             checkDomingo.addEventListener('change', () => {
-                if (checkDomingo.checked) {
-                    inputTitulo.value = "ESPECIALES DE DOMINGO 🍽️";
-                } else {
-                    inputTitulo.value = "Menú del Día 🍽️";
+                const activo = checkDomingo.checked;
+                inputTitulo.value = activo ? "ESPECIALES DE DOMINGO 🍽️" : "Menú del Día 🍽️";
+                
+                // Ocultar o mostrar la columna de entradas
+                if (colEntradasAdmin) {
+                    colEntradasAdmin.style.display = activo ? 'none' : 'block';
                 }
             });
         }
 
-        asignarGuardado('btn-save-menu', "menuDiario", () => ({
-            entrada: document.getElementById('input-entrada').value,
-            segundo: document.getElementById('input-segundo').value,
-            refresco: document.getElementById('input-refresco').value,
-            titulo: document.getElementById('input-titulo-menu').value,
-            modoDomingo: document.getElementById('check-modo-domingo').checked
-        }));
+        // Extraer los datos y guardar
+        asignarGuardado('btn-save-menu', "menuDiario", () => {
+            // Leer Entradas
+            const entradasArray = Array.from(document.querySelectorAll('.entrada-item')).map(el => ({
+                nombre: el.querySelector('.ent-nombre').value.trim(),
+                precio: parseFloat(el.querySelector('.ent-precio').value) || 6
+            })).filter(e => e.nombre !== "");
+
+            // Leer Segundos
+            const segundosArray = Array.from(document.querySelectorAll('.segundo-item')).map(el => ({
+                nombre: el.querySelector('.seg-nombre').value.trim(),
+                acomp: el.querySelector('.seg-acomp').value.trim(),
+                precio: 15 // Fijo e inmodificable
+            })).filter(s => s.nombre !== "");
+
+            return {
+                entradas: entradasArray,
+                segundos: segundosArray,
+                refresco: document.getElementById('input-refresco').value,
+                titulo: document.getElementById('input-titulo-menu').value,
+                modoDomingo: document.getElementById('check-modo-domingo').checked,
+                // Conservamos los viejos en blanco por si acaso
+                entrada: "", segundo: "" 
+            };
+        });
 
         // --- CONTACTO ---
         cargarDocumento("contacto", (d) => {
