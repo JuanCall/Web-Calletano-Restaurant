@@ -424,19 +424,76 @@ btnConfirmarCobro.addEventListener('click', async () => {
 });
 
 // =========================================================
-//  6. REGISTRO DE GASTOS Y ARQUEO FINAL
+//  6. REGISTRO DE GASTOS, HISTORIAL Y ARQUEO FINAL
 // =========================================================
 let modalGastoInstance = null;
 const btnNuevoGasto = document.getElementById('btn-nuevo-gasto');
 const btnGuardarGasto = document.getElementById('btn-guardar-gasto');
 
+// NUEVA FUNCIÓN: Cargar el historial de gastos del día
+async function cargarGastosHoy() {
+    const listaGastos = document.getElementById('lista-gastos-hoy');
+    if (!listaGastos) return;
+
+    const inicioDia = new Date();
+    inicioDia.setHours(0, 0, 0, 0); // Desde las 00:00 de hoy
+
+    const q = query(collection(db, "gastos"), where("fecha", ">=", inicioDia));
+    try {
+        const snap = await getDocs(q);
+        listaGastos.innerHTML = "";
+        
+        if (snap.empty) {
+            listaGastos.innerHTML = "<div class='text-center text-muted small py-2'>No hay gastos registrados hoy.</div>";
+            return;
+        }
+
+        snap.forEach(documento => {
+            const d = documento.data();
+            listaGastos.innerHTML += `
+                <div class="d-flex justify-content-between align-items-center bg-white border shadow-sm p-2 rounded mb-1 animate__animated animate__fadeIn">
+                    <div>
+                        <strong class="d-block text-dark small">${d.concepto}</strong>
+                        <span class="badge bg-secondary mt-1" style="font-size: 0.65rem;">${d.categoria}</span>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <strong class="text-danger me-3 fw-bold">S/ ${d.monto.toFixed(2)}</strong>
+                        <button class="btn btn-sm text-danger border-0 px-2" onclick="eliminarGasto('${documento.id}')" title="Eliminar este gasto">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    } catch (error) {
+        console.error("Error al cargar gastos:", error);
+        listaGastos.innerHTML = "<div class='text-danger small'>Error al cargar el historial.</div>";
+    }
+}
+
+// NUEVA FUNCIÓN: Eliminar un gasto por error
+window.eliminarGasto = async (id) => {
+    if (confirm("¿Seguro que deseas anular este gasto? El monto volverá a tu caja.")) {
+        try {
+            await deleteDoc(doc(db, "gastos", id));
+            cargarGastosHoy(); // Recargamos la lista automáticamente
+        } catch (error) {
+            console.error("Error al eliminar:", error);
+            alert("No se pudo eliminar el gasto.");
+        }
+    }
+};
+
+// Abrir Modal de Gastos
 btnNuevoGasto.addEventListener('click', () => {
     if (!modalGastoInstance) modalGastoInstance = new bootstrap.Modal(document.getElementById('modalGasto'));
     document.getElementById('gasto-concepto').value = "";
     document.getElementById('gasto-monto').value = "0";
+    cargarGastosHoy(); // Cargamos la lista antes de que aparezca la ventana
     modalGastoInstance.show();
 });
 
+// Guardar Nuevo Gasto
 btnGuardarGasto.addEventListener('click', async () => {
     const concepto = document.getElementById('gasto-concepto').value.trim();
     const categoria = document.getElementById('gasto-categoria').value;
@@ -449,12 +506,28 @@ btnGuardarGasto.addEventListener('click', async () => {
 
     try {
         await addDoc(collection(db, "gastos"), { fecha: new Date(), concepto: concepto, categoria: categoria, monto: monto });
-        modalGastoInstance.hide();
+        
+        // Limpiamos los cuadros de texto por si quiere agregar otro gasto
+        document.getElementById('gasto-concepto').value = "";
+        document.getElementById('gasto-monto').value = "0";
+        
+        // Recargamos la lista para que vea el nuevo gasto abajo
+        cargarGastosHoy();
+        
+        // Le mostramos un check verde temporal
+        btnGuardarGasto.innerHTML = '<i class="fas fa-check"></i> ¡Guardado!';
+        btnGuardarGasto.classList.replace('btn-warning', 'btn-success');
+        
+        setTimeout(() => {
+            btnGuardarGasto.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Gasto';
+            btnGuardarGasto.classList.replace('btn-success', 'btn-warning');
+            btnGuardarGasto.disabled = false;
+        }, 1500);
+
     } catch (error) {
         console.error("Error:", error);
-    } finally {
         btnGuardarGasto.disabled = false;
-        btnGuardarGasto.innerHTML = '<i class="fas fa-save"></i> Guardar Gasto';
+        btnGuardarGasto.innerHTML = '<i class="fas fa-save me-2"></i>Guardar Gasto';
     }
 });
 
