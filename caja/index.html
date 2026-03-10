@@ -110,16 +110,19 @@
 
                 <!-- Botones rápidos -->
                 <div class="row g-2 mb-3">
-                    <div class="col-6">
-                        <button class="btn btn-outline-warning btn-rapido w-100" id="btn-taper"
-                                onclick="agregarAlPedido('Taper', 2.00)" disabled>
-                            <i class="fas fa-box me-1"></i>Taper (S/ 2)
+                    <div class="col-4">
+                        <button class="btn btn-outline-warning w-100 fw-bold shadow-sm py-2" id="btn-taper-1" onclick="agregarAlPedido('Taper (Chico)', 1.00)" disabled>
+                            <i class="fas fa-box"></i> Taper S/1
                         </button>
                     </div>
-                    <div class="col-6">
-                        <button class="btn btn-outline-info btn-rapido w-100" id="btn-refresco"
-                                onclick="agregarAlPedido('Refresco', 2.00)" disabled>
-                            <i class="fas fa-glass-whiskey me-1"></i>Refresco (S/ 2)
+                    <div class="col-4">
+                        <button class="btn btn-outline-warning w-100 fw-bold shadow-sm py-2" id="btn-taper-2" onclick="agregarAlPedido('Taper (Grande)', 2.00)" disabled>
+                            <i class="fas fa-box"></i> Taper S/2
+                        </button>
+                    </div>
+                    <div class="col-4">
+                        <button class="btn btn-outline-info w-100 fw-bold shadow-sm py-2" id="btn-refresco" disabled>
+                            <i class="fas fa-glass-whiskey"></i> Refresco
                         </button>
                     </div>
                 </div>

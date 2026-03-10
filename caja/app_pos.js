@@ -22,7 +22,8 @@ const contenedorMesas = document.getElementById('contenedor-mesas');
 const tituloMesa = document.getElementById('titulo-mesa');
 const estadoMesa = document.getElementById('estado-mesa');
 const btnAgregarProducto = document.getElementById('btn-agregar-producto');
-const btnTaper = document.getElementById('btn-taper');
+const btnTaper1 = document.getElementById('btn-taper-1');
+const btnTaper2 = document.getElementById('btn-taper-2');
 const btnRefresco = document.getElementById('btn-refresco');
 const btnCobrar = document.getElementById('btn-cobrar');
 const totalCuenta = document.getElementById('total-cuenta');
@@ -31,55 +32,45 @@ const listaPedidos = document.getElementById('lista-pedidos');
 let modalProductosInstance = null; 
 
 // =========================================================
-//  1. ESCUCHAR MESAS EN TIEMPO REAL
+//  1. ESCUCHAR MESAS Y CONFIGURAR DÍA
 // =========================================================
 function iniciarSistemaPOS() {
-    // --- Detectar si es Domingo para cambiar precios ---
-    const esDomingo = new Date().getDay() === 0; // 0 significa Domingo en JavaScript
+    // Detectar Domingo para Refresco
+    const esDomingo = new Date().getDay() === 0;
     const precioRefresco = esDomingo ? 3.00 : 2.00;
     
-    // Sobrescribimos el botón de Refresco del HTML
-    btnRefresco.innerHTML = `<i class="fas fa-glass-whiskey"></i> Refresco (S/ ${precioRefresco})`;
+    btnRefresco.innerHTML = `<i class="fas fa-glass-whiskey"></i> S/ ${precioRefresco}`;
     btnRefresco.setAttribute('onclick', `agregarAlPedido('Refresco', ${precioRefresco})`);
 
     const mesasRef = collection(db, "mesas_pos");
-    
     onSnapshot(mesasRef, (snapshot) => {
         mesasData = [];
         snapshot.forEach((doc) => {
             mesasData.push({ id: doc.id, ...doc.data() });
         });
         mesasData.sort((a, b) => a.numero - b.numero);
-        
         dibujarMesas();
         actualizarComandera(); 
     });
-
     cargarCartaDesdeWeb();
 }
 
 // =========================================================
-//  2. DIBUJAR MESAS
+//  2. DIBUJAR MESAS (3x4)
 // =========================================================
 function dibujarMesas() {
     contenedorMesas.innerHTML = ""; 
-    
     mesasData.forEach(mesa => {
         const esOcupada = mesa.estado === "ocupada";
         const claseEstado = esOcupada ? "mesa-ocupada" : "mesa-libre";
-        const textoEstado = esOcupada ? "Ocupada" : "Libre";
-        const icono = esOcupada ? "fa-utensils" : "fa-check-circle";
-        const total = esOcupada ? `S/ ${mesa.total_consumo.toFixed(2)}` : "S/ 0.00";
         const esSeleccionada = mesa.id === mesaSeleccionadaId ? "mesa-seleccionada" : "";
-
         const div = document.createElement('div');
-        // Usamos col-4 (12/4 = 3) para forzar siempre 3 columnas por fila
         div.className = "col-4 mb-3"; 
         div.innerHTML = `
-            <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada}" onclick="seleccionarMesa('${mesa.id}')">
+            <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada}" onclick="seleccionarMesa('${mesa.id}')" style="height: 160px;">
                 <h3 class="fw-bold mb-1">Mesa ${mesa.numero}</h3>
-                <span class="badge bg-white text-dark mb-2"><i class="fas ${icono}"></i> ${textoEstado}</span>
-                <strong class="fs-5">${total}</strong>
+                <span class="badge bg-white text-dark mb-2">${esOcupada ? 'Ocupada' : 'Libre'}</span>
+                <strong class="fs-5">S/ ${mesa.total_consumo.toFixed(2)}</strong>
             </div>
         `;
         contenedorMesas.appendChild(div);
@@ -87,7 +78,7 @@ function dibujarMesas() {
 }
 
 // =========================================================
-//  3. LÓGICA DE LA COMANDERA
+//  3. LÓGICA DE LA COMANDERA (+ / -)
 // =========================================================
 window.seleccionarMesa = (id) => {
     mesaSeleccionadaId = id;
@@ -102,18 +93,14 @@ function actualizarComandera() {
 
     tituloMesa.innerText = `Mesa ${mesa.numero}`;
     btnAgregarProducto.disabled = false;
-    btnTaper.disabled = false;
+    btnTaper1.disabled = false;
+    btnTaper2.disabled = false;
     btnRefresco.disabled = false;
     
     if (mesa.estado === "libre" || !mesa.pedido_actual || mesa.pedido_actual.length === 0) {
         estadoMesa.className = "badge bg-success mt-2";
         estadoMesa.innerText = "Libre";
-        listaPedidos.innerHTML = `
-            <div class="text-center text-muted mt-5">
-                <i class="fas fa-concierge-bell fa-3x mb-3 opacity-25"></i>
-                <p>Agregue platos para abrir la mesa.</p>
-            </div>
-        `;
+        listaPedidos.innerHTML = `<div class="text-center text-muted mt-5"><p>Agregue platos para abrir la mesa.</p></div>`;
         totalCuenta.innerText = "S/ 0.00";
         btnCobrar.disabled = true;
     } else {
@@ -124,13 +111,15 @@ function actualizarComandera() {
         mesa.pedido_actual.forEach((item, index) => {
             itemsHTML += `
             <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                <div>
-                    <strong class="d-block text-dark">${item.nombre}</strong>
-                    <small class="text-muted fw-bold">${item.cantidad} x S/ ${item.precio.toFixed(2)}</small>
+                <div style="width: 55%">
+                    <strong class="d-block text-dark small">${item.nombre}</strong>
+                    <strong class="text-primary">S/ ${item.subtotal.toFixed(2)}</strong>
                 </div>
-                <div class="text-end">
-                    <strong class="d-block text-primary">S/ ${item.subtotal.toFixed(2)}</strong>
-                    <button class="btn btn-sm btn-outline-danger mt-1 border-0" onclick="eliminarDelPedido(${index})" title="Eliminar"><i class="fas fa-trash"></i></button>
+                <div class="d-flex align-items-center justify-content-end" style="width: 45%">
+                    <button class="btn btn-sm btn-outline-secondary px-2 py-0 fw-bold" onclick="modificarCantidad(${index}, -1)">-</button>
+                    <span class="mx-2 fw-bold">${item.cantidad}</span>
+                    <button class="btn btn-sm btn-outline-primary px-2 py-0 fw-bold" onclick="modificarCantidad(${index}, 1)">+</button>
+                    <button class="btn btn-sm text-danger ms-2 border-0" onclick="eliminarDelPedido(${index})"><i class="fas fa-trash-alt"></i></button>
                 </div>
             </div>`;
         });
@@ -140,146 +129,146 @@ function actualizarComandera() {
     }
 }
 
+// Función para sumar o restar cantidades directamente
+window.modificarCantidad = async (index, cambio) => {
+    const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
+    if (!mesa) return;
+
+    let nuevoPedido = [...mesa.pedido_actual];
+    nuevoPedido[index].cantidad += cambio;
+
+    if (nuevoPedido[index].cantidad <= 0) {
+        nuevoPedido.splice(index, 1); // Si llega a cero, borramos el plato
+    } else {
+        nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * nuevoPedido[index].precio;
+    }
+
+    let nuevoTotal = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
+    let nuevoEstado = nuevoPedido.length === 0 ? "libre" : "ocupada";
+
+    try {
+        await updateDoc(doc(db, "mesas_pos", mesa.id), {
+            estado: nuevoEstado,
+            pedido_actual: nuevoPedido,
+            total_consumo: nuevoTotal
+        });
+    } catch (e) { console.error(e); }
+};
+
 // =========================================================
-//  4. CATÁLOGO DE PRODUCTOS Y PEDIDOS
+//  4. CATÁLOGO (HUMITA DOMINGOS)
 // =========================================================
 async function cargarCartaDesdeWeb() {
     try {
         const snapCarta = await getDoc(doc(db, "contenido", "cartaCompleta"));
         const snapMenu = await getDoc(doc(db, "contenido", "menuDiario"));
-        
+        const esDomingo = new Date().getDay() === 0;
         let html = "";
 
-        // 1. BOTÓN PARA PLATOS FUERA DE CARTA (PERSONALIZADOS)
-        html += `<h5 class="mt-2 fw-bold text-danger border-bottom pb-2"><i class="fas fa-edit"></i> Pedidos Especiales</h5>`;
-        html += `<div class="row g-2 mb-3">
-                    <div class="col-12">
-                        <button class="btn btn-outline-danger w-100 text-start fw-bold shadow-sm" onclick="agregarPlatoPersonalizado()">
-                            <i class="fas fa-keyboard"></i> Escribir plato fuera de carta...
-                        </button>
-                    </div>
-                 </div>`;
+        // Botón especial para platos fuera de carta
+        html += `<button class="btn btn-outline-danger w-100 mb-3 fw-bold" onclick="agregarPlatoPersonalizado()"><i class="fas fa-keyboard"></i> Plato fuera de carta</button>`;
 
-        // 2. OPCIONES DEL MENÚ DESGLOSADAS
-        if(snapMenu.exists() && snapMenu.data().titulo) {
-            const tituloMenu = snapMenu.data().titulo || "Menú del Día";
-            const esDomingo = new Date().getDay() === 0;
-
+        // Lógica de Menú / Almuerzo Dominical
+        if(snapMenu.exists()) {
             if (esDomingo) {
-                // Interfaz para los Domingos
-                html += `<h5 class="mt-3 fw-bold text-dark border-bottom pb-2"><i class="fas fa-utensils text-warning"></i> Especial de Domingo</h5>`;
-                html += `<div class="row g-2 mb-3">
-                            <div class="col-12">
-                                <button class="btn btn-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Almuerzo', 30)">
-                                    <i class="fas fa-star"></i> Almuerzo (S/ 30.00)
-                                </button>
-                            </div>
-                         </div>`;
+                html += `<h5 class="fw-bold text-warning border-bottom">Especial Dominical</h5>
+                         <button class="btn btn-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('Almuerzo', 30)">
+                            <i class="fas fa-star"></i> Almuerzo (S/ 30.00)
+                         </button>
+                         <button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start" onclick="agregarAlPedido('Humita', 3)">
+                            <i class="fas fa-plus-circle"></i> Humita (S/ 3.00)
+                         </button>`;
             } else {
-                // Interfaz para Lunes a Sábado
-                html += `<h5 class="mt-3 fw-bold text-dark border-bottom pb-2"><i class="fas fa-utensils text-warning"></i> ${tituloMenu}</h5>`;
-                html += `<div class="row g-2 mb-3">
-                            <div class="col-12">
-                                <button class="btn btn-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('${tituloMenu} (Completo)', 15)">
-                                    <i class="fas fa-star"></i> Completo (S/ 15.00)
-                                </button>
-                            </div>
-                            <div class="col-6">
-                                <button class="btn btn-outline-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Solo Entrada', 6)">
-                                    <i class="fas fa-angle-right"></i> Solo Entrada (S/ 6.00)
-                                </button>
-                            </div>
-                            <div class="col-6">
-                                <button class="btn btn-outline-warning w-100 text-start fw-bold shadow-sm" onclick="agregarAlPedido('Solo Segundo', 15)">
-                                    <i class="fas fa-angle-right"></i> Solo Segundo (S/ 15.00)
-                                </button>
-                            </div>
+                html += `<h5 class="fw-bold text-warning border-bottom">Menú del Día</h5>
+                         <button class="btn btn-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('Menú Completo', 15)">Completo (S/ 15)</button>
+                         <div class="row g-2 mb-3">
+                            <div class="col-6"><button class="btn btn-outline-warning w-100 fw-bold" onclick="agregarAlPedido('Solo Entrada', 6)">Entrada (S/ 6)</button></div>
+                            <div class="col-6"><button class="btn btn-outline-warning w-100 fw-bold" onclick="agregarAlPedido('Solo Segundo', 15)">Segundo (S/ 15)</button></div>
                          </div>`;
             }
         }
 
-        // 3. LA CARTA NORMAL
+        // Resto de la carta normal...
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach(cat => {
-                html += `<h5 class="mt-4 fw-bold text-primary border-bottom pb-1">${cat.nombre}</h5>`;
-                html += `<div class="row g-2">`;
+                html += `<h6 class="mt-3 fw-bold text-primary border-bottom">${cat.nombre}</h6><div class="row g-2">`;
                 
                 cat.items.forEach(item => {
                     const precio1 = parseFloat(String(item.precio).replace(/[^0-9.]/g, '')) || 0;
-                    if (item.precio2 && item.precio2.trim() !== "" && item.precio2 !== "-") {
+                    
+                    // Verificamos si existe un segundo precio (Ej: Fuente)
+                    if (item.precio2 && String(item.precio2).trim() !== "" && item.precio2 !== "-") {
                         const precio2 = parseFloat(String(item.precio2).replace(/[^0-9.]/g, '')) || 0;
-                        html += `<div class="col-md-6"><button class="btn btn-outline-secondary w-100 text-start" onclick="agregarAlPedido('${item.nombre} (${cat.col1})', ${precio1})"><strong>${item.nombre} (${cat.col1})</strong><br><small>S/ ${precio1.toFixed(2)}</small></button></div>`;
-                        html += `<div class="col-md-6"><button class="btn btn-outline-secondary w-100 text-start" onclick="agregarAlPedido('${item.nombre} (${cat.col2})', ${precio2})"><strong>${item.nombre} (${cat.col2})</strong><br><small>S/ ${precio2.toFixed(2)}</small></button></div>`;
+                        
+                        // Si hay dos precios, dibujamos DOS botones (Personal y Fuente)
+                        html += `
+                        <div class="col-6">
+                            <button class="btn btn-outline-secondary w-100 text-start small" onclick="agregarAlPedido('${item.nombre} (${cat.col1})', ${precio1})">
+                                <small>${item.nombre} <b class="text-primary">(${cat.col1})</b></small><br><strong>S/ ${precio1.toFixed(2)}</strong>
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-outline-secondary w-100 text-start small" onclick="agregarAlPedido('${item.nombre} (${cat.col2})', ${precio2})">
+                                <small>${item.nombre} <b class="text-success">(${cat.col2})</b></small><br><strong>S/ ${precio2.toFixed(2)}</strong>
+                            </button>
+                        </div>`;
                     } else {
-                        html += `<div class="col-md-6"><button class="btn btn-outline-secondary w-100 text-start" onclick="agregarAlPedido('${item.nombre}', ${precio1})"><strong>${item.nombre}</strong><br><small>S/ ${precio1.toFixed(2)}</small></button></div>`;
+                        // Si solo hay un precio, dibujamos UN botón normal
+                        html += `
+                        <div class="col-6">
+                            <button class="btn btn-outline-secondary w-100 text-start small" onclick="agregarAlPedido('${item.nombre}', ${precio1})">
+                                <small>${item.nombre}</small><br><strong>S/ ${precio1.toFixed(2)}</strong>
+                            </button>
+                        </div>`;
                     }
                 });
                 html += `</div>`;
             });
         }
         document.getElementById('catalogo-productos').innerHTML = html;
-    } catch (error) {
-        document.getElementById('catalogo-productos').innerHTML = "<p class='text-danger'>Error al cargar el menú.</p>";
-    }
+    } catch (e) { console.error(e); }
 }
 
-// Funcion para cobrar platos que no existen
-window.agregarPlatoPersonalizado = () => {
-    const nombre = prompt("¿Qué plato o antojo especial están pidiendo?");
-    if (!nombre || nombre.trim() === "") return;
-    
-    const precioStr = prompt(`¿A cuánto vas a cobrar el/la "${nombre}"? (Escribe solo el número, ej: 12.50)`);
-    const precio = parseFloat(precioStr);
-    
-    if (isNaN(precio) || precio <= 0) {
-        alert("El precio ingresado no es válido. Inténtalo de nuevo.");
-        return;
-    }
-    
-    // Le agregamos la etiqueta "(Extra)" para que en los reportes saber que fue inventado
-    agregarAlPedido(`${nombre} (Extra)`, precio);
-};
-
+// Abrir el modal del catálogo al hacer clic en "Agregar Pedido"
 btnAgregarProducto.addEventListener('click', () => {
-    if (!modalProductosInstance) modalProductosInstance = new bootstrap.Modal(document.getElementById('modalProductos'));
+    if (!modalProductosInstance) {
+        modalProductosInstance = new bootstrap.Modal(document.getElementById('modalProductos'));
+    }
     modalProductosInstance.show();
 });
+
+window.agregarPlatoPersonalizado = () => {
+    const n = prompt("Nombre del plato:");
+    const p = parseFloat(prompt("Precio (S/):"));
+    if (n && !isNaN(p)) agregarAlPedido(n + " (Extra)", p);
+};
 
 window.agregarAlPedido = async (nombre, precio) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
-
     let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
-    
-    let itemIndex = nuevoPedido.findIndex(i => i.nombre === nombre);
-    if (itemIndex > -1) {
-        nuevoPedido[itemIndex].cantidad += 1;
-        nuevoPedido[itemIndex].subtotal = nuevoPedido[itemIndex].cantidad * nuevoPedido[itemIndex].precio;
+    let idx = nuevoPedido.findIndex(i => i.nombre === nombre);
+    if (idx > -1) {
+        nuevoPedido[idx].cantidad += 1;
+        nuevoPedido[idx].subtotal = nuevoPedido[idx].cantidad * nuevoPedido[idx].precio;
     } else {
         nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, subtotal: parseFloat(precio) });
     }
-
-    let nuevoTotal = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
-
+    let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
     try {
-        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: nuevoTotal });
+        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
         if(modalProductosInstance) modalProductosInstance.hide();
-    } catch (error) { console.error("Error guardando:", error); }
+    } catch (e) { console.error(e); }
 };
 
 window.eliminarDelPedido = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
-    if (!mesa || !confirm("¿Seguro que deseas eliminar este pedido?")) return;
-
+    if (!mesa || !confirm("¿Eliminar?")) return;
     let nuevoPedido = [...mesa.pedido_actual];
-    nuevoPedido.splice(index, 1); 
-
-    let nuevoTotal = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
-    let nuevoEstado = nuevoPedido.length === 0 ? "libre" : "ocupada"; 
-
-    try {
-        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoEstado, pedido_actual: nuevoPedido, total_consumo: nuevoTotal });
-    } catch (error) { console.error("Error borrando:", error); }
+    nuevoPedido.splice(index, 1);
+    let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
+    let est = nuevoPedido.length === 0 ? "libre" : "ocupada";
+    await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: est, pedido_actual: nuevoPedido, total_consumo: total });
 };
 
 // =========================================================
@@ -503,7 +492,7 @@ async function cargarDatosDashboard(anioMes) {
             if (data.items && Array.isArray(data.items)) {
                 data.items.forEach(item => {
                     // Ignorar "Taper" y "Refresco"
-                    if (item.nombre !== 'Taper' && item.nombre !== 'Refresco') {
+                    if (!item.nombre.includes('Taper') && item.nombre !== 'Refresco') {
                         if (conteoPlatos[item.nombre]) {
                             conteoPlatos[item.nombre] += item.cantidad;
                         } else {
