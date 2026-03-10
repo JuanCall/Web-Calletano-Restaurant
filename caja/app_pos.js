@@ -232,7 +232,7 @@ async function cargarCartaDesdeWeb() {
                                  </button>`;
                     } else {
                         d.entradas.forEach(e => {
-                            html += `<button class="btn btn-outline-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('${e.nombre}', ${e.precio})">
+                            html += `<button class="btn btn-outline-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${e.precio})">
                                         ${e.nombre} (S/ ${e.precio})
                                      </button>`;
                         });
@@ -242,7 +242,7 @@ async function cargarCartaDesdeWeb() {
                 html += `<h5 class="fw-bold text-danger border-bottom mt-3">Segundos (S/ 15)</h5>`;
                 if (d.segundos && d.segundos.length > 0) {
                     d.segundos.forEach(s => {
-                        html += `<button class="btn btn-danger w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('${s.nombre}', 15)">
+                        html += `<button class="btn btn-danger w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('${s.nombre} (Segundo)', 15)">
                                     ${s.nombre}
                                  </button>`;
                     });
