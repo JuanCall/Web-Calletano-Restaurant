@@ -4,6 +4,7 @@ Allow: /
 # PROHIBIDO EL PASO A BOTS (Seguridad)
 Disallow: /admin-secreto.html
 Disallow: /styleadmin.css
+Disallow: /caja/
 
 # Mapa del sitio para que Google no se pierda
 Sitemap: https://calletano-restaurant.web.app/sitemap.xml
