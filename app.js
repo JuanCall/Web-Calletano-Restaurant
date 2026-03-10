@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 import { getFirestore, doc, getDoc, getDocs, setDoc, collection, addDoc, query, where, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
@@ -11,15 +10,24 @@ const firebaseConfig = {
     storageBucket: "calletano-restaurant.firebasestorage.app",
     messagingSenderId: "1036720006578",
     appId: "1:1036720006578:web:31b305a61a353f324bb0ab",
-    measurementId: "G-VBPRFGMZ1J"
+    measurementId: "G-VBPRFGMZ1J" // ¡Lo volvemos a activar!
 };
 
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-console.log("Sistema Calletano V18 (Prevención de BD Vacía)");
+// --- CARGA SEGURA DE ANALYTICS (ANTI-BLOQUEOS DE SAFARI) ---
+import("https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js")
+    .then((module) => {
+        module.getAnalytics(app);
+        console.log("Analytics activado de forma segura.");
+    })
+    .catch((err) => {
+        console.warn("Analytics bloqueado por privacidad (Safari/AdBlocker). La web seguirá funcionando normal.");
+    });
+
+console.log("Sistema Calletano V20 (Con Analytics a prueba de fallos)");
 
 const path = window.location.pathname;
 
@@ -147,15 +155,58 @@ if (path.includes("index.html") || path === "/") {
             }
         }
 
-        // DIBUJAR SEGUNDOS (Lista + Guarnición)
+        // DIBUJAR SEGUNDOS (Lista + Guarnición Inteligente)
         if (listaSegundos) {
             if (d.segundos && Array.isArray(d.segundos) && d.segundos.length > 0) {
-                listaSegundos.innerHTML = d.segundos.map(s => `
-                    <li class="border-bottom border-danger-subtle py-2">
-                        <div class="fs-5 fw-bold text-dark"><i class="fas fa-check text-danger me-2 small"></i>${s.nombre}</div>
-                        ${s.acomp ? `<span class="d-block small text-muted fw-normal fst-italic ps-4">Con: ${s.acomp}</span>` : ''}
-                    </li>
-                `).join("");
+                let htmlSegundos = "";
+                
+                // 1. Agrupar platos por su guarnición
+                const gruposAcomp = {};
+                d.segundos.forEach(s => {
+                    const acomp = (s.acomp || "").trim();
+                    if (!gruposAcomp[acomp]) gruposAcomp[acomp] = [];
+                    gruposAcomp[acomp].push(s.nombre);
+                });
+
+                // 2. Dibujar los grupos en la pantalla
+                Object.keys(gruposAcomp).forEach(acomp => {
+                    const platos = gruposAcomp[acomp];
+                    
+                    // Dibujar los nombres de los platos de este grupo
+                    platos.forEach((nombre, idx) => {
+                        const isLast = (idx === platos.length - 1);
+                        const hasAcomp = (acomp !== "");
+                        // Quitamos la línea separadora al último plato si tiene guarnición abajo
+                        const borderClass = (isLast && hasAcomp) ? "" : "border-bottom border-danger-subtle pb-2";
+                        
+                        htmlSegundos += `
+                            <li class="pt-2 ${borderClass}">
+                                <div class="fs-5 fw-bold text-dark"><i class="fas fa-check text-danger me-2 small"></i>${nombre}</div>
+                            </li>
+                        `;
+                    });
+
+                    // Dibujar la guarnición una sola vez para este grupo
+                    if (acomp !== "") {
+                        let textoPrefijo = "Con:";
+                        if (Object.keys(gruposAcomp).length === 1 && platos.length > 1) {
+                            textoPrefijo = "Todos salen con:";
+                        } else if (platos.length > 1) {
+                            textoPrefijo = "Salen con:";
+                        }
+
+                        htmlSegundos += `
+                            <li class="pb-2 mb-2 border-bottom border-danger-subtle">
+                                <div class="d-inline-block bg-danger bg-opacity-10 rounded px-2 py-1 mt-1 ms-4 border border-danger-subtle shadow-sm">
+                                    <span class="small text-danger fw-bold fst-italic">
+                                        <i class="fas fa-utensils me-1"></i>${textoPrefijo} ${acomp}
+                                    </span>
+                                </div>
+                            </li>
+                        `;
+                    }
+                });
+                listaSegundos.innerHTML = htmlSegundos;
             } else {
                 listaSegundos.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${d.segundo || "Por definir"}</li>`;
             }
