@@ -145,17 +145,40 @@ function actualizarComandera() {
         
         let itemsHTML = "";
         mesa.pedido_actual.forEach((item, index) => {
+            const modalidad = item.modalidad || 'local';
+            let badgeMod = '';
+            let btnColor = 'btn-outline-secondary';
+            let iconMod = 'fa-store';
+            let textoMod = 'Local';
+
+            if (modalidad === 'delivery') {
+                badgeMod = '<span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">+S/3 Envío y Taper</span>';
+                btnColor = 'btn-info text-dark';
+                iconMod = 'fa-motorcycle';
+                textoMod = 'Delivery';
+            }
+
             itemsHTML += `
-            <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                <div style="width: 55%">
-                    <strong class="d-block text-dark small">${item.nombre}</strong>
-                    <strong class="text-primary">S/ ${item.subtotal.toFixed(2)}</strong>
+            <div class="d-flex flex-column border-bottom py-2 animate__animated animate__fadeIn" style="animation-duration: 0.3s;">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div style="width: 70%">
+                        <strong class="d-block text-dark small leading-tight">${item.nombre}</strong>
+                        ${badgeMod}
+                    </div>
+                    <strong class="text-primary text-end" style="width: 30%">S/ ${item.subtotal.toFixed(2)}</strong>
                 </div>
-                <div class="d-flex align-items-center justify-content-end" style="width: 45%">
-                    <button class="btn btn-sm btn-outline-secondary px-2 py-0 fw-bold" onclick="modificarCantidad(${index}, -1)">-</button>
-                    <span class="mx-2 fw-bold">${item.cantidad}</span>
-                    <button class="btn btn-sm btn-outline-primary px-2 py-0 fw-bold" onclick="modificarCantidad(${index}, 1)">+</button>
-                    <button class="btn btn-sm text-danger ms-2 border-0" onclick="eliminarDelPedido(${index})"><i class="fas fa-trash-alt"></i></button>
+                <div class="d-flex justify-content-between align-items-center mt-1">
+                    <button class="btn btn-sm ${btnColor} px-2 py-0 fw-bold shadow-sm" onclick="cambiarModalidad(${index})" title="Cambiar a Delivery" style="border-radius: 12px; font-size: 0.75rem;">
+                        <i class="fas ${iconMod}"></i> ${textoMod}
+                    </button>
+                    <div class="d-flex align-items-center bg-light rounded shadow-sm border">
+                        <button class="btn btn-sm text-secondary px-2 py-0 fw-bold border-0" onclick="modificarCantidad(${index}, -1)">-</button>
+                        <span class="mx-2 fw-bold" style="min-width: 12px; text-align: center;">${item.cantidad}</span>
+                        <button class="btn btn-sm text-primary px-2 py-0 fw-bold border-0" onclick="modificarCantidad(${index}, 1)">+</button>
+                        <div class="border-start ms-1 ps-1">
+                            <button class="btn btn-sm text-danger border-0 px-2 py-0" onclick="eliminarDelPedido(${index})"><i class="fas fa-trash-alt"></i></button>
+                        </div>
+                    </div>
                 </div>
             </div>`;
         });
@@ -174,20 +197,44 @@ window.modificarCantidad = async (index, cambio) => {
     nuevoPedido[index].cantidad += cambio;
 
     if (nuevoPedido[index].cantidad <= 0) {
-        nuevoPedido.splice(index, 1); // Si llega a cero, borramos el plato
+        nuevoPedido.splice(index, 1);
     } else {
-        nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * nuevoPedido[index].precio;
+        // Le sumamos el recargo solo si es delivery
+        const recargo = (nuevoPedido[index].modalidad === 'delivery') ? 3 : 0;
+        nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
     }
 
     let nuevoTotal = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
     let nuevoEstado = nuevoPedido.length === 0 ? "libre" : "ocupada";
 
-    try {
-        await updateDoc(doc(db, "mesas_pos", mesa.id), {
-            estado: nuevoEstado,
-            pedido_actual: nuevoPedido,
-            total_consumo: nuevoTotal
-        });
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoEstado, pedido_actual: nuevoPedido, total_consumo: nuevoTotal });
+    } catch (e) { console.error(e); }
+};
+
+// Función para alternar entre Local y Delivery
+window.cambiarModalidad = async (index) => {
+    const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
+    if (!mesa) return;
+
+    let nuevoPedido = [...mesa.pedido_actual];
+    let modActual = nuevoPedido[index].modalidad || 'local';
+    
+    // Cambiamos de Local a Delivery y viceversa
+    nuevoPedido[index].modalidad = (modActual === 'local') ? 'delivery' : 'local';
+
+    const recargo = (nuevoPedido[index].modalidad === 'delivery') ? 3 : 0;
+    nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
+
+    // Auto-fusionar si ya existe una fila idéntica (Mismo plato + Misma modalidad)
+    let idxExistente = nuevoPedido.findIndex((i, pos) => i.nombre === nuevoPedido[index].nombre && (i.modalidad || 'local') === nuevoPedido[index].modalidad && pos !== index);
+    if (idxExistente > -1) {
+        nuevoPedido[idxExistente].cantidad += nuevoPedido[index].cantidad;
+        nuevoPedido[idxExistente].subtotal += nuevoPedido[index].subtotal;
+        nuevoPedido.splice(index, 1);
+    }
+
+    let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: total });
     } catch (e) { console.error(e); }
 };
 
@@ -221,18 +268,28 @@ async function cargarCartaDesdeWeb() {
                             <i class="fas fa-plus-circle"></i> Humita (S/ 3.00)
                          </button>`;
             } else {
-                html += `<h5 class="fw-bold text-warning border-bottom">Opciones de Entrada</h5>`;
+                // LUNES A SÁBADO
+                html += `<h5 class="fw-bold text-success border-bottom mt-2">Menú Completo</h5>`;
+                html += `<button class="btn btn-success w-100 mb-3 fw-bold text-start shadow-sm" onclick="agregarAlPedido('Menú Completo', 15)">
+                            <i class="fas fa-utensils"></i> Menú Completo (S/ 15.00)
+                         </button>`;
                 if (d.entradas && d.entradas.length > 0) {
                     const precios = d.entradas.map(e => e.precio);
                     const todosIguales = precios.every(p => p === precios[0]);
 
+                    // Si todas cuestan lo mismo, el precio va en el Título y salen botones limpios
                     if (todosIguales) {
-                        html += `<button class="btn btn-outline-warning w-100 mb-2 fw-bold" onclick="agregarAlPedido('Entrada', ${precios[0]})">
-                                    Entrada (S/ ${precios[0]})
-                                 </button>`;
-                    } else {
+                        html += `<h5 class="fw-bold text-warning border-bottom">Entradas (S/ ${precios[0]})</h5>`;
                         d.entradas.forEach(e => {
-                            html += `<button class="btn btn-outline-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${e.precio})">
+                            html += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${precios[0]})">
+                                        ${e.nombre}
+                                     </button>`;
+                        });
+                    } else {
+                        // Si hay precios diferentes, el título va limpio y el precio va en cada botón
+                        html += `<h5 class="fw-bold text-warning border-bottom">Entradas</h5>`;
+                        d.entradas.forEach(e => {
+                            html += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${e.precio})">
                                         ${e.nombre} (S/ ${e.precio})
                                      </button>`;
                         });
@@ -310,13 +367,17 @@ window.agregarAlPedido = async (nombre, precio) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
     let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
-    let idx = nuevoPedido.findIndex(i => i.nombre === nombre);
+    
+    // Solo agrupa el plato si es exactamente el mismo nombre y ambos son "local"
+    let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local');
+    
     if (idx > -1) {
         nuevoPedido[idx].cantidad += 1;
         nuevoPedido[idx].subtotal = nuevoPedido[idx].cantidad * nuevoPedido[idx].precio;
     } else {
-        nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, subtotal: parseFloat(precio) });
+        nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', subtotal: parseFloat(precio) });
     }
+    
     let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
     try {
         await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: total });

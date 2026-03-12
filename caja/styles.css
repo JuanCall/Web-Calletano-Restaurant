@@ -56,10 +56,6 @@ body {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.6; transform: scale(1.25); }
 }
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position:  200% 0; }
-}
 
 /* ── LOGIN ──────────────────────────────────────────────────── */
 #login-section {
@@ -86,9 +82,7 @@ body {
   margin-bottom: 0.75rem;
   transition: box-shadow var(--transition);
 }
-.login-logo:hover {
-  box-shadow: 0 0 0 10px rgba(212,168,67,0.25);
-}
+.login-logo:hover { box-shadow: 0 0 0 10px rgba(212,168,67,0.25); }
 
 .login-title {
   font-family: var(--font-display);
@@ -213,7 +207,7 @@ body {
   position: relative;
   overflow: hidden;
 }
-/* stagger de aparición para cada mesa */
+/* Stagger de aparición */
 .mesa-card:nth-child(1)  { animation-delay: 0.04s; }
 .mesa-card:nth-child(2)  { animation-delay: 0.08s; }
 .mesa-card:nth-child(3)  { animation-delay: 0.12s; }
@@ -233,11 +227,8 @@ body {
   transition: background var(--transition);
 }
 .mesa-card:hover::after { background: rgba(255,255,255,0.15); }
-.mesa-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
-}
-.mesa-card:active { transform: translateY(-1px) scale(0.98); }
+.mesa-card:hover        { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+.mesa-card:active       { transform: translateY(-1px) scale(0.98); }
 
 .mesa-libre {
   background-color: var(--mesa-libre);
@@ -255,7 +246,7 @@ body {
   transform: scale(1.03) !important;
 }
 
-/* Dot indicador de ocupada */
+/* Dot pulsante en mesa ocupada */
 .mesa-ocupada::before {
   content: '';
   position: absolute;
@@ -266,12 +257,8 @@ body {
   animation: pulse-dot 1.8s ease-in-out infinite;
 }
 
-.mesa-nombre {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-.mesa-icono { font-size: 1.6rem; opacity: 0.75; }
+.mesa-nombre { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; }
+.mesa-icono  { font-size: 1.6rem; opacity: 0.75; }
 
 /* ── COMANDERA HEADER ────────────────────────────────────────── */
 .comandera-top {
@@ -296,24 +283,24 @@ body {
 .lista-pedidos::-webkit-scrollbar { width: 4px; }
 .lista-pedidos::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 2px; }
 
-/* Item de pedido animado */
 .pedido-item {
   animation: fadeUp 0.3s ease both;
   border-radius: 10px;
 }
 
-/* ── BOTONES RÁPIDOS (Taper / Refresco) ──────────────────────── */
-.btn-rapido {
+/* ── BOTONES RÁPIDOS — 3 columnas (Taper S/1 · Taper S/2 · Refresco) ── */
+.col-4 .btn {
   border-radius: 10px;
+  font-size: 0.78rem;
   font-weight: 700;
-  font-size: 0.82rem;
+  white-space: nowrap;
   transition: transform var(--transition), box-shadow var(--transition);
 }
-.btn-rapido:hover {
+.col-4 .btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.12);
 }
-.btn-rapido:active { transform: scale(0.96); }
+.col-4 .btn:active:not(:disabled) { transform: scale(0.96); }
 
 /* ── BTN COBRAR ──────────────────────────────────────────────── */
 #btn-cobrar {
@@ -348,20 +335,62 @@ body {
 .modal-header { border-bottom: none; }
 .modal-footer { border-top: none; }
 
-/* Productos en el catálogo */
 .producto-btn {
   border-radius: 12px;
   transition: transform var(--transition), box-shadow var(--transition);
   border: none;
 }
-.producto-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-}
+.producto-btn:hover  { transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,0.12); }
 .producto-btn:active { transform: scale(0.97); }
 
-/* ── BADGES / PILLS ─────────────────────────────────────────── */
-.badge { font-family: var(--font-body); font-size: 0.75rem; }
+/* ── LISTA GASTOS DEL DÍA (modal Gasto) ─────────────────────── */
+#lista-gastos-hoy {
+  max-height: 200px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,0,0,0.15) transparent;
+}
+#lista-gastos-hoy::-webkit-scrollbar { width: 4px; }
+#lista-gastos-hoy::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 2px; }
+
+/* Filas de gasto generadas por JS */
+#lista-gastos-hoy .gasto-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  border-left: 3px solid var(--brand-accent);
+  animation: fadeUp 0.25s ease both;
+  transition: background var(--transition);
+}
+#lista-gastos-hoy .gasto-item:hover { background: #fff8f0; }
+
+/* ── TOP 5 PLATOS (modal Arqueo) ─────────────────────────────── */
+#arq-top-platos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Filas de platos generadas por JS */
+#arq-top-platos .plato-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: #f8f6f2;
+  transition: background var(--transition);
+}
+#arq-top-platos .plato-row:first-child {
+  background: #fff8e1;
+  border-left: 3px solid var(--brand-gold);
+}
+#arq-top-platos .plato-row:hover { background: #f0ede8; }
 
 /* ── SCROLLBAR GLOBAL ────────────────────────────────────────── */
 * {
@@ -370,14 +399,12 @@ body {
 }
 
 /* ── SPINNER ─────────────────────────────────────────────────── */
-.spinner-border {
-  width: 2rem; height: 2rem;
-  border-width: 3px;
-}
+.spinner-border { width: 2rem; height: 2rem; border-width: 3px; }
 
 /* ── MEDIA: pantallas pequeñas ───────────────────────────────── */
 @media (max-width: 768px) {
   body { overflow: auto; }
   .mesas-container, .comandera-container { height: auto; }
   .mesa-card { height: 130px; }
+  .col-4 .btn { font-size: 0.72rem; padding: 6px 4px; }
 }
