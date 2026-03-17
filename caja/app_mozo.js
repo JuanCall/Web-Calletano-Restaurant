@@ -69,7 +69,6 @@ function dibujarMesas() {
         const div = document.createElement('div');
         div.className = "col-md-6 col-lg-4 mb-3"; 
         
-        // Se agregó el Total de la Mesa al cuadrito del Mozo
         div.innerHTML = `
             <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada} d-flex flex-column p-3" onclick="seleccionarMesa('${mesa.id}')" style="height: 140px; cursor: pointer;">
                 <h3 class="fw-bold mb-1">Mesa ${mesa.numero}</h3>
@@ -85,6 +84,32 @@ function dibujarMesas() {
 }
 
 window.seleccionarMesa = (id) => { mesaSeleccionadaId = id; dibujarMesas(); actualizarComandera(); };
+
+// NUEVO MOTOR MATEMÁTICO: Calcula menús automáticos
+function calcularTotalMesa(pedido) {
+    let subtotal = pedido.reduce((acc, curr) => acc + curr.subtotal, 0);
+    let cantE = 0, cantS = 0;
+    
+    if (new Date().getDay() !== 0) { // Si NO es domingo (el domingo no hay menú combo)
+        pedido.forEach(i => {
+            if (i.categoria === 'entrada') cantE += i.cantidad;
+            if (i.categoria === 'segundo') cantS += i.cantidad;
+        });
+    }
+    
+    let combos = Math.min(cantE, cantS); // Cantidad de pares completos armados
+    let descuento = combos * 6; // S/ 6 de rebaja por cada par para que cueste S/ 15 exactos
+    
+    return { total: subtotal - descuento, combos: combos, descuento: descuento };
+}
+
+function calcularRecargoTaper(modalidad, categoria, nombre) {
+    if (modalidad === 'delivery') return 3;
+    if (modalidad !== 'llevar') return 0;   
+    const cats1Sol = ['Guarnición', 'Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza', 'entrada'];
+    if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) return 1;
+    return 2; 
+}
 
 function actualizarComandera() {
     if (!mesaSeleccionadaId) return; 
@@ -109,7 +134,6 @@ function actualizarComandera() {
         let itemsPendientes = 0;
         
         mesa.pedido_actual.forEach((item, index) => {
-            // Ocultamos de la vista del mozo los platos que ya fueron enviados a cocina
             if (item.estado_envio === 'enviado') return;
             itemsPendientes++;
 
@@ -144,6 +168,16 @@ function actualizarComandera() {
             </div>`;
         });
         
+        // MOSTRAR PROMOCIONES ARMADAS AL MOZO
+        const calc = calcularTotalMesa(mesa.pedido_actual);
+        if(calc.combos > 0 && itemsPendientes > 0) {
+            itemsHTML += `
+            <div class="d-flex justify-content-between align-items-center bg-success bg-opacity-10 text-success p-2 mt-2 rounded border border-success border-opacity-25 shadow-sm">
+                <strong><i class="fas fa-gift me-1"></i> Promo: ${calc.combos} Menú(s) Armado(s)</strong>
+                <strong class="text-success fw-bold">-S/ ${calc.descuento.toFixed(2)}</strong>
+            </div>`;
+        }
+
         if (itemsPendientes === 0) {
             listaPedidos.innerHTML = `<div class="text-center text-success mt-5"><i class="fas fa-check-circle fa-3x mb-3 opacity-50"></i><p class="fw-bold">Pedidos enviados a cocina.</p><p class="text-muted small">Puede agregar más platos a la mesa.</p></div>`;
             if (btnEnviar) btnEnviar.style.display = 'none';
@@ -152,14 +186,6 @@ function actualizarComandera() {
             if (btnEnviar) btnEnviar.style.display = 'block';
         }
     }
-}
-
-function calcularRecargoTaper(modalidad, categoria, nombre) {
-    if (modalidad === 'delivery') return 3;
-    if (modalidad !== 'llevar') return 0;   
-    const cats1Sol = ['Guarnición', 'Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza', 'entrada'];
-    if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) return 1;
-    return 2; 
 }
 
 window.modificarCantidad = async (index, cambio) => {
@@ -172,8 +198,9 @@ window.modificarCantidad = async (index, cambio) => {
         const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
         nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
     }
-    let nuevoTotal = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: nuevoTotal }); } catch (e) { console.error(e); }
+    
+    let calc = calcularTotalMesa(nuevoPedido);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
 };
 
 window.cambiarModalidad = async (index) => {
@@ -189,15 +216,15 @@ window.cambiarModalidad = async (index) => {
     const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
     nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
 
-    // Solo agrupamos si el plato existe y TAMPOCO ha sido enviado aún
     let idxExistente = nuevoPedido.findIndex((i, pos) => i.nombre === nuevoPedido[index].nombre && (i.modalidad || 'local') === nuevoPedido[index].modalidad && i.estado_envio !== 'enviado' && pos !== index);
     if (idxExistente > -1) {
         nuevoPedido[idxExistente].cantidad += nuevoPedido[index].cantidad;
         nuevoPedido[idxExistente].subtotal += nuevoPedido[index].subtotal;
         nuevoPedido.splice(index, 1);
     }
-    let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: total }); } catch (e) { console.error(e); }
+    
+    let calc = calcularTotalMesa(nuevoPedido);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
 };
 
 async function cargarCartaDesdeWeb() {
@@ -219,9 +246,7 @@ async function cargarCartaDesdeWeb() {
                 if (d.segundos) d.segundos.forEach(s => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-3 fs-6" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30, 'segundo')"><i class="fas fa-star"></i> ${s.nombre}</button>`);
                 bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-3 fs-6" onclick="agregarAlPedido('Humita', 3, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 3.00)</button>`;
             } else {
-                bodyHTML += `<h5 class="fw-bold text-success border-bottom mt-2">Menú Completo</h5>`;
-                bodyHTML += `<button class="btn btn-success w-100 mb-3 fw-bold text-start shadow-sm py-3 fs-6" onclick="agregarAlPedido('Menú Completo', 15, 'menu')"><i class="fas fa-utensils"></i> Menú Completo (S/ 15.00)</button>`;
-                
+                // ELIMINADO EL BOTON DE MENU COMPLETO: Ahora el mozo junta platos manuales.
                 if (d.entradas && d.entradas.length > 0) {
                     const precios = d.entradas.map(e => e.precio);
                     const todosIguales = precios.every(p => p === precios[0]);
@@ -274,7 +299,6 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
     if (!mesa) return;
     let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
     
-    // El mozo agrupa solo si es el mismo plato Y si aún no ha sido enviado
     let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local' && i.estado_envio !== 'enviado');
     
     if (idx > -1) { 
@@ -284,9 +308,9 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
         nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio), estado_envio: 'pendiente' }); 
     }
     
-    let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
+    let calc = calcularTotalMesa(nuevoPedido);
     try {
-        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
+        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
         if(modalProductosInstance) modalProductosInstance.hide();
     } catch (e) { console.error(e); }
 };
@@ -296,8 +320,8 @@ window.eliminarDelPedido = async (index) => {
     if (!mesa || !confirm("¿Eliminar plato?")) return;
     let nuevoPedido = [...mesa.pedido_actual];
     nuevoPedido.splice(index, 1);
-    let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
-    await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
+    let calc = calcularTotalMesa(nuevoPedido);
+    await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
 };
 
 // SISTEMA DE IMPRESIÓN DEL MOZO
@@ -321,7 +345,6 @@ window.imprimirComandasSeparadas = async () => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa || !mesa.pedido_actual || mesa.pedido_actual.length === 0) return;
 
-    // Filtramos SOLO los platos que el mozo acaba de agregar (los pendientes)
     const itemsPendientes = mesa.pedido_actual.filter(item => item.estado_envio !== 'enviado');
     if (itemsPendientes.length === 0) return;
 
@@ -351,14 +374,10 @@ window.imprimirComandasSeparadas = async () => {
         }, itemsCocina.length > 0 ? 1500 : 0); 
     }
 
-    // MARCADO DE BASE DE DATOS: Cambiamos todo a "enviado"
     let nuevoPedido = mesa.pedido_actual.map(item => ({ ...item, estado_envio: 'enviado' }));
-    try {
-        await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido });
-    } catch (e) { console.error(e); }
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido }); } catch (e) { console.error(e); }
 };
 
-// LOGIN / LOGOUT
 const loginSection = document.getElementById('login-section');
 const posSection = document.getElementById('pos-section');
 
