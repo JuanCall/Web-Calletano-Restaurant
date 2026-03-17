@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comandera Mozo - Calletano</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-light">
+
+<div id="login-section" class="d-flex align-items-center justify-content-center vh-100">
+    <div class="login-card shadow-lg" style="width: 360px;">
+        <div class="text-center mb-4">
+            <h2 class="login-title mt-2 text-primary">Tablets Mozos</h2>
+            <p class="login-subtitle">Toma de Pedidos</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Usuario</label>
+            <input type="email" id="pos-email" class="form-control" placeholder="mozo@calletano.com">
+        </div>
+        <div class="mb-4">
+            <label class="form-label">Contraseña</label>
+            <input type="password" id="pos-pass" class="form-control" placeholder="••••••••">
+        </div>
+        <button id="btn-login" class="btn btn-primary btn-lg w-100 text-white fw-bold">
+            <i class="fas fa-sign-in-alt me-2"></i>Entrar
+        </button>
+    </div>
+</div>
+
+<div id="pos-section" class="container-fluid p-0 d-none">
+    <div class="row g-0">
+        <div class="col-md-7 col-lg-7 mesas-container">
+            <div class="salon-header bg-dark text-white p-3 d-flex justify-content-between align-items-center shadow-sm">
+                <h4 class="m-0 fw-bold"><i class="fas fa-tablet-alt me-2 text-info"></i>Salón Calletano</h4>
+                <button class="btn btn-outline-light fw-bold" id="btn-logout" title="Cerrar Sesión">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+            <div class="row g-3 p-3" id="contenedor-mesas">
+                <div class="col-12 text-center text-muted mt-5">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <h5>Sincronizando mesas...</h5>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5 col-lg-5 comandera-container border-start bg-white vh-100 d-flex flex-column">
+            <div class="p-3 bg-light border-bottom text-center">
+                <h4 id="titulo-mesa" class="m-0 fw-bold text-dark">Seleccione una mesa</h4>
+                <span id="estado-mesa" class="badge bg-secondary mt-2">Esperando...</span>
+            </div>
+
+            <div class="p-3 border-bottom text-center">
+                <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" id="btn-agregar-producto" disabled>
+                    <i class="fas fa-plus me-2"></i>Agregar Platos / Bebidas
+                </button>
+            </div>
+
+            <div class="lista-pedidos flex-grow-1 overflow-auto p-2" id="lista-pedidos">
+                <div class="text-center text-muted mt-5">
+                    <i class="fas fa-concierge-bell fa-3x mb-3 opacity-25"></i>
+                    <p>Mesa vacía.</p>
+                </div>
+            </div>
+
+            <div class="p-3 bg-white border-top shadow-lg" id="zona-envio" style="display: none;">
+                <div class="d-flex justify-content-between align-items-center mb-2 px-2">
+                    <span class="text-muted fw-bold">Consumo actual:</span>
+                    <strong class="text-primary fs-5" id="total-cuenta">S/ 0.00</strong>
+                </div>
+                <button class="btn btn-dark btn-lg w-100 fw-bold shadow" onclick="imprimirComandasSeparadas()">
+                    <i class="fas fa-fire me-2 text-warning"></i>Enviar a Cocina / Barra
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalProductos" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-book-open text-warning me-2"></i>Nuestra Carta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <div id="catalogo-productos">
+                    <div class="text-center mt-4"><div class="spinner-border text-primary"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module" src="app_mozo.js"></script>
+
+</body>
+</html>
