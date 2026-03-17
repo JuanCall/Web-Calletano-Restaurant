@@ -27,36 +27,69 @@ const zonaEnvio = document.getElementById('zona-envio');
 const totalCuenta = document.getElementById('total-cuenta');
 
 let modalProductosInstance = null; 
-let itemsProhibidosDeCarta = []; 
 
-async function cargarItemsProhibidos() {
-    try {
-        const snapCarta = await getDoc(doc(db, "contenido", "cartaCompleta"));
-        if (snapCarta.exists() && snapCarta.data().categorias) {
-            const categoriasProhibidas = ['Guarnición', 'Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza'];
-            snapCarta.data().categorias.forEach(cat => {
-                if (categoriasProhibidas.includes(cat.nombre)) {
-                    cat.items.forEach(item => {
-                        itemsProhibidosDeCarta.push(item.nombre);
-                        if (cat.col1) itemsProhibidosDeCarta.push(`${item.nombre} (${cat.col1})`);
-                        if (cat.col2) itemsProhibidosDeCarta.push(`${item.nombre} (${cat.col2})`);
-                    });
-                }
-            });
-        }
-    } catch (e) { console.error(e); }
+// --- MOTOR DE CÁLCULO (AUTO-COMBO MATEMÁTICO) ---
+function calcularRecargoTaper(modalidad, categoria, nombre) {
+    if (modalidad === 'delivery') return 3;
+    if (modalidad !== 'llevar') return 0;   
+    const cats1Sol = ['Guarnición', 'Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza', 'entrada'];
+    if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) return 1;
+    return 2; 
 }
 
-function iniciarSistemaMozos() {
-    const mesasRef = collection(db, "mesas_pos");
-    onSnapshot(mesasRef, (snapshot) => {
-        mesasData = [];
-        snapshot.forEach((doc) => { mesasData.push({ id: doc.id, ...doc.data() }); });
-        mesasData.sort((a, b) => a.numero - b.numero);
-        dibujarMesas();
-        actualizarComandera(); 
+function obtenerVistaPedido(pedido_actual) {
+    if (!pedido_actual) return { vista: [], total: 0 };
+    if (new Date().getDay() === 0) {
+        let total = pedido_actual.reduce((a,b)=>a+b.subtotal,0);
+        return { vista: JSON.parse(JSON.stringify(pedido_actual)), total };
+    }
+
+    let original = JSON.parse(JSON.stringify(pedido_actual));
+    let vista = [];
+
+    let modalidades = ['local', 'llevar', 'delivery'];
+    modalidades.forEach(mod => {
+        let itemsMod = original.filter(i => (i.modalidad || 'local') === mod);
+        let entradas = itemsMod.filter(i => i.categoria === 'entrada').sort((a,b) => b.precio - a.precio);
+        let segundos = itemsMod.filter(i => i.categoria === 'segundo');
+        let otros = itemsMod.filter(i => i.categoria !== 'entrada' && i.categoria !== 'segundo');
+
+        let expE = []; entradas.forEach(e => { for(let i=0; i<e.cantidad; i++) expE.push({...e, cantidad:1}); });
+        let expS = []; segundos.forEach(s => { for(let i=0; i<s.cantidad; i++) expS.push({...s, cantidad:1}); });
+
+        let menusArmados = 0;
+        while(expE.length > 0 && expS.length > 0) { expE.shift(); expS.shift(); menusArmados++; }
+
+        let cantMenusReales = otros.filter(i => i.categoria === 'menu').reduce((a,b)=>a+b.cantidad, 0);
+        otros = otros.filter(i => i.categoria !== 'menu'); 
+
+        let totalMenus = cantMenusReales + menusArmados;
+        if (totalMenus > 0) {
+            let recargo = calcularRecargoTaper(mod, 'menu', 'Menú Completo');
+            vista.push({ nombre: 'Menú Completo', cantidad: totalMenus, precio: 15, modalidad: mod, categoria: 'menu', subtotal: totalMenus * (15 + recargo) });
+        }
+
+        let sobrantes = [...expE, ...expS, ...otros];
+        sobrantes.forEach(item => {
+            let recargo = calcularRecargoTaper(mod, item.categoria, item.nombre);
+            let idx = vista.findIndex(v => v.nombre === item.nombre && v.modalidad === mod);
+            if (idx > -1) { vista[idx].cantidad++; vista[idx].subtotal += (item.precio + recargo); } 
+            else { vista.push({...item, cantidad: 1, subtotal: (item.precio + recargo)}); }
+        });
     });
-    cargarItemsProhibidos();
+
+    let total = vista.reduce((a,b) => a+b.subtotal, 0);
+    return { vista, total };
+}
+// ------------------------------------------------
+
+function iniciarSistemaMozos() {
+    onSnapshot(collection(db, "mesas_pos"), (snapshot) => {
+        mesasData = [];
+        snapshot.forEach(doc => mesasData.push({ id: doc.id, ...doc.data() }));
+        mesasData.sort((a, b) => a.numero - b.numero);
+        dibujarMesas(); actualizarComandera(); 
+    });
     cargarCartaDesdeWeb();
 }
 
@@ -85,32 +118,6 @@ function dibujarMesas() {
 
 window.seleccionarMesa = (id) => { mesaSeleccionadaId = id; dibujarMesas(); actualizarComandera(); };
 
-// NUEVO MOTOR MATEMÁTICO: Calcula menús automáticos
-function calcularTotalMesa(pedido) {
-    let subtotal = pedido.reduce((acc, curr) => acc + curr.subtotal, 0);
-    let cantE = 0, cantS = 0;
-    
-    if (new Date().getDay() !== 0) { // Si NO es domingo (el domingo no hay menú combo)
-        pedido.forEach(i => {
-            if (i.categoria === 'entrada') cantE += i.cantidad;
-            if (i.categoria === 'segundo') cantS += i.cantidad;
-        });
-    }
-    
-    let combos = Math.min(cantE, cantS); // Cantidad de pares completos armados
-    let descuento = combos * 6; // S/ 6 de rebaja por cada par para que cueste S/ 15 exactos
-    
-    return { total: subtotal - descuento, combos: combos, descuento: descuento };
-}
-
-function calcularRecargoTaper(modalidad, categoria, nombre) {
-    if (modalidad === 'delivery') return 3;
-    if (modalidad !== 'llevar') return 0;   
-    const cats1Sol = ['Guarnición', 'Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza', 'entrada'];
-    if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) return 1;
-    return 2; 
-}
-
 function actualizarComandera() {
     if (!mesaSeleccionadaId) return; 
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
@@ -118,7 +125,6 @@ function actualizarComandera() {
 
     tituloMesa.innerText = `Mesa ${mesa.numero}`;
     btnAgregarProducto.disabled = false;
-    
     const btnEnviar = zonaEnvio.querySelector('button');
 
     if (mesa.estado === "libre" || !mesa.pedido_actual || mesa.pedido_actual.length === 0) {
@@ -128,7 +134,6 @@ function actualizarComandera() {
     } else {
         estadoMesa.className = "badge bg-danger mt-2"; estadoMesa.innerText = "Ocupada";
         zonaEnvio.style.display = 'block';
-        totalCuenta.innerText = `S/ ${mesa.total_consumo.toFixed(2)}`;
         
         let itemsHTML = "";
         let itemsPendientes = 0;
@@ -168,13 +173,17 @@ function actualizarComandera() {
             </div>`;
         });
         
-        // MOSTRAR PROMOCIONES ARMADAS AL MOZO
-        const calc = calcularTotalMesa(mesa.pedido_actual);
-        if(calc.combos > 0 && itemsPendientes > 0) {
+        let calculoVirtual = obtenerVistaPedido(mesa.pedido_actual);
+        let totalCrudo = mesa.pedido_actual.reduce((a,b)=>a+b.subtotal,0);
+        let descuentoArmado = totalCrudo - calculoVirtual.total;
+        
+        totalCuenta.innerText = `S/ ${calculoVirtual.total.toFixed(2)}`;
+
+        if(descuentoArmado > 0 && itemsPendientes > 0) {
             itemsHTML += `
             <div class="d-flex justify-content-between align-items-center bg-success bg-opacity-10 text-success p-2 mt-2 rounded border border-success border-opacity-25 shadow-sm">
-                <strong><i class="fas fa-gift me-1"></i> Promo: ${calc.combos} Menú(s) Armado(s)</strong>
-                <strong class="text-success fw-bold">-S/ ${calc.descuento.toFixed(2)}</strong>
+                <strong><i class="fas fa-gift me-1"></i> Descuento Menú Armado</strong>
+                <strong class="text-success fw-bold">-S/ ${descuentoArmado.toFixed(2)}</strong>
             </div>`;
         }
 
@@ -199,8 +208,8 @@ window.modificarCantidad = async (index, cambio) => {
         nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
     }
     
-    let calc = calcularTotalMesa(nuevoPedido);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
+    let { total } = obtenerVistaPedido(nuevoPedido);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: total }); } catch (e) { console.error(e); }
 };
 
 window.cambiarModalidad = async (index) => {
@@ -222,9 +231,8 @@ window.cambiarModalidad = async (index) => {
         nuevoPedido[idxExistente].subtotal += nuevoPedido[index].subtotal;
         nuevoPedido.splice(index, 1);
     }
-    
-    let calc = calcularTotalMesa(nuevoPedido);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
+    let { total } = obtenerVistaPedido(nuevoPedido);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: total }); } catch (e) { console.error(e); }
 };
 
 async function cargarCartaDesdeWeb() {
@@ -246,7 +254,6 @@ async function cargarCartaDesdeWeb() {
                 if (d.segundos) d.segundos.forEach(s => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-3 fs-6" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30, 'segundo')"><i class="fas fa-star"></i> ${s.nombre}</button>`);
                 bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-3 fs-6" onclick="agregarAlPedido('Humita', 3, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 3.00)</button>`;
             } else {
-                // ELIMINADO EL BOTON DE MENU COMPLETO: Ahora el mozo junta platos manuales.
                 if (d.entradas && d.entradas.length > 0) {
                     const precios = d.entradas.map(e => e.precio);
                     const todosIguales = precios.every(p => p === precios[0]);
@@ -308,9 +315,9 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
         nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio), estado_envio: 'pendiente' }); 
     }
     
-    let calc = calcularTotalMesa(nuevoPedido);
+    let { total } = obtenerVistaPedido(nuevoPedido);
     try {
-        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
+        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
         if(modalProductosInstance) modalProductosInstance.hide();
     } catch (e) { console.error(e); }
 };
@@ -320,11 +327,11 @@ window.eliminarDelPedido = async (index) => {
     if (!mesa || !confirm("¿Eliminar plato?")) return;
     let nuevoPedido = [...mesa.pedido_actual];
     nuevoPedido.splice(index, 1);
-    let calc = calcularTotalMesa(nuevoPedido);
-    await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
+    let { total } = obtenerVistaPedido(nuevoPedido);
+    await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
 };
 
-// SISTEMA DE IMPRESIÓN DEL MOZO
+// IMPRESIÓN MOZO
 function enviarAImpresora(htmlContent) {
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     printWindow.document.write(`
@@ -382,13 +389,8 @@ const loginSection = document.getElementById('login-section');
 const posSection = document.getElementById('pos-section');
 
 onAuthStateChanged(auth, (user) => {
-    if (user) {
-        loginSection.classList.add('d-none'); posSection.classList.remove('d-none');
-        iniciarSistemaMozos(); 
-    } else {
-        loginSection.classList.remove('d-none'); posSection.classList.add('d-none');
-        mesasData = []; contenedorMesas.innerHTML = "";
-    }
+    if (user) { loginSection.classList.add('d-none'); posSection.classList.remove('d-none'); iniciarSistemaMozos(); } 
+    else { loginSection.classList.remove('d-none'); posSection.classList.add('d-none'); mesasData = []; contenedorMesas.innerHTML = ""; }
 });
 
 document.getElementById('btn-login').addEventListener('click', () => {
@@ -396,10 +398,7 @@ document.getElementById('btn-login').addEventListener('click', () => {
     const pass = document.getElementById('pos-pass').value;
     const btn = document.getElementById('btn-login');
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
-
-    signInWithEmailAndPassword(auth, email, pass)
-        .catch(error => { alert("Acceso denegado."); })
-        .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar'; });
+    signInWithEmailAndPassword(auth, email, pass).catch(error => { alert("Acceso denegado."); }).finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar'; });
 });
 
 document.getElementById('btn-logout').addEventListener('click', () => { if(confirm("¿Cerrar sesión de mozo?")) signOut(auth); });
