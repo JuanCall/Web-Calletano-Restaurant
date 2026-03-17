@@ -10,7 +10,7 @@ const firebaseConfig = {
     storageBucket: "calletano-restaurant.firebasestorage.app",
     messagingSenderId: "1036720006578",
     appId: "1:1036720006578:web:31b305a61a353f324bb0ab",
-    measurementId: "G-VBPRFGMZ1J" // ¡Lo volvemos a activar!
+    measurementId: "G-VBPRFGMZ1J"
 };
 
 const app = initializeApp(firebaseConfig);

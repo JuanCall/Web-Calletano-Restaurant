@@ -38,14 +38,13 @@ async function cargarItemsProhibidos() {
     try {
         const snapCarta = await getDoc(doc(db, "contenido", "cartaCompleta"));
         if (snapCarta.exists() && snapCarta.data().categorias) {
-            // Estas son las categorías que NO queremos en el ranking
+            // Categorías exactas que no van al ranking principal
             const categoriasProhibidas = ['Guarniciones', 'Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza'];
             
             snapCarta.data().categorias.forEach(cat => {
                 if (categoriasProhibidas.includes(cat.nombre)) {
                     cat.items.forEach(item => {
-                        itemsProhibidosDeCarta.push(item.nombre); // Ejemplo: "Chicha Morada"
-                        // Si tienen tamaños (Jarra/Vaso), también los agregamos a la lista negra
+                        itemsProhibidosDeCarta.push(item.nombre);
                         if (cat.col1) itemsProhibidosDeCarta.push(`${item.nombre} (${cat.col1})`);
                         if (cat.col2) itemsProhibidosDeCarta.push(`${item.nombre} (${cat.col2})`);
                     });
@@ -56,26 +55,21 @@ async function cargarItemsProhibidos() {
 }
 
 function esPlatoParaRanking(nombre) {
-    // Palabras base que siempre se ignoran (Tapers, Extras y las Entradas genéricas)
-    const terminosBase = ['Taper', 'Refresco', '(Extra)', 'Humita', 'Entrada', 'Segundo'];
+    const terminosBase = ['Taper', 'Refresco', '(Extra)'];
     if (terminosBase.some(t => nombre.includes(t))) return false;
-    
-    // Filtro dinámico: Si el plato es una bebida o guarnición, lo ignora
     if (itemsProhibidosDeCarta.includes(nombre)) return false;
-
-    return true; // Si pasa todos los filtros, sí va al ranking
+    return true; 
 }
 
 // =========================================================
 //  1. ESCUCHAR MESAS Y CONFIGURAR DÍA
 // =========================================================
 function iniciarSistemaPOS() {
-    // Detectar Domingo para Refresco
     const esDomingo = new Date().getDay() === 0;
     const precioRefresco = esDomingo ? 3.00 : 2.00;
     
     btnRefresco.innerHTML = `<i class="fas fa-glass-whiskey"></i> S/ ${precioRefresco}`;
-    btnRefresco.setAttribute('onclick', `agregarAlPedido('Refresco', ${precioRefresco})`);
+    btnRefresco.setAttribute('onclick', `agregarAlPedido('Refresco', ${precioRefresco}, 'bebida')`);
 
     const mesasRef = collection(db, "mesas_pos");
     onSnapshot(mesasRef, (snapshot) => {
@@ -114,7 +108,7 @@ function dibujarMesas() {
 }
 
 // =========================================================
-//  3. LÓGICA DE LA COMANDERA (+ / -)
+//  3. LÓGICA DE LA COMANDERA (+ / - Y MODALIDAD)
 // =========================================================
 window.seleccionarMesa = (id) => {
     mesaSeleccionadaId = id;
@@ -146,49 +140,70 @@ function actualizarComandera() {
         let itemsHTML = "";
         mesa.pedido_actual.forEach((item, index) => {
             const modalidad = item.modalidad || 'local';
+            const costoTaper = calcularRecargoTaper(modalidad, item.categoria, item.nombre);
+            
             let badgeMod = '';
             let btnColor = 'btn-outline-secondary';
             let iconMod = 'fa-store';
             let textoMod = 'Local';
 
-            if (modalidad === 'delivery') {
-                badgeMod = '<span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">+S/3 Envío y Taper</span>';
+            if (modalidad === 'llevar') {
+                badgeMod = `<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">+S/${costoTaper} Llevar</span>`;
+                btnColor = 'btn-warning text-dark';
+                iconMod = 'fa-shopping-bag';
+                textoMod = 'Llevar';
+            } else if (modalidad === 'delivery') {
+                badgeMod = `<span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">+S/${costoTaper} Delivery</span>`;
                 btnColor = 'btn-info text-dark';
                 iconMod = 'fa-motorcycle';
                 textoMod = 'Delivery';
             }
 
             itemsHTML += `
-            <div class="d-flex flex-column border-bottom py-2 animate__animated animate__fadeIn" style="animation-duration: 0.3s;">
+            <div class="d-flex flex-column border-bottom py-2">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <div style="width: 70%">
-                        <strong class="d-block text-dark small leading-tight">${item.nombre}</strong>
-                        ${badgeMod}
-                    </div>
+                    <div style="width: 70%"><strong class="d-block text-dark small">${item.nombre}</strong>${badgeMod}</div>
                     <strong class="text-primary text-end" style="width: 30%">S/ ${item.subtotal.toFixed(2)}</strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-1">
-                    <button class="btn btn-sm ${btnColor} px-2 py-0 fw-bold shadow-sm" onclick="cambiarModalidad(${index})" title="Cambiar a Delivery" style="border-radius: 12px; font-size: 0.75rem;">
-                        <i class="fas ${iconMod}"></i> ${textoMod}
-                    </button>
+                    <button class="btn btn-sm ${btnColor} px-2 py-0 fw-bold shadow-sm" onclick="cambiarModalidad(${index})" style="border-radius: 12px; font-size: 0.75rem;"><i class="fas ${iconMod}"></i> ${textoMod}</button>
                     <div class="d-flex align-items-center bg-light rounded shadow-sm border">
                         <button class="btn btn-sm text-secondary px-2 py-0 fw-bold border-0" onclick="modificarCantidad(${index}, -1)">-</button>
                         <span class="mx-2 fw-bold" style="min-width: 12px; text-align: center;">${item.cantidad}</span>
                         <button class="btn btn-sm text-primary px-2 py-0 fw-bold border-0" onclick="modificarCantidad(${index}, 1)">+</button>
-                        <div class="border-start ms-1 ps-1">
-                            <button class="btn btn-sm text-danger border-0 px-2 py-0" onclick="eliminarDelPedido(${index})"><i class="fas fa-trash-alt"></i></button>
-                        </div>
+                        <div class="border-start ms-1 ps-1"><button class="btn btn-sm text-danger border-0 px-2 py-0" onclick="eliminarDelPedido(${index})"><i class="fas fa-trash-alt"></i></button></div>
                     </div>
                 </div>
             </div>`;
         });
+
+        itemsHTML += `
+        <div class="mt-3 mb-2">
+            <button class="btn btn-dark w-100 fw-bold py-2 shadow-sm" onclick="imprimirComandasSeparadas()">
+                <i class="fas fa-print me-2"></i>Enviar Pedido (Cocina / Barra)
+            </button>
+        </div>`;
+
         listaPedidos.innerHTML = itemsHTML;
         totalCuenta.innerText = `S/ ${mesa.total_consumo.toFixed(2)}`;
         btnCobrar.disabled = false; 
     }
 }
 
-// Función para sumar o restar cantidades directamente
+// MOTOR DE CÁLCULO DE TAPERS
+// MOTOR DE CÁLCULO DE TAPERS
+function calcularRecargoTaper(modalidad, categoria, nombre) {
+    if (modalidad === 'delivery') return 3; // Delivery siempre suma 3 soles por plato
+    if (modalidad !== 'llevar') return 0;   // Local suma 0
+    
+    // Lógica para "Llevar" (1 sol o 2 soles)
+    const cats1Sol = ['Guarniciones', 'Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza', 'entrada'];
+    if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) {
+        return 1;
+    }
+    return 2; // Segundos, menú completo y platos a la carta = S/ 2
+}
+
 window.modificarCantidad = async (index, cambio) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
@@ -199,8 +214,7 @@ window.modificarCantidad = async (index, cambio) => {
     if (nuevoPedido[index].cantidad <= 0) {
         nuevoPedido.splice(index, 1);
     } else {
-        // Le sumamos el recargo solo si es delivery
-        const recargo = (nuevoPedido[index].modalidad === 'delivery') ? 3 : 0;
+        const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
         nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
     }
 
@@ -211,7 +225,6 @@ window.modificarCantidad = async (index, cambio) => {
     } catch (e) { console.error(e); }
 };
 
-// Función para alternar entre Local y Delivery
 window.cambiarModalidad = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
@@ -219,13 +232,14 @@ window.cambiarModalidad = async (index) => {
     let nuevoPedido = [...mesa.pedido_actual];
     let modActual = nuevoPedido[index].modalidad || 'local';
     
-    // Cambiamos de Local a Delivery y viceversa
-    nuevoPedido[index].modalidad = (modActual === 'local') ? 'delivery' : 'local';
+    // Rotación: Local -> Llevar -> Delivery -> Local
+    if (modActual === 'local') nuevoPedido[index].modalidad = 'llevar';
+    else if (modActual === 'llevar') nuevoPedido[index].modalidad = 'delivery';
+    else nuevoPedido[index].modalidad = 'local';
 
-    const recargo = (nuevoPedido[index].modalidad === 'delivery') ? 3 : 0;
+    const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
     nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
 
-    // Auto-fusionar si ya existe una fila idéntica (Mismo plato + Misma modalidad)
     let idxExistente = nuevoPedido.findIndex((i, pos) => i.nombre === nuevoPedido[index].nombre && (i.modalidad || 'local') === nuevoPedido[index].modalidad && pos !== index);
     if (idxExistente > -1) {
         nuevoPedido[idxExistente].cantidad += nuevoPedido[index].cantidad;
@@ -239,109 +253,119 @@ window.cambiarModalidad = async (index) => {
 };
 
 // =========================================================
-//  4. CATÁLOGO COMPLETO
+//  4. CATÁLOGO COMPLETO Y NAVEGACIÓN INTELIGENTE
 // =========================================================
 async function cargarCartaDesdeWeb() {
     try {
         const snapCarta = await getDoc(doc(db, "contenido", "cartaCompleta"));
         const snapMenu = await getDoc(doc(db, "contenido", "menuDiario"));
         const esDomingo = new Date().getDay() === 0;
-        let html = "";
 
-        html += `<button class="btn btn-outline-danger w-100 mb-3 fw-bold" onclick="agregarPlatoPersonalizado()"><i class="fas fa-keyboard"></i> Plato fuera de carta</button>`;
+        let navHTML = `<div class="d-flex overflow-auto pb-2 mb-3 sticky-top bg-light shadow-sm" 
+                            style="z-index: 1020; gap: 0.5rem; top: -16px; margin-left: -16px; margin-right: -16px; padding: 16px 16px 10px 16px;">`;
+        let bodyHTML = `<button class="btn btn-outline-danger w-100 mb-4 fw-bold shadow-sm" onclick="agregarPlatoPersonalizado()"><i class="fas fa-keyboard"></i> Plato fuera de carta</button>`;
 
         // 1. LÓGICA DE MENÚ DIARIO / ALMUERZOS
         if(snapMenu.exists()) {
             const d = snapMenu.data();
+            const tituloMenuNav = esDomingo ? "Almuerzo" : "Menú del Día";
+            
+            navHTML += `<button type="button" class="btn btn-sm btn-dark rounded-pill fw-bold px-3 flex-shrink-0 shadow-sm" 
+                                onclick="document.getElementById('seccion-menu').scrollIntoView({behavior: 'smooth', block: 'start'})">${tituloMenuNav}</button>`;
+            
+            bodyHTML += `<div id="seccion-menu" style="scroll-margin-top: 80px;">`;
 
             if (esDomingo) {
-                html += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical (S/ 30)</h5>`;
+                bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical (S/ 30)</h5>`;
                 if (d.segundos && d.segundos.length > 0) {
                     d.segundos.forEach(s => {
-                        html += `
-                        <button class="btn btn-warning w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30)">
-                            <i class="fas fa-star"></i> ${s.nombre}
-                        </button>`;
+                        bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30, 'segundo')">
+                                        <i class="fas fa-star"></i> ${s.nombre}
+                                     </button>`;
                     });
                 }
-                html += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start" onclick="agregarAlPedido('Humita', 3)">
-                            <i class="fas fa-plus-circle"></i> Humita (S/ 3.00)
-                         </button>`;
+                bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm" onclick="agregarAlPedido('Humita', 3, 'entrada')">
+                                <i class="fas fa-plus-circle"></i> Humita (S/ 3.00)
+                             </button>`;
             } else {
-                // LUNES A SÁBADO
-                html += `<h5 class="fw-bold text-success border-bottom mt-2">Menú Completo</h5>`;
-                html += `<button class="btn btn-success w-100 mb-3 fw-bold text-start shadow-sm" onclick="agregarAlPedido('Menú Completo', 15)">
-                            <i class="fas fa-utensils"></i> Menú Completo (S/ 15.00)
-                         </button>`;
+                bodyHTML += `<h5 class="fw-bold text-success border-bottom mt-2">Menú Completo</h5>`;
+                bodyHTML += `<button class="btn btn-success w-100 mb-3 fw-bold text-start shadow-sm" onclick="agregarAlPedido('Menú Completo', 15, 'menu')">
+                                <i class="fas fa-utensils"></i> Menú Completo (S/ 15.00)
+                             </button>`;
+                
                 if (d.entradas && d.entradas.length > 0) {
                     const precios = d.entradas.map(e => e.precio);
                     const todosIguales = precios.every(p => p === precios[0]);
 
-                    // Si todas cuestan lo mismo, el precio va en el Título y salen botones limpios
                     if (todosIguales) {
-                        html += `<h5 class="fw-bold text-warning border-bottom">Entradas (S/ ${precios[0]})</h5>`;
+                        bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Opciones de Entrada (S/ ${precios[0]})</h5>`;
                         d.entradas.forEach(e => {
-                            html += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${precios[0]})">
+                            bodyHTML += `<button class="btn btn-outline-warning w-100 mb-2 fw-bold text-start shadow-sm" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${precios[0]}, 'entrada')">
                                         ${e.nombre}
                                      </button>`;
                         });
                     } else {
-                        // Si hay precios diferentes, el título va limpio y el precio va en cada botón
-                        html += `<h5 class="fw-bold text-warning border-bottom">Entradas</h5>`;
+                        bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Opciones de Entrada</h5>`;
                         d.entradas.forEach(e => {
-                            html += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${e.precio})">
+                            bodyHTML += `<button class="btn btn-outline-warning w-100 mb-2 fw-bold text-start shadow-sm" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${e.precio}, 'entrada')">
                                         ${e.nombre} (S/ ${e.precio})
                                      </button>`;
                         });
                     }
                 }
 
-                html += `<h5 class="fw-bold text-danger border-bottom mt-3">Segundos (S/ 15)</h5>`;
+                bodyHTML += `<h5 class="fw-bold text-danger border-bottom mt-3">Segundos (S/ 15)</h5>`;
                 if (d.segundos && d.segundos.length > 0) {
                     d.segundos.forEach(s => {
-                        html += `<button class="btn btn-danger w-100 mb-2 fw-bold text-start" onclick="agregarAlPedido('${s.nombre} (Segundo)', 15)">
+                        bodyHTML += `<button class="btn btn-danger w-100 mb-4 fw-bold text-start shadow-sm" onclick="agregarAlPedido('${s.nombre} (Segundo)', 15, 'segundo')">
                                     ${s.nombre}
                                  </button>`;
                     });
                 }
             }
+            bodyHTML += `</div>`; 
         }
 
         // 2. LA CARTA COMPLETA (Platos de fondo, bebidas, etc)
         if(snapCarta.exists() && snapCarta.data().categorias) {
-            snapCarta.data().categorias.forEach(cat => {
-                html += `<h6 class="mt-4 fw-bold text-primary border-bottom">${cat.nombre}</h6><div class="row g-2">`;
+            snapCarta.data().categorias.forEach((cat, index) => {
+                const catId = `seccion-carta-${index}`;
+                navHTML += `<button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3 flex-shrink-0 shadow-sm" 
+                                    onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
+
+                bodyHTML += `<div id="${catId}" style="scroll-margin-top: 80px;">`;
+                bodyHTML += `<h6 class="mt-2 fw-bold text-primary border-bottom">${cat.nombre}</h6><div class="row g-2 mb-4">`;
                 
                 cat.items.forEach(item => {
                     const precio1 = parseFloat(String(item.precio).replace(/[^0-9.]/g, '')) || 0;
-                    
                     if (item.precio2 && String(item.precio2).trim() !== "" && item.precio2 !== "-") {
                         const precio2 = parseFloat(String(item.precio2).replace(/[^0-9.]/g, '')) || 0;
-                        html += `
+                        bodyHTML += `
                         <div class="col-6">
-                            <button class="btn btn-outline-secondary w-100 text-start small" onclick="agregarAlPedido('${item.nombre} (${cat.col1})', ${precio1})">
+                            <button class="btn btn-outline-secondary w-100 text-start small shadow-sm h-100" onclick="agregarAlPedido('${item.nombre} (${cat.col1})', ${precio1}, '${cat.nombre}')">
                                 <small>${item.nombre} <b class="text-primary">(${cat.col1})</b></small><br><strong>S/ ${precio1.toFixed(2)}</strong>
                             </button>
                         </div>
                         <div class="col-6">
-                            <button class="btn btn-outline-secondary w-100 text-start small" onclick="agregarAlPedido('${item.nombre} (${cat.col2})', ${precio2})">
+                            <button class="btn btn-outline-secondary w-100 text-start small shadow-sm h-100" onclick="agregarAlPedido('${item.nombre} (${cat.col2})', ${precio2}, '${cat.nombre}')">
                                 <small>${item.nombre} <b class="text-success">(${cat.col2})</b></small><br><strong>S/ ${precio2.toFixed(2)}</strong>
                             </button>
                         </div>`;
                     } else {
-                        html += `
+                        bodyHTML += `
                         <div class="col-6">
-                            <button class="btn btn-outline-secondary w-100 text-start small" onclick="agregarAlPedido('${item.nombre}', ${precio1})">
+                            <button class="btn btn-outline-secondary w-100 text-start small shadow-sm h-100" onclick="agregarAlPedido('${item.nombre}', ${precio1}, '${cat.nombre}')">
                                 <small>${item.nombre}</small><br><strong>S/ ${precio1.toFixed(2)}</strong>
                             </button>
                         </div>`;
                     }
                 });
-                html += `</div>`;
+                bodyHTML += `</div></div>`; 
             });
         }
         
-        document.getElementById('catalogo-productos').innerHTML = html;
+        navHTML += `</div>`; 
+        document.getElementById('catalogo-productos').innerHTML = navHTML + bodyHTML;
         
     } catch (error) { 
         console.error("Error cargando carta:", error); 
@@ -349,7 +373,6 @@ async function cargarCartaDesdeWeb() {
     }
 }
 
-// Abrir el modal del catálogo al hacer clic en "Agregar Pedido"
 btnAgregarProducto.addEventListener('click', () => {
     if (!modalProductosInstance) {
         modalProductosInstance = new bootstrap.Modal(document.getElementById('modalProductos'));
@@ -360,22 +383,21 @@ btnAgregarProducto.addEventListener('click', () => {
 window.agregarPlatoPersonalizado = () => {
     const n = prompt("Nombre del plato:");
     const p = parseFloat(prompt("Precio (S/):"));
-    if (n && !isNaN(p)) agregarAlPedido(n + " (Extra)", p);
+    if (n && !isNaN(p)) agregarAlPedido(n + " (Extra)", p, 'general');
 };
 
-window.agregarAlPedido = async (nombre, precio) => {
+window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
     let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
     
-    // Solo agrupa el plato si es exactamente el mismo nombre y ambos son "local"
     let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local');
     
     if (idx > -1) {
         nuevoPedido[idx].cantidad += 1;
         nuevoPedido[idx].subtotal = nuevoPedido[idx].cantidad * nuevoPedido[idx].precio;
     } else {
-        nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', subtotal: parseFloat(precio) });
+        nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio) });
     }
     
     let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
@@ -410,7 +432,6 @@ btnCobrar.addEventListener('click', () => {
     if (!mesa) return;
 
     totalACobrarActual = mesa.total_consumo;
-
     modalCobrarTotal.innerText = `Total: S/ ${totalACobrarActual.toFixed(2)}`;
     
     inputsPagos.forEach(input => input.value = "");
@@ -454,26 +475,14 @@ btnConfirmarCobro.addEventListener('click', async () => {
     btnConfirmarCobro.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
 
     try {
-        await addDoc(collection(db, "ventas_historicas"), {
-            mesa: mesa.numero,
-            fecha: new Date(),
-            items: mesa.pedido_actual,
-            total_cobrado: totalACobrarActual,
-            metodos_pago: {
-                efectivo: parseFloat(document.getElementById('pago-efectivo').value) || 0,
-                yape: parseFloat(document.getElementById('pago-yape').value) || 0,
-                plin: parseFloat(document.getElementById('pago-plin').value) || 0,
-                tarjeta: parseFloat(document.getElementById('pago-tarjeta').value) || 0
-            }
-        });
-
-        await updateDoc(doc(db, "mesas_pos", mesa.id), {
-            estado: "libre",
-            pedido_actual: [],
-            total_consumo: 0
-        });
-
+        const datosMetodos = { efectivo: parseFloat(document.getElementById('pago-efectivo').value) || 0, yape: parseFloat(document.getElementById('pago-yape').value) || 0, plin: parseFloat(document.getElementById('pago-plin').value) || 0, tarjeta: parseFloat(document.getElementById('pago-tarjeta').value) || 0 };
+        const itemsImpresion = [...mesa.pedido_actual];
+        
+        await addDoc(collection(db, "ventas_historicas"), { mesa: mesa.numero, fecha: new Date(), items: mesa.pedido_actual, total_cobrado: totalACobrarActual, metodos_pago: datosMetodos });
+        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "libre", pedido_actual: [], total_consumo: 0 });
+        
         modalCobroInstance.hide();
+        imprimirNotaVentaHTML(mesa.numero, itemsImpresion, totalACobrarActual, datosMetodos);
         
     } catch (error) {
         console.error("Error al registrar venta:", error);
@@ -491,13 +500,12 @@ let modalGastoInstance = null;
 const btnNuevoGasto = document.getElementById('btn-nuevo-gasto');
 const btnGuardarGasto = document.getElementById('btn-guardar-gasto');
 
-// NUEVA FUNCIÓN: Cargar el historial de gastos del día
 async function cargarGastosHoy() {
     const listaGastos = document.getElementById('lista-gastos-hoy');
     if (!listaGastos) return;
 
     const inicioDia = new Date();
-    inicioDia.setHours(0, 0, 0, 0); // Desde las 00:00 de hoy
+    inicioDia.setHours(0, 0, 0, 0); 
 
     const q = query(collection(db, "gastos"), where("fecha", ">=", inicioDia));
     try {
@@ -532,12 +540,11 @@ async function cargarGastosHoy() {
     }
 }
 
-// NUEVA FUNCIÓN: Eliminar un gasto por error
 window.eliminarGasto = async (id) => {
     if (confirm("¿Seguro que deseas anular este gasto? El monto volverá a tu caja.")) {
         try {
             await deleteDoc(doc(db, "gastos", id));
-            cargarGastosHoy(); // Recargamos la lista automáticamente
+            cargarGastosHoy(); 
         } catch (error) {
             console.error("Error al eliminar:", error);
             alert("No se pudo eliminar el gasto.");
@@ -545,16 +552,14 @@ window.eliminarGasto = async (id) => {
     }
 };
 
-// Abrir Modal de Gastos
 btnNuevoGasto.addEventListener('click', () => {
     if (!modalGastoInstance) modalGastoInstance = new bootstrap.Modal(document.getElementById('modalGasto'));
     document.getElementById('gasto-concepto').value = "";
     document.getElementById('gasto-monto').value = "0";
-    cargarGastosHoy(); // Cargamos la lista antes de que aparezca la ventana
+    cargarGastosHoy(); 
     modalGastoInstance.show();
 });
 
-// Guardar Nuevo Gasto
 btnGuardarGasto.addEventListener('click', async () => {
     const concepto = document.getElementById('gasto-concepto').value.trim();
     const categoria = document.getElementById('gasto-categoria').value;
@@ -567,15 +572,10 @@ btnGuardarGasto.addEventListener('click', async () => {
 
     try {
         await addDoc(collection(db, "gastos"), { fecha: new Date(), concepto: concepto, categoria: categoria, monto: monto });
-        
-        // Limpiamos los cuadros de texto por si quiere agregar otro gasto
         document.getElementById('gasto-concepto').value = "";
         document.getElementById('gasto-monto').value = "0";
-        
-        // Recargamos la lista para que vea el nuevo gasto abajo
         cargarGastosHoy();
         
-        // Le mostramos un check verde temporal
         btnGuardarGasto.innerHTML = '<i class="fas fa-check"></i> ¡Guardado!';
         btnGuardarGasto.classList.replace('btn-warning', 'btn-success');
         
@@ -633,7 +633,6 @@ btnArqueo.addEventListener('click', async () => {
             const data = doc.data();
             if (data.items) {
                 data.items.forEach(item => {
-                    // FILTRO APLICADO AQUÍ
                     if (esPlatoParaRanking(item.nombre)) {
                         conteoPlatosHoy[item.nombre] = (conteoPlatosHoy[item.nombre] || 0) + item.cantidad;
                     }
@@ -641,11 +640,10 @@ btnArqueo.addEventListener('click', async () => {
             }
         });
 
-        // Ordenar y sacar Top 3
         let rankingHoy = Object.keys(conteoPlatosHoy)
             .map(n => ({ nombre: n, cant: conteoPlatosHoy[n] }))
             .sort((a, b) => b.cant - a.cant)
-            .slice(0, 5);
+            .slice(0, 3);
 
         const containerTop = document.getElementById('arq-top-platos');
         containerTop.innerHTML = rankingHoy.length > 0 
@@ -713,7 +711,6 @@ async function cargarDatosDashboard(anioMes) {
 
             if (data.items && Array.isArray(data.items)) {
                 data.items.forEach(item => {
-                    // Ignorar "Taper" y "Refresco"
                     if (esPlatoParaRanking(item.nombre)) {
                         if (conteoPlatos[item.nombre]) {
                             conteoPlatos[item.nombre] += item.cantidad;
@@ -819,25 +816,19 @@ const posSection = document.getElementById('pos-section');
 const btnLogin = document.getElementById('btn-login');
 const btnLogout = document.getElementById('btn-logout');
 
-// Escuchar cambios: Si entra, mostramos POS. Si sale, mostramos Login.
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        // Contraseña correcta
         loginSection.classList.add('d-none');
         posSection.classList.remove('d-none');
-        iniciarSistemaPOS(); // Arrancamos el motor de mesas
+        iniciarSistemaPOS(); 
     } else {
-        // Bloqueado
         loginSection.classList.remove('d-none');
         posSection.classList.add('d-none');
-        
-        // Limpiamos la pantalla por seguridad
         mesasData = [];
         contenedorMesas.innerHTML = "";
     }
 });
 
-// Botón de Ingresar
 btnLogin.addEventListener('click', () => {
     const email = document.getElementById('pos-email').value;
     const pass = document.getElementById('pos-pass').value;
@@ -856,9 +847,99 @@ btnLogin.addEventListener('click', () => {
         });
 });
 
-// Botón de Salir
 btnLogout.addEventListener('click', () => {
     if(confirm("¿Seguro que deseas cerrar la caja y salir?")) {
         signOut(auth);
     }
 });
+
+// =========================================================
+//  9. SISTEMA DE IMPRESIÓN TÉRMICA (COMANDAS Y NOTA DE VENTA)
+// =========================================================
+
+function enviarAImpresora(htmlContent) {
+    const printWindow = window.open('', '_blank', 'width=400,height=600');
+    printWindow.document.write(`
+        <html><head><title>Impresión Ticket</title>
+        <style>
+            @page { margin: 0; }
+            body { font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 10px; margin: 0; color: #000; font-size: 14px; }
+            h2, h3, p { margin: 5px 0; text-align: center; }
+            hr { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; font-size: 13px; }
+            th, td { padding: 2px 0; }
+        </style>
+        </head><body>
+        ${htmlContent}
+        <script>setTimeout(() => { window.print(); window.close(); }, 500);</script>
+        </body></html>
+    `);
+    printWindow.document.close();
+}
+
+window.imprimirComandasSeparadas = () => {
+    const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
+    if (!mesa || !mesa.pedido_actual || mesa.pedido_actual.length === 0) return;
+
+    const catBebidas = ['Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza'];
+    
+    const itemsCocina = mesa.pedido_actual.filter(item => !catBebidas.includes(item.categoria) && item.nombre !== 'Refresco');
+    const itemsBarra = mesa.pedido_actual.filter(item => catBebidas.includes(item.categoria) || item.nombre === 'Refresco');
+
+    // 1. Genera e imprime ticket de Cocina
+    if (itemsCocina.length > 0) {
+        let htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
+        itemsCocina.forEach(item => {
+            let modLabel = '';
+            if (item.modalidad === 'llevar') modLabel = ' <b>[LLEVAR]</b>';
+            if (item.modalidad === 'delivery') modLabel = ' <b>[DELIVERY]</b>';
+            
+            htmlCocina += `<div style="margin-bottom: 8px; font-weight: bold; font-size: 16px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
+        });
+        htmlCocina += `<hr><p>---</p>`;
+        enviarAImpresora(htmlCocina);
+    }
+    
+    // 2. Genera e imprime ticket de Barra
+    if (itemsBarra.length > 0) {
+        setTimeout(() => {
+            let htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
+            itemsBarra.forEach(item => {
+                let modLabel = '';
+                if (item.modalidad === 'llevar') modLabel = ' <b>[LLEVAR]</b>';
+                if (item.modalidad === 'delivery') modLabel = ' <b>[DELIVERY]</b>';
+                
+                htmlBarra += `<div style="margin-bottom: 8px; font-weight: bold; font-size: 16px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
+            });
+            htmlBarra += `<hr><p>---</p>`;
+            enviarAImpresora(htmlBarra);
+        }, 1500); 
+    }
+};
+
+window.imprimirNotaVentaHTML = (mesaNum, items, total, metodos) => {
+    let html = `
+        <h2>CALLETANO</h2><p>Restaurante & Cevicheria</p>
+        <p>Barrio Nicaragua S/N, Máncora</p>
+        <hr><h3>NOTA DE VENTA</h3><h2>MESA ${mesaNum}</h2>
+        <p>${new Date().toLocaleString()}</p><hr>
+        <table><tr><th style="text-align:left;">Cant</th><th style="text-align:left;">Desc</th><th style="text-align:right;">Monto</th></tr>`;
+    
+    items.forEach(item => {
+        let modInfo = '';
+        if (item.modalidad === 'llevar') modInfo = '<br><small><i>(Llevar)</i></small>';
+        if (item.modalidad === 'delivery') modInfo = '<br><small><i>(Delivery)</i></small>';
+        
+        html += `<tr><td style="vertical-align:top; text-align:center;">${item.cantidad}</td><td>${item.nombre}${modInfo}</td><td style="text-align:right;">S/${item.subtotal.toFixed(2)}</td></tr>`;
+    });
+
+    html += `</table><hr><h2 style="text-align: right;">TOTAL: S/ ${total.toFixed(2)}</h2><hr><div style="text-align: left;">`;
+    if (metodos.efectivo > 0) html += `<p>Efectivo: S/ ${metodos.efectivo.toFixed(2)}</p>`;
+    if (metodos.yape > 0) html += `<p>Yape: S/ ${metodos.yape.toFixed(2)}</p>`;
+    if (metodos.plin > 0) html += `<p>Plin: S/ ${metodos.plin.toFixed(2)}</p>`;
+    if (metodos.tarjeta > 0) html += `<p>Tarjeta: S/ ${metodos.tarjeta.toFixed(2)}</p>`;
+    html += `</div><hr><p>¡Gracias por su preferencia!</p>
+             <p style="font-size: 10px;">* Documento interno. No es comprobante de pago válido para SUNAT *</p>`;
+    
+    enviarAImpresora(html);
+};
