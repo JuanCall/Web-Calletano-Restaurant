@@ -68,11 +68,16 @@ function dibujarMesas() {
         const esSeleccionada = mesa.id === mesaSeleccionadaId ? "mesa-seleccionada" : "";
         const div = document.createElement('div');
         div.className = "col-md-6 col-lg-4 mb-3"; 
+        
+        // Se agregó el Total de la Mesa al cuadrito del Mozo
         div.innerHTML = `
-            <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada}" onclick="seleccionarMesa('${mesa.id}')" style="height: 140px;">
+            <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada} d-flex flex-column p-3" onclick="seleccionarMesa('${mesa.id}')" style="height: 140px; cursor: pointer;">
                 <h3 class="fw-bold mb-1">Mesa ${mesa.numero}</h3>
-                <span class="badge bg-white text-dark mb-2">${esOcupada ? 'Ocupada' : 'Libre'}</span>
-                <strong class="text-secondary small">${mesa.pedido_actual ? mesa.pedido_actual.length : 0} items</strong>
+                <div><span class="badge bg-white text-dark mb-2 border shadow-sm">${esOcupada ? 'Ocupada' : 'Libre'}</span></div>
+                <div class="mt-auto border-top pt-2 d-flex justify-content-between align-items-center w-100">
+                    <strong class="text-secondary small">${mesa.pedido_actual ? mesa.pedido_actual.length : 0} items</strong>
+                    <strong class="text-primary fw-bold">S/ ${(mesa.total_consumo || 0).toFixed(2)}</strong>
+                </div>
             </div>
         `;
         contenedorMesas.appendChild(div);
@@ -89,6 +94,8 @@ function actualizarComandera() {
     tituloMesa.innerText = `Mesa ${mesa.numero}`;
     btnAgregarProducto.disabled = false;
     
+    const btnEnviar = zonaEnvio.querySelector('button');
+
     if (mesa.estado === "libre" || !mesa.pedido_actual || mesa.pedido_actual.length === 0) {
         estadoMesa.className = "badge bg-success mt-2"; estadoMesa.innerText = "Libre";
         listaPedidos.innerHTML = `<div class="text-center text-muted mt-5"><p>Agregue platos para abrir la mesa.</p></div>`;
@@ -99,7 +106,13 @@ function actualizarComandera() {
         totalCuenta.innerText = `S/ ${mesa.total_consumo.toFixed(2)}`;
         
         let itemsHTML = "";
+        let itemsPendientes = 0;
+        
         mesa.pedido_actual.forEach((item, index) => {
+            // Ocultamos de la vista del mozo los platos que ya fueron enviados a cocina
+            if (item.estado_envio === 'enviado') return;
+            itemsPendientes++;
+
             const modalidad = item.modalidad || 'local';
             const costoTaper = calcularRecargoTaper(modalidad, item.categoria, item.nombre);
             
@@ -130,7 +143,14 @@ function actualizarComandera() {
                 </div>
             </div>`;
         });
-        listaPedidos.innerHTML = itemsHTML;
+        
+        if (itemsPendientes === 0) {
+            listaPedidos.innerHTML = `<div class="text-center text-success mt-5"><i class="fas fa-check-circle fa-3x mb-3 opacity-50"></i><p class="fw-bold">Pedidos enviados a cocina.</p><p class="text-muted small">Puede agregar más platos a la mesa.</p></div>`;
+            if (btnEnviar) btnEnviar.style.display = 'none';
+        } else {
+            listaPedidos.innerHTML = itemsHTML;
+            if (btnEnviar) btnEnviar.style.display = 'block';
+        }
     }
 }
 
@@ -169,7 +189,8 @@ window.cambiarModalidad = async (index) => {
     const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
     nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
 
-    let idxExistente = nuevoPedido.findIndex((i, pos) => i.nombre === nuevoPedido[index].nombre && (i.modalidad || 'local') === nuevoPedido[index].modalidad && pos !== index);
+    // Solo agrupamos si el plato existe y TAMPOCO ha sido enviado aún
+    let idxExistente = nuevoPedido.findIndex((i, pos) => i.nombre === nuevoPedido[index].nombre && (i.modalidad || 'local') === nuevoPedido[index].modalidad && i.estado_envio !== 'enviado' && pos !== index);
     if (idxExistente > -1) {
         nuevoPedido[idxExistente].cantidad += nuevoPedido[index].cantidad;
         nuevoPedido[idxExistente].subtotal += nuevoPedido[index].subtotal;
@@ -252,10 +273,16 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
     let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
-    let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local');
     
-    if (idx > -1) { nuevoPedido[idx].cantidad += 1; nuevoPedido[idx].subtotal = nuevoPedido[idx].cantidad * nuevoPedido[idx].precio; } 
-    else { nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio) }); }
+    // El mozo agrupa solo si es el mismo plato Y si aún no ha sido enviado
+    let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local' && i.estado_envio !== 'enviado');
+    
+    if (idx > -1) { 
+        nuevoPedido[idx].cantidad += 1; 
+        nuevoPedido[idx].subtotal = nuevoPedido[idx].cantidad * nuevoPedido[idx].precio; 
+    } else { 
+        nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio), estado_envio: 'pendiente' }); 
+    }
     
     let total = nuevoPedido.reduce((acc, curr) => acc + curr.subtotal, 0);
     try {
@@ -273,7 +300,7 @@ window.eliminarDelPedido = async (index) => {
     await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
 };
 
-// SISTEMA DE IMPRESIÓN (Solo envía la orden, no cobra la mesa)
+// SISTEMA DE IMPRESIÓN DEL MOZO
 function enviarAImpresora(htmlContent) {
     const printWindow = window.open('', '_blank', 'width=400,height=600');
     printWindow.document.write(`
@@ -290,13 +317,17 @@ function enviarAImpresora(htmlContent) {
     printWindow.document.close();
 }
 
-window.imprimirComandasSeparadas = () => {
+window.imprimirComandasSeparadas = async () => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa || !mesa.pedido_actual || mesa.pedido_actual.length === 0) return;
 
+    // Filtramos SOLO los platos que el mozo acaba de agregar (los pendientes)
+    const itemsPendientes = mesa.pedido_actual.filter(item => item.estado_envio !== 'enviado');
+    if (itemsPendientes.length === 0) return;
+
     const catBebidas = ['Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza'];
-    const itemsCocina = mesa.pedido_actual.filter(item => !catBebidas.includes(item.categoria) && item.nombre !== 'Refresco');
-    const itemsBarra = mesa.pedido_actual.filter(item => catBebidas.includes(item.categoria) || item.nombre === 'Refresco');
+    const itemsCocina = itemsPendientes.filter(item => !catBebidas.includes(item.categoria) && item.nombre !== 'Refresco');
+    const itemsBarra = itemsPendientes.filter(item => catBebidas.includes(item.categoria) || item.nombre === 'Refresco');
 
     if (itemsCocina.length > 0) {
         let htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
@@ -319,6 +350,12 @@ window.imprimirComandasSeparadas = () => {
             enviarAImpresora(htmlBarra);
         }, itemsCocina.length > 0 ? 1500 : 0); 
     }
+
+    // MARCADO DE BASE DE DATOS: Cambiamos todo a "enviado"
+    let nuevoPedido = mesa.pedido_actual.map(item => ({ ...item, estado_envio: 'enviado' }));
+    try {
+        await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido });
+    } catch (e) { console.error(e); }
 };
 
 // LOGIN / LOGOUT
