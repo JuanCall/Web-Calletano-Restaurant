@@ -36,7 +36,7 @@ async function cargarItemsProhibidos() {
     try {
         const snapCarta = await getDoc(doc(db, "contenido", "cartaCompleta"));
         if (snapCarta.exists() && snapCarta.data().categorias) {
-            const categoriasProhibidas = ['Guarnición', 'Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza'];
+            const categoriasProhibidas = ['Guarniciones', 'Jugos Naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza'];
             snapCarta.data().categorias.forEach(cat => {
                 if (categoriasProhibidas.includes(cat.nombre)) {
                     cat.items.forEach(item => {
@@ -61,7 +61,7 @@ function esPlatoParaRanking(nombre) {
 function calcularRecargoTaper(modalidad, categoria, nombre) {
     if (modalidad === 'delivery') return 3;
     if (modalidad !== 'llevar') return 0;   
-    const cats1Sol = ['Guarnición', 'Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza', 'entrada'];
+    const cats1Sol = ['Guarniciones', 'Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza', 'entrada'];
     if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) return 1;
     return 2; 
 }
