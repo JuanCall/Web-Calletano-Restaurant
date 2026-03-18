@@ -28,7 +28,7 @@ const totalCuenta = document.getElementById('total-cuenta');
 
 let modalProductosInstance = null; 
 
-// --- MOTOR DE CÁLCULO (AUTO-COMBO MATEMÁTICO) ---
+// --- MOTOR MATEMÁTICO: AUTO-COMBO ---
 function calcularRecargoTaper(modalidad, categoria, nombre) {
     if (modalidad === 'delivery') return 3;
     if (modalidad !== 'llevar') return 0;   
@@ -37,56 +37,43 @@ function calcularRecargoTaper(modalidad, categoria, nombre) {
     return 2; 
 }
 
-function obtenerVistaPedido(pedido_actual) {
-    if (!pedido_actual) return { vista: [], total: 0 };
-    if (new Date().getDay() === 0) {
-        let total = pedido_actual.reduce((a,b)=>a+b.subtotal,0);
-        return { vista: JSON.parse(JSON.stringify(pedido_actual)), total };
-    }
+function calcularTotalMesa(pedido) {
+    let total = 0; let combos = 0; let descuento = 0;
+    let no_domingo = new Date().getDay() !== 0;
+    let expE = []; let expS = []; let otros = [];
 
-    let original = JSON.parse(JSON.stringify(pedido_actual));
-    let vista = [];
-
-    let modalidades = ['local', 'llevar', 'delivery'];
-    modalidades.forEach(mod => {
-        let itemsMod = original.filter(i => (i.modalidad || 'local') === mod);
-        let entradas = itemsMod.filter(i => i.categoria === 'entrada').sort((a,b) => b.precio - a.precio);
-        let segundos = itemsMod.filter(i => i.categoria === 'segundo');
-        let otros = itemsMod.filter(i => i.categoria !== 'entrada' && i.categoria !== 'segundo');
-
-        let expE = []; entradas.forEach(e => { for(let i=0; i<e.cantidad; i++) expE.push({...e, cantidad:1}); });
-        let expS = []; segundos.forEach(s => { for(let i=0; i<s.cantidad; i++) expS.push({...s, cantidad:1}); });
-
-        let menusArmados = 0;
-        while(expE.length > 0 && expS.length > 0) { expE.shift(); expS.shift(); menusArmados++; }
-
-        let cantMenusReales = otros.filter(i => i.categoria === 'menu').reduce((a,b)=>a+b.cantidad, 0);
-        otros = otros.filter(i => i.categoria !== 'menu'); 
-
-        let totalMenus = cantMenusReales + menusArmados;
-        if (totalMenus > 0) {
-            let recargo = calcularRecargoTaper(mod, 'menu', 'Menú Completo');
-            vista.push({ nombre: 'Menú Completo', cantidad: totalMenus, precio: 15, modalidad: mod, categoria: 'menu', subtotal: totalMenus * (15 + recargo) });
-        }
-
-        let sobrantes = [...expE, ...expS, ...otros];
-        sobrantes.forEach(item => {
-            let recargo = calcularRecargoTaper(mod, item.categoria, item.nombre);
-            let idx = vista.findIndex(v => v.nombre === item.nombre && v.modalidad === mod);
-            if (idx > -1) { vista[idx].cantidad++; vista[idx].subtotal += (item.precio + recargo); } 
-            else { vista.push({...item, cantidad: 1, subtotal: (item.precio + recargo)}); }
-        });
+    pedido.forEach(item => {
+        if (no_domingo && item.categoria === 'entrada') { for(let i=0; i<item.cantidad; i++) expE.push({...item, cantidad: 1}); } 
+        else if (no_domingo && item.categoria === 'segundo') { for(let i=0; i<item.cantidad; i++) expS.push({...item, cantidad: 1}); } 
+        else { for(let i=0; i<item.cantidad; i++) otros.push({...item, cantidad: 1}); }
     });
 
-    let total = vista.reduce((a,b) => a+b.subtotal, 0);
-    return { vista, total };
+    while (expE.length > 0 && expS.length > 0) {
+        combos++; let E = expE.shift(); let S = expS.shift();
+        let recargo = 0;
+        if (E.modalidad === 'delivery' || S.modalidad === 'delivery') recargo = 3;
+        else if (E.modalidad === 'llevar' && S.modalidad === 'llevar') recargo = 2;
+        else if (S.modalidad === 'llevar') recargo = 2;
+        else if (E.modalidad === 'llevar') recargo = 1;
+
+        total += (15 + recargo);
+        let origE = E.precio + (E.modalidad === 'delivery' ? 3 : (E.modalidad === 'llevar' ? 1 : 0));
+        let origS = S.precio + (S.modalidad === 'delivery' ? 3 : (S.modalidad === 'llevar' ? 2 : 0));
+        descuento += (origE + origS) - (15 + recargo);
+    }
+
+    [...expE, ...expS, ...otros].forEach(item => {
+        let recargo = calcularRecargoTaper(item.modalidad, item.categoria, item.nombre);
+        total += (item.precio + recargo);
+    });
+
+    return { total, combos, descuento };
 }
-// ------------------------------------------------
 
 function iniciarSistemaMozos() {
     onSnapshot(collection(db, "mesas_pos"), (snapshot) => {
         mesasData = [];
-        snapshot.forEach(doc => mesasData.push({ id: doc.id, ...doc.data() }));
+        snapshot.forEach((doc) => { mesasData.push({ id: doc.id, ...doc.data() }); });
         mesasData.sort((a, b) => a.numero - b.numero);
         dibujarMesas(); actualizarComandera(); 
     });
@@ -135,8 +122,7 @@ function actualizarComandera() {
         estadoMesa.className = "badge bg-danger mt-2"; estadoMesa.innerText = "Ocupada";
         zonaEnvio.style.display = 'block';
         
-        let itemsHTML = "";
-        let itemsPendientes = 0;
+        let itemsHTML = ""; let itemsPendientes = 0;
         
         mesa.pedido_actual.forEach((item, index) => {
             if (item.estado_envio === 'enviado') return;
@@ -173,17 +159,14 @@ function actualizarComandera() {
             </div>`;
         });
         
-        let calculoVirtual = obtenerVistaPedido(mesa.pedido_actual);
-        let totalCrudo = mesa.pedido_actual.reduce((a,b)=>a+b.subtotal,0);
-        let descuentoArmado = totalCrudo - calculoVirtual.total;
-        
-        totalCuenta.innerText = `S/ ${calculoVirtual.total.toFixed(2)}`;
+        let calc = calcularTotalMesa(mesa.pedido_actual);
+        totalCuenta.innerText = `S/ ${calc.total.toFixed(2)}`;
 
-        if(descuentoArmado > 0 && itemsPendientes > 0) {
+        if(calc.combos > 0 && itemsPendientes > 0) {
             itemsHTML += `
             <div class="d-flex justify-content-between align-items-center bg-success bg-opacity-10 text-success p-2 mt-2 rounded border border-success border-opacity-25 shadow-sm">
-                <strong><i class="fas fa-gift me-1"></i> Descuento Menú Armado</strong>
-                <strong class="text-success fw-bold">-S/ ${descuentoArmado.toFixed(2)}</strong>
+                <strong><i class="fas fa-gift me-1"></i> Promo: ${calc.combos} Menú(s) Armado(s)</strong>
+                <strong class="text-success fw-bold">-S/ ${calc.descuento.toFixed(2)}</strong>
             </div>`;
         }
 
@@ -208,8 +191,8 @@ window.modificarCantidad = async (index, cambio) => {
         nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
     }
     
-    let { total } = obtenerVistaPedido(nuevoPedido);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: total }); } catch (e) { console.error(e); }
+    let calc = calcularTotalMesa(nuevoPedido);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
 };
 
 window.cambiarModalidad = async (index) => {
@@ -231,8 +214,9 @@ window.cambiarModalidad = async (index) => {
         nuevoPedido[idxExistente].subtotal += nuevoPedido[index].subtotal;
         nuevoPedido.splice(index, 1);
     }
-    let { total } = obtenerVistaPedido(nuevoPedido);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: total }); } catch (e) { console.error(e); }
+    
+    let calc = calcularTotalMesa(nuevoPedido);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
 };
 
 async function cargarCartaDesdeWeb() {
@@ -315,9 +299,9 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
         nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio), estado_envio: 'pendiente' }); 
     }
     
-    let { total } = obtenerVistaPedido(nuevoPedido);
+    let calc = calcularTotalMesa(nuevoPedido);
     try {
-        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
+        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
         if(modalProductosInstance) modalProductosInstance.hide();
     } catch (e) { console.error(e); }
 };
@@ -327,8 +311,8 @@ window.eliminarDelPedido = async (index) => {
     if (!mesa || !confirm("¿Eliminar plato?")) return;
     let nuevoPedido = [...mesa.pedido_actual];
     nuevoPedido.splice(index, 1);
-    let { total } = obtenerVistaPedido(nuevoPedido);
-    await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
+    let calc = calcularTotalMesa(nuevoPedido);
+    await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
 };
 
 // IMPRESIÓN MOZO
@@ -400,5 +384,4 @@ document.getElementById('btn-login').addEventListener('click', () => {
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
     signInWithEmailAndPassword(auth, email, pass).catch(error => { alert("Acceso denegado."); }).finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar'; });
 });
-
 document.getElementById('btn-logout').addEventListener('click', () => { if(confirm("¿Cerrar sesión de mozo?")) signOut(auth); });
