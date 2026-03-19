@@ -33,7 +33,7 @@ async function cargarItemsProhibidos() {
 }
 
 function esPlatoParaRanking(nombre) {
-    const terminosBase = ['Taper', 'Refresco', '(Extra)', 'Menú Completo'];
+    const terminosBase = ['Taper', 'Refresco', '(Extra)', '(Entrada)', '(Segundo)'];
     if (terminosBase.some(t => nombre.includes(t))) return false;
     if (itemsProhibidosDeCarta.includes(nombre)) return false; return true; 
 }
@@ -163,6 +163,17 @@ function actualizarComandera() {
                 </div>
             </div>`;
         });
+
+        // Agregamos los botones de Pre-Cuenta y Enviar a Cocina para la Cajera
+        itemsHTML += `
+        <div class="mt-3 mb-2 d-flex gap-2">
+            <button class="btn btn-secondary w-50 fw-bold py-2 shadow-sm" onclick="imprimirPreCuenta()" title="Imprimir cuenta de la mesa">
+                <i class="fas fa-receipt me-1"></i> Pre-Cuenta
+            </button>
+            <button class="btn btn-dark w-50 fw-bold py-2 shadow-sm" onclick="imprimirComandasSeparadas()" title="Enviar a cocina/barra">
+                <i class="fas fa-fire me-1"></i> Pedido
+            </button>
+        </div>`;
 
         listaPedidos.innerHTML = itemsHTML; totalCuenta.innerText = `S/ ${total.toFixed(2)}`; btnCobrar.disabled = false; 
     }
@@ -474,24 +485,25 @@ document.getElementById('btn-login').addEventListener('click', () => {
 document.getElementById('btn-logout').addEventListener('click', () => { if(confirm("¿Cerrar la caja y salir?")) signOut(auth); });
 
 // =========================================================
-// SISTEMA DE IMPRESIÓN EN CASCADA (Evita bloqueos del navegador)
+// SISTEMA DE IMPRESIÓN (Disparo simultáneo antibloqueos)
 // =========================================================
-function enviarAImpresora(htmlContent, callback) {
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
+function enviarAImpresora(htmlContent, windowName) {
+    const printWindow = window.open('', windowName, 'width=400,height=600');
     
-    // Si el navegador bloquea la ventana, le avisamos al mozo/cajera
     if (!printWindow) {
         alert("⚠️ EL NAVEGADOR BLOQUEÓ EL TICKET.\n\nPor favor, ve a la barra de direcciones de Chrome arriba a la derecha, haz clic en el ícono de ventana con una 'X' roja y selecciona 'Permitir siempre ventanas emergentes'.");
         return;
     }
 
     printWindow.document.write(`
-        <html><head><title>Comanda</title>
+        <html><head><title>${windowName}</title>
         <style>
             @page { margin: 0; }
             body { font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 10px; margin: 0; color: #000; font-size: 16px; }
             h2, p { margin: 5px 0; text-align: center; }
             hr { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; font-size: 15px; }
+            th, td { padding: 4px 0; }
         </style></head><body>${htmlContent}
         <script>
             window.onload = () => { window.print(); };
@@ -500,17 +512,37 @@ function enviarAImpresora(htmlContent, callback) {
         </body></html>
     `);
     printWindow.document.close();
-
-    // Si hay un segundo ticket (bebidas), ESPERAMOS a que se cierre el primero
-    if (callback) {
-        let checkClose = setInterval(() => {
-            if (printWindow.closed) {
-                clearInterval(checkClose);
-                setTimeout(callback, 500); // Medio segundo después lanza el ticket de bebidas
-            }
-        }, 500);
-    }
 }
+
+window.imprimirPreCuenta = () => {
+    const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
+    if (!mesa || !mesa.pedido_actual || mesa.pedido_actual.length === 0) return;
+
+    let { vista, total } = obtenerVistaPedido(mesa.pedido_actual);
+
+    let html = `
+        <h2>CALLETANO</h2><p>Restaurante & Cevicheria</p>
+        <p>Barrio Nicaragua S/N, Máncora</p>
+        <hr><h3>PRE-CUENTA</h3><h2>MESA ${mesa.numero}</h2>
+        <p>${new Date().toLocaleString()}</p><hr>
+        <table><tr><th style="text-align:left;">Cant</th><th style="text-align:left;">Desc</th><th style="text-align:right;">Monto</th></tr>`;
+    
+    vista.forEach(item => {
+        let modInfo = '';
+        if (item.modalidad === 'llevar') modInfo = '<br><small><i>(Llevar)</i></small>';
+        if (item.modalidad === 'delivery') modInfo = '<br><small><i>(Delivery)</i></small>';
+        if (item.modalidad === 'mixto') modInfo = '<br><small><i>(Taper)</i></small>';
+        
+        let txtNota = item.nota ? `<br><small style="color: #555;"><i>* ${item.nota}</i></small>` : '';
+
+        html += `<tr><td style="vertical-align:top; text-align:center;">${item.cantidad}</td><td>${item.nombre}${modInfo}${txtNota}</td><td style="text-align:right;">S/${item.subtotal.toFixed(2)}</td></tr>`;
+    });
+
+    html += `</table><hr><h2 style="text-align: right;">TOTAL: S/ ${total.toFixed(2)}</h2><hr>
+             <p style="text-align: center;">Por favor, verifique su pedido.<br>Este documento no es un comprobante de pago.</p>`;
+    
+    enviarAImpresora(html, 'Ticket_Pre_Cuenta');
+};
 
 window.imprimirComandasSeparadas = async () => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
@@ -525,7 +557,6 @@ window.imprimirComandasSeparadas = async () => {
 
     let htmlCocina = ""; let htmlBarra = "";
 
-    // 1. Armamos el ticket de Cocina
     if (itemsCocina.length > 0) {
         htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
         itemsCocina.forEach(item => {
@@ -536,7 +567,6 @@ window.imprimirComandasSeparadas = async () => {
         htmlCocina += `<hr><p>---</p>`;
     }
     
-    // 2. Armamos el ticket de Barra
     if (itemsBarra.length > 0) {
         htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
         itemsBarra.forEach(item => {
@@ -547,17 +577,39 @@ window.imprimirComandasSeparadas = async () => {
         htmlBarra += `<hr><p>---</p>`;
     }
 
-    // 3. ENVIAMOS EN CASCADA (El ticket 2 espera al ticket 1)
-    if (itemsCocina.length > 0 && itemsBarra.length > 0) {
-        enviarAImpresora(htmlCocina, () => {
-            enviarAImpresora(htmlBarra);
-        });
-    } else if (itemsCocina.length > 0) {
-        enviarAImpresora(htmlCocina);
-    } else if (itemsBarra.length > 0) {
-        enviarAImpresora(htmlBarra);
-    }
+    if (itemsCocina.length > 0) enviarAImpresora(htmlCocina, 'Ticket_Cocina');
+    if (itemsBarra.length > 0) enviarAImpresora(htmlBarra, 'Ticket_Barra');
 
     let nuevoPedido = mesa.pedido_actual.map(item => ({ ...item, estado_envio: 'enviado' }));
     try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido }); } catch (e) { console.error(e); }
+};
+
+window.imprimirNotaVentaHTML = (mesaNum, itemsVista, total, metodos) => {
+    let html = `
+        <h2>CALLETANO</h2><p>Restaurante & Cevicheria</p>
+        <p>Barrio Nicaragua S/N, Máncora</p>
+        <hr><h3>NOTA DE VENTA</h3><h2>MESA ${mesaNum}</h2>
+        <p>${new Date().toLocaleString()}</p><hr>
+        <table><tr><th style="text-align:left;">Cant</th><th style="text-align:left;">Desc</th><th style="text-align:right;">Monto</th></tr>`;
+    
+    itemsVista.forEach(item => {
+        let modInfo = '';
+        if (item.modalidad === 'llevar') modInfo = '<br><small><i>(Llevar)</i></small>';
+        if (item.modalidad === 'delivery') modInfo = '<br><small><i>(Delivery)</i></small>';
+        if (item.modalidad === 'mixto') modInfo = '<br><small><i>(Taper)</i></small>';
+        
+        let txtNota = item.nota ? `<br><small style="color: #555;"><i>* ${item.nota}</i></small>` : '';
+
+        html += `<tr><td style="vertical-align:top; text-align:center;">${item.cantidad}</td><td>${item.nombre}${modInfo}${txtNota}</td><td style="text-align:right;">S/${item.subtotal.toFixed(2)}</td></tr>`;
+    });
+
+    html += `</table><hr><h2 style="text-align: right;">TOTAL: S/ ${total.toFixed(2)}</h2><hr><div style="text-align: left;">`;
+    if (metodos.efectivo > 0) html += `<p>Efectivo: S/ ${metodos.efectivo.toFixed(2)}</p>`;
+    if (metodos.yape > 0) html += `<p>Yape: S/ ${metodos.yape.toFixed(2)}</p>`;
+    if (metodos.plin > 0) html += `<p>Plin: S/ ${metodos.plin.toFixed(2)}</p>`;
+    if (metodos.tarjeta > 0) html += `<p>Tarjeta: S/ ${metodos.tarjeta.toFixed(2)}</p>`;
+    html += `</div><hr><p>¡Gracias por su preferencia!</p>
+             <p style="font-size: 10px;">* Documento interno. No es comprobante de pago válido para SUNAT *</p>`;
+    
+    enviarAImpresora(html, 'Ticket_Nota_Venta');
 };
