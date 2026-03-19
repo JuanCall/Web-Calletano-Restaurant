@@ -26,6 +26,12 @@ const listaPedidos = document.getElementById('lista-pedidos');
 const zonaEnvio = document.getElementById('zona-envio');
 const totalCuenta = document.getElementById('total-cuenta');
 
+// BOTONES RÁPIDOS MOZO
+const btnRefresco = document.getElementById('btn-refresco');
+const btnHumita = document.getElementById('btn-humita');
+const colRefresco = document.getElementById('col-refresco');
+const colHumita = document.getElementById('col-humita');
+
 let modalProductosInstance = null; 
 
 // --- MOTOR MATEMÁTICO: AUTO-COMBO ---
@@ -71,6 +77,22 @@ function calcularTotalMesa(pedido) {
 }
 
 function iniciarSistemaMozos() {
+    const esDomingo = new Date().getDay() === 0;
+    const precioRefresco = esDomingo ? 3.00 : 2.00;
+    
+    if (btnRefresco) {
+        btnRefresco.innerHTML = `<i class="fas fa-glass-whiskey"></i> Refresco S/ ${precioRefresco.toFixed(2)}`;
+        btnRefresco.setAttribute('onclick', `agregarAlPedido('Refresco', ${precioRefresco}, 'bebida')`);
+    }
+
+    if (esDomingo && colHumita && colRefresco) {
+        colHumita.style.display = 'block';
+        colRefresco.className = 'col-6';
+        if (btnHumita) btnHumita.setAttribute('onclick', `agregarAlPedido('Humita', 3, 'entrada')`);
+    } else if (colRefresco) {
+        colRefresco.className = 'col-12';
+    }
+
     onSnapshot(collection(db, "mesas_pos"), (snapshot) => {
         mesasData = [];
         snapshot.forEach((doc) => { mesasData.push({ id: doc.id, ...doc.data() }); });
@@ -112,6 +134,9 @@ function actualizarComandera() {
 
     tituloMesa.innerText = `Mesa ${mesa.numero}`;
     btnAgregarProducto.disabled = false;
+    if (btnRefresco) btnRefresco.disabled = false;
+    if (btnHumita) btnHumita.disabled = false;
+    
     const btnEnviar = zonaEnvio.querySelector('button');
 
     if (mesa.estado === "libre" || !mesa.pedido_actual || mesa.pedido_actual.length === 0) {
@@ -253,7 +278,7 @@ async function cargarCartaDesdeWeb() {
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach((cat, index) => {
                 const catId = `seccion-carta-${index}`;
-                navHTML += `<button type="button" class="btn btn-outline-primary rounded-pill fw-bold px-4 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
+                navHTML += `<button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-4 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
                 bodyHTML += `<div id="${catId}" style="scroll-margin-top: 80px;"><h6 class="mt-2 fw-bold text-primary border-bottom fs-5">${cat.nombre}</h6><div class="row g-2 mb-4">`;
                 
                 cat.items.forEach(item => {
@@ -384,4 +409,5 @@ document.getElementById('btn-login').addEventListener('click', () => {
     btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
     signInWithEmailAndPassword(auth, email, pass).catch(error => { alert("Acceso denegado."); }).finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar'; });
 });
+
 document.getElementById('btn-logout').addEventListener('click', () => { if(confirm("¿Cerrar sesión de mozo?")) signOut(auth); });

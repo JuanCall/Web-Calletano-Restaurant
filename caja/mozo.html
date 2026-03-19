@@ -53,10 +53,22 @@
                 <span id="estado-mesa" class="badge bg-secondary mt-2">Esperando...</span>
             </div>
 
-            <div class="p-3 border-bottom text-center">
-                <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm" id="btn-agregar-producto" disabled>
+            <div class="p-3 border-bottom text-center bg-white">
+                <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm mb-2" id="btn-agregar-producto" disabled>
                     <i class="fas fa-plus me-2"></i>Agregar Platos / Bebidas
                 </button>
+                <div class="row g-2">
+                    <div class="col-12" id="col-refresco">
+                        <button class="btn btn-outline-info w-100 fw-bold shadow-sm py-2" id="btn-refresco" disabled>
+                            <i class="fas fa-glass-whiskey"></i> Refresco
+                        </button>
+                    </div>
+                    <div class="col-6" id="col-humita" style="display: none;">
+                        <button class="btn btn-outline-warning w-100 fw-bold shadow-sm py-2" id="btn-humita" disabled>
+                            <i class="fas fa-leaf"></i> Humita
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="lista-pedidos flex-grow-1 overflow-auto p-2" id="lista-pedidos">
