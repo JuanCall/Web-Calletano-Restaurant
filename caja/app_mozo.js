@@ -26,7 +26,6 @@ const listaPedidos = document.getElementById('lista-pedidos');
 const zonaEnvio = document.getElementById('zona-envio');
 const totalCuenta = document.getElementById('total-cuenta');
 
-// BOTONES RÁPIDOS MOZO
 const btnRefresco = document.getElementById('btn-refresco');
 const btnHumita = document.getElementById('btn-humita');
 const colRefresco = document.getElementById('col-refresco');
@@ -34,11 +33,11 @@ const colHumita = document.getElementById('col-humita');
 
 let modalProductosInstance = null; 
 
-// --- MOTOR MATEMÁTICO: AUTO-COMBO ---
+// --- MOTOR MATEMÁTICO ---
 function calcularRecargoTaper(modalidad, categoria, nombre) {
     if (modalidad === 'delivery') return 3;
     if (modalidad !== 'llevar') return 0;   
-    const cats1Sol = ['Guarnición', 'Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza', 'entrada'];
+    const cats1Sol = ['Guarniciones', 'Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza', 'entrada'];
     if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) return 1;
     return 2; 
 }
@@ -86,12 +85,9 @@ function iniciarSistemaMozos() {
     }
 
     if (esDomingo && colHumita && colRefresco) {
-        colHumita.style.display = 'block';
-        colRefresco.className = 'col-6';
+        colHumita.style.display = 'block'; colRefresco.className = 'col-6';
         if (btnHumita) btnHumita.setAttribute('onclick', `agregarAlPedido('Humita', 3, 'entrada')`);
-    } else if (colRefresco) {
-        colRefresco.className = 'col-12';
-    }
+    } else if (colRefresco) { colRefresco.className = 'col-12'; }
 
     onSnapshot(collection(db, "mesas_pos"), (snapshot) => {
         mesasData = [];
@@ -108,8 +104,7 @@ function dibujarMesas() {
         const esOcupada = mesa.estado === "ocupada";
         const claseEstado = esOcupada ? "mesa-ocupada" : "mesa-libre";
         const esSeleccionada = mesa.id === mesaSeleccionadaId ? "mesa-seleccionada" : "";
-        const div = document.createElement('div');
-        div.className = "col-md-6 col-lg-4 mb-3"; 
+        const div = document.createElement('div'); div.className = "col-md-6 col-lg-4 mb-3"; 
         
         div.innerHTML = `
             <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada} d-flex flex-column p-3" onclick="seleccionarMesa('${mesa.id}')" style="height: 140px; cursor: pointer;">
@@ -119,8 +114,7 @@ function dibujarMesas() {
                     <strong class="text-secondary small">${mesa.pedido_actual ? mesa.pedido_actual.length : 0} items</strong>
                     <strong class="text-primary fw-bold">S/ ${(mesa.total_consumo || 0).toFixed(2)}</strong>
                 </div>
-            </div>
-        `;
+            </div>`;
         contenedorMesas.appendChild(div);
     });
 }
@@ -166,15 +160,18 @@ function actualizarComandera() {
                 btnColor = 'btn-info text-dark'; iconMod = 'fa-motorcycle'; textoMod = 'Delivery';
             }
 
+            let txtNota = item.nota ? `<br><span class="text-danger fst-italic mt-1 d-block" style="font-size: 0.75rem;"><i class="fas fa-comment-dots"></i> ${item.nota}</span>` : '';
+
             itemsHTML += `
             <div class="d-flex flex-column border-bottom py-2">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <div style="width: 75%"><strong class="d-block text-dark small">${item.nombre}</strong>${badgeMod}</div>
+                    <div style="width: 75%"><strong class="d-block text-dark small">${item.nombre}</strong>${badgeMod}${txtNota}</div>
                     <strong class="text-primary text-end" style="width: 25%">S/ ${item.subtotal.toFixed(2)}</strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-1">
                     <button class="btn btn-sm ${btnColor} px-2 py-0 fw-bold shadow-sm" onclick="cambiarModalidad(${index})" style="border-radius: 12px; font-size: 0.75rem;"><i class="fas ${iconMod}"></i> ${textoMod}</button>
                     <div class="d-flex align-items-center bg-light rounded shadow-sm border">
+                        <button class="btn btn-sm text-info px-3 py-1 fw-bold border-0 fs-5 border-end" onclick="agregarNota(${index})" title="Agregar Nota al plato"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-sm text-secondary px-3 py-1 fw-bold border-0 fs-5" onclick="modificarCantidad(${index}, -1)">-</button>
                         <span class="mx-2 fw-bold fs-5">${item.cantidad}</span>
                         <button class="btn btn-sm text-primary px-3 py-1 fw-bold border-0 fs-5" onclick="modificarCantidad(${index}, 1)">+</button>
@@ -205,25 +202,37 @@ function actualizarComandera() {
     }
 }
 
-window.modificarCantidad = async (index, cambio) => {
+// FUNCIÓN PARA AGREGAR NOTAS
+window.agregarNota = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
     let nuevoPedido = [...mesa.pedido_actual];
+    
+    let notaActual = nuevoPedido[index].nota || "";
+    let nuevaNota = prompt(`Comentario para: ${nuevoPedido[index].nombre}\n(Ej: sin aji, tapers separados, poca sal)`, notaActual);
+    
+    if (nuevaNota !== null) {
+        nuevoPedido[index].nota = nuevaNota.trim();
+        try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido }); } catch (e) { console.error(e); }
+    }
+};
+
+window.modificarCantidad = async (index, cambio) => {
+    const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
+    if (!mesa) return; let nuevoPedido = [...mesa.pedido_actual];
     nuevoPedido[index].cantidad += cambio;
     if (nuevoPedido[index].cantidad <= 0) nuevoPedido.splice(index, 1);
     else {
         const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
         nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
     }
-    
     let calc = calcularTotalMesa(nuevoPedido);
     try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
 };
 
 window.cambiarModalidad = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
-    if (!mesa) return;
-    let nuevoPedido = [...mesa.pedido_actual];
+    if (!mesa) return; let nuevoPedido = [...mesa.pedido_actual];
     let modActual = nuevoPedido[index].modalidad || 'local';
     
     if (modActual === 'local') nuevoPedido[index].modalidad = 'llevar';
@@ -233,7 +242,7 @@ window.cambiarModalidad = async (index) => {
     const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
     nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
 
-    let idxExistente = nuevoPedido.findIndex((i, pos) => i.nombre === nuevoPedido[index].nombre && (i.modalidad || 'local') === nuevoPedido[index].modalidad && i.estado_envio !== 'enviado' && pos !== index);
+    let idxExistente = nuevoPedido.findIndex((i, pos) => i.nombre === nuevoPedido[index].nombre && (i.modalidad || 'local') === nuevoPedido[index].modalidad && i.estado_envio !== 'enviado' && (i.nota||'') === (nuevoPedido[index].nota||'') && pos !== index);
     if (idxExistente > -1) {
         nuevoPedido[idxExistente].cantidad += nuevoPedido[index].cantidad;
         nuevoPedido[idxExistente].subtotal += nuevoPedido[index].subtotal;
@@ -241,7 +250,7 @@ window.cambiarModalidad = async (index) => {
     }
     
     let calc = calcularTotalMesa(nuevoPedido);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) {}
 };
 
 async function cargarCartaDesdeWeb() {
@@ -278,7 +287,7 @@ async function cargarCartaDesdeWeb() {
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach((cat, index) => {
                 const catId = `seccion-carta-${index}`;
-                navHTML += `<button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-4 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
+                navHTML += `<button type="button" class="btn btn-outline-primary rounded-pill fw-bold px-4 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
                 bodyHTML += `<div id="${catId}" style="scroll-margin-top: 80px;"><h6 class="mt-2 fw-bold text-primary border-bottom fs-5">${cat.nombre}</h6><div class="row g-2 mb-4">`;
                 
                 cat.items.forEach(item => {
@@ -294,8 +303,7 @@ async function cargarCartaDesdeWeb() {
                 bodyHTML += `</div></div>`; 
             });
         }
-        navHTML += `</div>`; 
-        document.getElementById('catalogo-productos').innerHTML = navHTML + bodyHTML;
+        navHTML += `</div>`; document.getElementById('catalogo-productos').innerHTML = navHTML + bodyHTML;
     } catch (error) { console.error(error); }
 }
 
@@ -305,24 +313,19 @@ btnAgregarProducto.addEventListener('click', () => {
 });
 
 window.agregarPlatoPersonalizado = () => {
-    const n = prompt("Nombre del plato:");
-    const p = parseFloat(prompt("Precio (S/):"));
+    const n = prompt("Nombre del plato:"); const p = parseFloat(prompt("Precio (S/):"));
     if (n && !isNaN(p)) agregarAlPedido(n + " (Extra)", p, 'general');
 };
 
 window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
-    if (!mesa) return;
-    let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
+    if (!mesa) return; let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
     
-    let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local' && i.estado_envio !== 'enviado');
+    // Si no tiene nota, agrupa. Si tiene nota, crea fila nueva.
+    let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local' && i.estado_envio !== 'enviado' && !i.nota);
     
-    if (idx > -1) { 
-        nuevoPedido[idx].cantidad += 1; 
-        nuevoPedido[idx].subtotal = nuevoPedido[idx].cantidad * nuevoPedido[idx].precio; 
-    } else { 
-        nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio), estado_envio: 'pendiente' }); 
-    }
+    if (idx > -1) { nuevoPedido[idx].cantidad += 1; nuevoPedido[idx].subtotal = nuevoPedido[idx].cantidad * nuevoPedido[idx].precio; } 
+    else { nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio), estado_envio: 'pendiente' }); }
     
     let calc = calcularTotalMesa(nuevoPedido);
     try {
@@ -333,16 +336,23 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
 
 window.eliminarDelPedido = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
-    if (!mesa || !confirm("¿Eliminar plato?")) return;
-    let nuevoPedido = [...mesa.pedido_actual];
-    nuevoPedido.splice(index, 1);
-    let calc = calcularTotalMesa(nuevoPedido);
+    if (!mesa || !confirm("¿Eliminar plato?")) return; let nuevoPedido = [...mesa.pedido_actual];
+    nuevoPedido.splice(index, 1); let calc = calcularTotalMesa(nuevoPedido);
     await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
 };
 
-// IMPRESIÓN MOZO
-function enviarAImpresora(htmlContent) {
+// =========================================================
+// SISTEMA DE IMPRESIÓN EN CASCADA (Evita bloqueos del navegador)
+// =========================================================
+function enviarAImpresora(htmlContent, callback) {
     const printWindow = window.open('', '_blank', 'width=400,height=600');
+    
+    // Si el navegador bloquea la ventana, le avisamos al mozo/cajera
+    if (!printWindow) {
+        alert("⚠️ EL NAVEGADOR BLOQUEÓ EL TICKET.\n\nPor favor, ve a la barra de direcciones de Chrome arriba a la derecha, haz clic en el ícono de ventana con una 'X' roja y selecciona 'Permitir siempre ventanas emergentes'.");
+        return;
+    }
+
     printWindow.document.write(`
         <html><head><title>Comanda</title>
         <style>
@@ -351,10 +361,23 @@ function enviarAImpresora(htmlContent) {
             h2, p { margin: 5px 0; text-align: center; }
             hr { border-top: 1px dashed #000; margin: 10px 0; }
         </style></head><body>${htmlContent}
-        <script>setTimeout(() => { window.print(); window.close(); }, 500);</script>
+        <script>
+            window.onload = () => { window.print(); };
+            window.onafterprint = () => { window.close(); };
+        </script>
         </body></html>
     `);
     printWindow.document.close();
+
+    // Si hay un segundo ticket (bebidas), ESPERAMOS a que se cierre el primero
+    if (callback) {
+        let checkClose = setInterval(() => {
+            if (printWindow.closed) {
+                clearInterval(checkClose);
+                setTimeout(callback, 500); // Medio segundo después lanza el ticket de bebidas
+            }
+        }, 500);
+    }
 }
 
 window.imprimirComandasSeparadas = async () => {
@@ -364,50 +387,58 @@ window.imprimirComandasSeparadas = async () => {
     const itemsPendientes = mesa.pedido_actual.filter(item => item.estado_envio !== 'enviado');
     if (itemsPendientes.length === 0) return;
 
-    const catBebidas = ['Jugo Natural', 'Bebida Helada', 'Bebida Caliente', 'Cerveza'];
+    const catBebidas = ['Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza'];
     const itemsCocina = itemsPendientes.filter(item => !catBebidas.includes(item.categoria) && item.nombre !== 'Refresco');
     const itemsBarra = itemsPendientes.filter(item => catBebidas.includes(item.categoria) || item.nombre === 'Refresco');
 
+    let htmlCocina = ""; let htmlBarra = "";
+
+    // 1. Armamos el ticket de Cocina
     if (itemsCocina.length > 0) {
-        let htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
+        htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
         itemsCocina.forEach(item => {
             let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
-            htmlCocina += `<div style="margin-bottom: 10px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
+            htmlCocina += `<div style="margin-top: 8px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
+            if (item.nota) htmlCocina += `<div style="font-size: 15px; font-style: italic; font-weight: bold; margin-bottom: 5px;">* NOTA: ${item.nota}</div>`;
         });
         htmlCocina += `<hr><p>---</p>`;
-        enviarAImpresora(htmlCocina);
     }
     
+    // 2. Armamos el ticket de Barra
     if (itemsBarra.length > 0) {
-        setTimeout(() => {
-            let htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
-            itemsBarra.forEach(item => {
-                let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
-                htmlBarra += `<div style="margin-bottom: 10px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
-            });
-            htmlBarra += `<hr><p>---</p>`;
+        htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
+        itemsBarra.forEach(item => {
+            let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
+            htmlBarra += `<div style="margin-top: 8px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
+            if (item.nota) htmlBarra += `<div style="font-size: 15px; font-style: italic; font-weight: bold; margin-bottom: 5px;">* NOTA: ${item.nota}</div>`;
+        });
+        htmlBarra += `<hr><p>---</p>`;
+    }
+
+    // 3. ENVIAMOS EN CASCADA (El ticket 2 espera al ticket 1)
+    if (itemsCocina.length > 0 && itemsBarra.length > 0) {
+        enviarAImpresora(htmlCocina, () => {
             enviarAImpresora(htmlBarra);
-        }, itemsCocina.length > 0 ? 1500 : 0); 
+        });
+    } else if (itemsCocina.length > 0) {
+        enviarAImpresora(htmlCocina);
+    } else if (itemsBarra.length > 0) {
+        enviarAImpresora(htmlBarra);
     }
 
     let nuevoPedido = mesa.pedido_actual.map(item => ({ ...item, estado_envio: 'enviado' }));
     try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido }); } catch (e) { console.error(e); }
 };
 
-const loginSection = document.getElementById('login-section');
-const posSection = document.getElementById('pos-section');
-
+const loginSection = document.getElementById('login-section'); const posSection = document.getElementById('pos-section');
 onAuthStateChanged(auth, (user) => {
     if (user) { loginSection.classList.add('d-none'); posSection.classList.remove('d-none'); iniciarSistemaMozos(); } 
     else { loginSection.classList.remove('d-none'); posSection.classList.add('d-none'); mesasData = []; contenedorMesas.innerHTML = ""; }
 });
 
 document.getElementById('btn-login').addEventListener('click', () => {
-    const email = document.getElementById('pos-email').value;
-    const pass = document.getElementById('pos-pass').value;
-    const btn = document.getElementById('btn-login');
-    btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+    const email = document.getElementById('pos-email').value; const pass = document.getElementById('pos-pass').value;
+    const btn = document.getElementById('btn-login'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
     signInWithEmailAndPassword(auth, email, pass).catch(error => { alert("Acceso denegado."); }).finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar'; });
 });
-
 document.getElementById('btn-logout').addEventListener('click', () => { if(confirm("¿Cerrar sesión de mozo?")) signOut(auth); });
