@@ -38,7 +38,7 @@ function esPlatoParaRanking(nombre) {
     if (itemsProhibidosDeCarta.includes(nombre)) return false; return true; 
 }
 
-// --- CEREBRO CAJA: CONVERSIÓN VISUAL CON NOTAS ---
+// --- CEREBRO CAJA ---
 function calcularRecargoTaper(modalidad, categoria, nombre) {
     if (modalidad === 'delivery') return 3; if (modalidad !== 'llevar') return 0;   
     const cats1Sol = ['Guarniciones', 'Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza', 'entrada'];
@@ -71,7 +71,6 @@ function obtenerVistaPedido(pedido_actual) {
         else if (S.modalidad === 'llevar') { recargo = 2; modName = 'mixto'; notaMod = ` (S/Llevar)`; } 
         else if (E.modalidad === 'llevar') { recargo = 1; modName = 'mixto'; notaMod = ` (E/Llevar)`; }
 
-        // FUSIONAMOS LAS NOTAS
         let notasCombo = [];
         if (E.nota) notasCombo.push(`${E.nombre.replace(' (Entrada)','')}: ${E.nota}`);
         if (S.nota) notasCombo.push(`${S.nombre.replace(' (Segundo)','')}: ${S.nota}`);
@@ -102,8 +101,8 @@ function iniciarSistemaPOS() {
         mesasData.sort((a, b) => {
             const aEsNum = !isNaN(a.numero); const bEsNum = !isNaN(b.numero);
             if (aEsNum && bEsNum) return parseInt(a.numero) - parseInt(b.numero);
-            if (aEsNum && !bEsNum) return -1; // Los números (Salón) van primero
-            if (!aEsNum && bEsNum) return 1;  // Las letras (Delivery) van después
+            if (aEsNum && !bEsNum) return -1; 
+            if (!aEsNum && bEsNum) return 1;  
             return String(a.numero).localeCompare(String(b.numero));
         });
         dibujarMesas(); actualizarComandera(); 
@@ -119,10 +118,8 @@ function dibujarMesas() {
     let haySalon = false; let hayVirtuales = false;
 
     mesasData.forEach(mesa => {
-        const esOcupada = mesa.estado === "ocupada";
-        const claseEstado = esOcupada ? "mesa-ocupada" : "mesa-libre";
-        const esSeleccionada = mesa.id === mesaSeleccionadaId ? "mesa-seleccionada" : "";
-        const esVirtual = isNaN(mesa.numero); // Detecta si es texto ("DLV 1")
+        const esOcupada = mesa.estado === "ocupada"; const claseEstado = esOcupada ? "mesa-ocupada" : "mesa-libre"; const esSeleccionada = mesa.id === mesaSeleccionadaId ? "mesa-seleccionada" : "";
+        const esVirtual = isNaN(mesa.numero); 
 
         let icono = esVirtual ? (String(mesa.numero).toLowerCase().includes('dlv') ? "fa-motorcycle text-info" : "fa-shopping-bag text-warning") : "fa-utensils";
         let titulo = esVirtual ? mesa.numero : `Mesa ${mesa.numero}`;
@@ -163,6 +160,13 @@ function actualizarComandera() {
         estadoMesa.className = "badge bg-danger mt-2"; estadoMesa.innerText = "Ocupada";
         let { vista, total } = obtenerVistaPedido(mesa.pedido_actual);
         let itemsHTML = "";
+
+        if (mesa.nota_general) {
+            itemsHTML += `
+            <div class="alert alert-warning py-2 px-3 mb-2 d-flex justify-content-between align-items-center shadow-sm">
+                <div><i class="fas fa-motorcycle me-2"></i><strong>Datos:</strong> ${mesa.nota_general}</div>
+            </div>`;
+        }
         
         vista.forEach((item) => {
             const modalidad = item.modalidad || 'local'; const costoTaper = calcularRecargoTaper(modalidad, item.categoria, item.nombre);
@@ -172,7 +176,7 @@ function actualizarComandera() {
 
             if (modalidad === 'delivery') { badgeMod = `<span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">+S/${costoTaper} Delivery</span>`; btnColor = 'btn-info text-dark'; iconMod = 'fa-motorcycle'; textoMod = 'Delivery'; }
 
-            let txtNota = item.nota ? `<br><span class="text-danger fst-italic mt-1 d-block" style="font-size: 0.75rem;"><i class="fas fa-comment-dots"></i> ${item.nota}</span>` : '';
+            let txtNota = item.nota ? `<br><span class="text-danger fw-bold fst-italic mt-1 d-block" style="font-size: 0.75rem;"><i class="fas fa-comment-dots"></i> ${item.nota}</span>` : '';
 
             itemsHTML += `
             <div class="d-flex flex-column border-bottom py-2">
@@ -192,7 +196,6 @@ function actualizarComandera() {
             </div>`;
         });
 
-        // Agregamos los botones de Pre-Cuenta y Enviar a Cocina para la Cajera
         itemsHTML += `
         <div class="mt-3 mb-2 d-flex gap-2">
             <button class="btn btn-secondary w-50 fw-bold py-2 shadow-sm" onclick="imprimirPreCuenta()" title="Imprimir cuenta de la mesa">
@@ -207,6 +210,12 @@ function actualizarComandera() {
     }
 }
 
+// CORRECCIÓN VITAL: Forzar la actualización del subtotal real en la base de datos
+function recalcularSubtotalRaw(item) {
+    const recargo = calcularRecargoTaper(item.modalidad || 'local', item.categoria, item.nombre);
+    item.subtotal = item.cantidad * ((item.precio || 0) + recargo);
+}
+
 // BOTONES DE EDICIÓN CAJA
 window.modificarVistaCantidad = async (nombre, modalidad, cambio) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
@@ -214,24 +223,28 @@ window.modificarVistaCantidad = async (nombre, modalidad, cambio) => {
 
     if (cambio === -1) {
         if (nombre.startsWith('Menú Completo')) {
-            let idxE = pedido.findIndex(i => i.categoria === 'entrada'); if(idxE > -1) { pedido[idxE].cantidad--; if(pedido[idxE].cantidad<=0) pedido.splice(idxE, 1); }
-            let idxS = pedido.findIndex(i => i.categoria === 'segundo'); if(idxS > -1) { pedido[idxS].cantidad--; if(pedido[idxS].cantidad<=0) pedido.splice(idxS, 1); }
+            let idxE = pedido.findIndex(i => i.categoria === 'entrada'); 
+            if(idxE > -1) { pedido[idxE].cantidad--; recalcularSubtotalRaw(pedido[idxE]); if(pedido[idxE].cantidad<=0) pedido.splice(idxE, 1); }
+            let idxS = pedido.findIndex(i => i.categoria === 'segundo'); 
+            if(idxS > -1) { pedido[idxS].cantidad--; recalcularSubtotalRaw(pedido[idxS]); if(pedido[idxS].cantidad<=0) pedido.splice(idxS, 1); }
         } else {
             let idx = pedido.findIndex(i => i.nombre === nombre && (i.modalidad||'local') === modalidad);
-            if (idx > -1) { pedido[idx].cantidad--; if(pedido[idx].cantidad <= 0) pedido.splice(idx, 1); }
+            if (idx > -1) { pedido[idx].cantidad--; recalcularSubtotalRaw(pedido[idx]); if(pedido[idx].cantidad <= 0) pedido.splice(idx, 1); }
         }
     } else if (cambio === 1) {
         if (nombre.startsWith('Menú Completo')) {
-            pedido.push({nombre: 'Menú Completo', precio: 15, cantidad: 1, modalidad: (modalidad==='mixto'?'local':modalidad), categoria: 'menu', subtotal: 15});
+            let mod = modalidad === 'mixto' ? 'local' : modalidad;
+            pedido.push({nombre: 'Menú Completo', precio: 15, cantidad: 1, modalidad: mod, categoria: 'menu', subtotal: 15 + calcularRecargoTaper(mod, 'menu', 'Menú Completo')});
         } else {
             let idx = pedido.findIndex(i => i.nombre === nombre && (i.modalidad||'local') === modalidad);
             if (idx > -1) {
                 pedido[idx].cantidad++; 
+                recalcularSubtotalRaw(pedido[idx]);
             } else {
-                // Buscamos el plato original para copiar su precio si es que no está exactamente con esta modalidad
                 let platoBase = pedido.find(i => i.nombre === nombre);
                 if(platoBase) {
-                     pedido.push({nombre: nombre, precio: platoBase.precio, cantidad: 1, modalidad: modalidad, subtotal: platoBase.precio, categoria: platoBase.categoria});
+                     let recargo = calcularRecargoTaper(modalidad, platoBase.categoria, platoBase.nombre);
+                     pedido.push({nombre: nombre, precio: platoBase.precio, cantidad: 1, modalidad: modalidad, subtotal: platoBase.precio + recargo, categoria: platoBase.categoria});
                 }
             }
         }
@@ -248,11 +261,26 @@ window.cambiarModalidadVista = async (nombre, modalidad) => {
     if (nombre.startsWith('Menú Completo')) {
         let idxE = pedido.findIndex(i => i.categoria === 'entrada' && (i.modalidad||'local') === (modalidad==='mixto'?'local':modalidad));
         let idxS = pedido.findIndex(i => i.categoria === 'segundo');
-        if (idxE > -1) { if(pedido[idxE].cantidad>1){pedido[idxE].cantidad--; pedido.push({...pedido[idxE], cantidad:1, modalidad:nuevaMod});} else {pedido[idxE].modalidad=nuevaMod;} }
-        if (idxS > -1) { if(pedido[idxS].cantidad>1){pedido[idxS].cantidad--; pedido.push({...pedido[idxS], cantidad:1, modalidad:nuevaMod});} else {pedido[idxS].modalidad=nuevaMod;} }
+        if (idxE > -1) { 
+            if(pedido[idxE].cantidad>1){
+                pedido[idxE].cantidad--; recalcularSubtotalRaw(pedido[idxE]); 
+                let nItem = {...pedido[idxE], cantidad:1, modalidad:nuevaMod}; recalcularSubtotalRaw(nItem); pedido.push(nItem);
+            } else { pedido[idxE].modalidad=nuevaMod; recalcularSubtotalRaw(pedido[idxE]); } 
+        }
+        if (idxS > -1) { 
+            if(pedido[idxS].cantidad>1){
+                pedido[idxS].cantidad--; recalcularSubtotalRaw(pedido[idxS]);
+                let nItem = {...pedido[idxS], cantidad:1, modalidad:nuevaMod}; recalcularSubtotalRaw(nItem); pedido.push(nItem);
+            } else { pedido[idxS].modalidad=nuevaMod; recalcularSubtotalRaw(pedido[idxS]); } 
+        }
     } else {
         let idx = pedido.findIndex(i => i.nombre === nombre && (i.modalidad||'local') === modalidad);
-        if (idx > -1) { if(pedido[idx].cantidad>1){pedido[idx].cantidad--; pedido.push({...pedido[idx], cantidad:1, modalidad:nuevaMod});} else {pedido[idx].modalidad=nuevaMod;} }
+        if (idx > -1) { 
+            if(pedido[idx].cantidad>1){
+                pedido[idx].cantidad--; recalcularSubtotalRaw(pedido[idx]);
+                let nItem = {...pedido[idx], cantidad:1, modalidad:nuevaMod}; recalcularSubtotalRaw(nItem); pedido.push(nItem);
+            } else { pedido[idx].modalidad=nuevaMod; recalcularSubtotalRaw(pedido[idx]); } 
+        }
     }
     let { total } = obtenerVistaPedido(pedido);
     try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: pedido, total_consumo: total }); } catch (e) {}
@@ -264,8 +292,12 @@ window.eliminarVistaItem = async (nombre, modalidad) => {
     if (nombre.startsWith('Menú Completo')) {
         let cantE = pedido.filter(i => i.categoria === 'entrada').reduce((a,b)=>a+b.cantidad,0); let cantS = pedido.filter(i => i.categoria === 'segundo').reduce((a,b)=>a+b.cantidad,0);
         let eFormar = Math.min(cantE, cantS); let sFormar = eFormar;
-        for(let i=pedido.length-1; i>=0; i--) { if (pedido[i].categoria==='entrada') { let restar = Math.min(pedido[i].cantidad, eFormar); pedido[i].cantidad-=restar; eFormar-=restar; if(pedido[i].cantidad<=0) pedido.splice(i, 1); } }
-        for(let i=pedido.length-1; i>=0; i--) { if (pedido[i].categoria==='segundo') { let restar = Math.min(pedido[i].cantidad, sFormar); pedido[i].cantidad-=restar; sFormar-=restar; if(pedido[i].cantidad<=0) pedido.splice(i, 1); } }
+        for(let i=pedido.length-1; i>=0; i--) { 
+            if (pedido[i].categoria==='entrada') { let restar = Math.min(pedido[i].cantidad, eFormar); pedido[i].cantidad-=restar; recalcularSubtotalRaw(pedido[i]); eFormar-=restar; if(pedido[i].cantidad<=0) pedido.splice(i, 1); } 
+        }
+        for(let i=pedido.length-1; i>=0; i--) { 
+            if (pedido[i].categoria==='segundo') { let restar = Math.min(pedido[i].cantidad, sFormar); pedido[i].cantidad-=restar; recalcularSubtotalRaw(pedido[i]); sFormar-=restar; if(pedido[i].cantidad<=0) pedido.splice(i, 1); } 
+        }
     } else { pedido = pedido.filter(i => !(i.nombre === nombre && (i.modalidad||'local') === modalidad)); }
     let { total } = obtenerVistaPedido(pedido);
     try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: pedido.length === 0 ? "libre" : "ocupada", pedido_actual: pedido, total_consumo: total }); } catch (e) {}
@@ -288,7 +320,6 @@ async function cargarCartaDesdeWeb() {
             if (esDomingo) {
                 bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical (S/ 30)</h5>`;
                 if (d.segundos) d.segundos.forEach(s => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30, 'segundo')"><i class="fas fa-star"></i> ${s.nombre}</button>`);
-                // PRECIO CORREGIDO A 4 SOLES AQUÍ ABAJO:
                 bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Humita', 4, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 4.00)</button>`;
             } else {
                 if (d.entradas && d.entradas.length > 0) {
@@ -305,7 +336,7 @@ async function cargarCartaDesdeWeb() {
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach((cat, index) => {
                 const catId = `seccion-carta-${index}`;
-                navHTML += `<button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
+                navHTML += `<button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-4 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
                 bodyHTML += `<div id="${catId}" style="scroll-margin-top: 80px;"><h6 class="mt-2 fw-bold text-primary border-bottom fs-5">${cat.nombre}</h6><div class="row g-2 mb-4">`;
                 
                 cat.items.forEach(item => {
@@ -339,22 +370,20 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return; let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
     
-    // En caja, agrupa si no tiene nota
     let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local' && !i.nota);
-    if (idx > -1) { nuevoPedido[idx].cantidad += 1; } 
-    else { nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio) }); } // Corrección aquí: subtotal: parseFloat(precio)
+    if (idx > -1) { nuevoPedido[idx].cantidad += 1; recalcularSubtotalRaw(nuevoPedido[idx]); } 
+    else { nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio) }); }
     
     let { total } = obtenerVistaPedido(nuevoPedido);
     try { 
         await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
         
-        // FEEDBACK VISUAL: Mensaje flotante verde sin cerrar el modal
         const toast = document.createElement('div');
         toast.className = 'position-fixed top-0 start-50 translate-middle-x p-3 mt-5';
         toast.style.zIndex = '9999';
         toast.innerHTML = `<div class="badge bg-success fs-6 shadow px-4 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i> ${nombre} agregado</div>`;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 1000); // Desaparece en 1 segundo
+        setTimeout(() => toast.remove(), 1000); 
 
     } catch (e) { console.error(e); }
 };
@@ -392,10 +421,12 @@ btnConfirmarCobro.addEventListener('click', async () => {
         let { vista } = obtenerVistaPedido(mesa.pedido_actual);
         
         await addDoc(collection(db, "ventas_historicas"), { mesa: mesa.numero, fecha: new Date(), items: vista, total_cobrado: totalACobrarActual, metodos_pago: datosMetodos });
-        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "libre", pedido_actual: [], total_consumo: 0 });
+        
+        // BORRAMOS LA NOTA GENERAL AL COBRAR LA MESA
+        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "libre", pedido_actual: [], total_consumo: 0, nota_general: "" });
         
         modalCobroInstance.hide();
-        imprimirNotaVentaHTML(mesa.numero, vista, totalACobrarActual, datosMetodos);
+        imprimirNotaVentaHTML(mesa.numero, vista, totalACobrarActual, datosMetodos, mesa.nota_general);
     } catch (error) { console.error(error); alert("Error al cobrar."); } 
     finally { btnConfirmarCobro.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar Pago'; btnConfirmarCobro.disabled = false; }
 });
@@ -444,9 +475,8 @@ let modalArqueoInstance = null; const btnArqueo = document.getElementById('btn-a
 btnArqueo.addEventListener('click', () => {
     if (!modalArqueoInstance) modalArqueoInstance = new bootstrap.Modal(document.getElementById('modalArqueo'));
     
-    // Inyectamos el calendario en la pantalla de arqueo
-    const modalBody = document.querySelector('#modalArqueo .modal-body');
     if (!document.getElementById('filtro-fecha-arqueo')) {
+        const modalBody = document.querySelector('#modalArqueo .modal-body');
         const divFiltro = document.createElement('div');
         divFiltro.className = "bg-light p-3 rounded border mb-3 d-flex justify-content-between align-items-center shadow-sm";
         divFiltro.innerHTML = `<strong class="text-dark"><i class="far fa-calendar-alt me-2"></i>Fecha:</strong> <input type="date" id="filtro-fecha-arqueo" class="form-control w-50 fw-bold text-primary">`;
@@ -458,7 +488,6 @@ btnArqueo.addEventListener('click', () => {
         });
     }
 
-    // Seleccionamos "Hoy" por defecto al abrir
     const hoy = new Date();
     const mesStr = String(hoy.getMonth() + 1).padStart(2, '0');
     const diaStr = String(hoy.getDate()).padStart(2, '0');
@@ -469,7 +498,6 @@ btnArqueo.addEventListener('click', () => {
 });
 
 async function generarArqueo(fechaFiltro) {
-    // Calculamos el inicio y fin exacto del día seleccionado
     const inicioDia = new Date(fechaFiltro); inicioDia.setHours(0, 0, 0, 0);
     const finDia = new Date(fechaFiltro); finDia.setHours(23, 59, 59, 999);
 
@@ -493,7 +521,6 @@ async function generarArqueo(fechaFiltro) {
         let conteoPlatosHoy = {};
         ventasSnap.forEach((doc) => { const data = doc.data(); if (data.items) { data.items.forEach(item => { if (esPlatoParaRanking(item.nombre)) conteoPlatosHoy[item.nombre] = (conteoPlatosHoy[item.nombre] || 0) + item.cantidad; }); } });
         
-        // AHORA CORTAMOS EN 5 (Top 5) Y MEJORAMOS EL DISEÑO
         let rankingHoy = Object.keys(conteoPlatosHoy).map(n => ({ nombre: n, cant: conteoPlatosHoy[n] })).sort((a, b) => b.cant - a.cant).slice(0, 5);
         const containerTop = document.getElementById('arq-top-platos'); 
         containerTop.innerHTML = rankingHoy.length > 0 ? rankingHoy.map((p, i) => `<div class="mb-1 border-bottom pb-1">${i+1}. ${p.nombre} <span class="badge bg-warning text-dark float-end">${p.cant}</span></div>`).join("") : "<div class='text-muted'>Sin ventas en esta fecha.</div>";
@@ -597,12 +624,13 @@ window.imprimirPreCuenta = () => {
     if (!mesa || !mesa.pedido_actual || mesa.pedido_actual.length === 0) return;
 
     let { vista, total } = obtenerVistaPedido(mesa.pedido_actual);
+    let notaGeneralHtml = mesa.nota_general ? `<div style="border: 1px dashed #000; padding: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; text-transform: uppercase;">📝 ${mesa.nota_general}</div>` : '';
 
     let html = `
         <h2>CALLETANO</h2><p>Restaurante & Cevicheria</p>
         <p>Barrio Nicaragua S/N, Máncora</p>
         <hr><h3>PRE-CUENTA</h3><h2>MESA ${mesa.numero}</h2>
-        <p>${new Date().toLocaleString()}</p><hr>
+        <p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}
         <table><tr><th style="text-align:left;">Cant</th><th style="text-align:left;">Desc</th><th style="text-align:right;">Monto</th></tr>`;
     
     vista.forEach(item => {
@@ -634,9 +662,10 @@ window.imprimirComandasSeparadas = async () => {
     const itemsBarra = itemsPendientes.filter(item => catBebidas.includes(item.categoria) || item.nombre === 'Refresco');
 
     let htmlCocina = ""; let htmlBarra = "";
+    let notaGeneralHtml = mesa.nota_general ? `<div style="border: 1px solid #000; padding: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; text-transform: uppercase;">📝 ${mesa.nota_general}</div>` : '';
 
     if (itemsCocina.length > 0) {
-        htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
+        htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}`;
         itemsCocina.forEach(item => {
             let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
             htmlCocina += `<div style="margin-top: 8px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
@@ -646,7 +675,7 @@ window.imprimirComandasSeparadas = async () => {
     }
     
     if (itemsBarra.length > 0) {
-        htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
+        htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}`;
         itemsBarra.forEach(item => {
             let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
             htmlBarra += `<div style="margin-top: 8px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
@@ -662,12 +691,13 @@ window.imprimirComandasSeparadas = async () => {
     try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido }); } catch (e) { console.error(e); }
 };
 
-window.imprimirNotaVentaHTML = (mesaNum, itemsVista, total, metodos) => {
+window.imprimirNotaVentaHTML = (mesaNum, itemsVista, total, metodos, notaGeneral) => {
+    let notaGeneralHtml = notaGeneral ? `<div style="border: 1px dashed #000; padding: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; text-transform: uppercase;">📝 ${notaGeneral}</div>` : '';
     let html = `
         <h2>CALLETANO</h2><p>Restaurante & Cevicheria</p>
         <p>Barrio Nicaragua S/N, Máncora</p>
         <hr><h3>NOTA DE VENTA</h3><h2>MESA ${mesaNum}</h2>
-        <p>${new Date().toLocaleString()}</p><hr>
+        <p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}
         <table><tr><th style="text-align:left;">Cant</th><th style="text-align:left;">Desc</th><th style="text-align:right;">Monto</th></tr>`;
     
     itemsVista.forEach(item => {

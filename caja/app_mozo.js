@@ -189,7 +189,7 @@ function actualizarComandera() {
                 btnColor = 'btn-info text-dark'; iconMod = 'fa-motorcycle'; textoMod = 'Delivery';
             }
 
-            let txtNota = item.nota ? `<br><span class="text-danger fst-italic mt-1 d-block" style="font-size: 0.75rem;"><i class="fas fa-comment-dots"></i> ${item.nota}</span>` : '';
+            let txtNota = item.nota ? `<br><span class="text-danger fw-bold fst-italic mt-1 d-block" style="font-size: 0.75rem;"><i class="fas fa-comment-dots"></i> ${item.nota}</span>` : '';
 
             itemsHTML += `
             <div class="d-flex flex-column border-bottom py-2">
@@ -231,7 +231,20 @@ function actualizarComandera() {
     }
 }
 
-// FUNCIÓN PARA AGREGAR NOTAS
+// NUEVA FUNCIÓN PARA NOTA GENERAL (DELIVERY/NOMBRE)
+window.agregarNotaGeneral = async () => {
+    const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
+    if (!mesa) return;
+    
+    let notaActual = mesa.nota_general || "";
+    let nuevaNota = prompt(`Comentario General para Mesa/Delivery ${mesa.numero}:\n(Ej: Nombre, Dirección, Pagar con Yape)`, notaActual);
+    
+    if (nuevaNota !== null) {
+        try { await updateDoc(doc(db, "mesas_pos", mesa.id), { nota_general: nuevaNota.trim() }); } 
+        catch (e) { console.error(e); }
+    }
+};
+
 window.agregarNota = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
@@ -299,7 +312,7 @@ async function cargarCartaDesdeWeb() {
             if (esDomingo) {
                 bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical (S/ 30)</h5>`;
                 if (d.segundos) d.segundos.forEach(s => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30, 'segundo')"><i class="fas fa-star"></i> ${s.nombre}</button>`);
-                bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Humita', 4, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 3.00)</button>`;
+                bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Humita', 4, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 4.00)</button>`;
             } else {
                 if (d.entradas && d.entradas.length > 0) {
                     const precios = d.entradas.map(e => e.precio); const todosIguales = precios.every(p => p === precios[0]);
@@ -322,11 +335,9 @@ async function cargarCartaDesdeWeb() {
                     const p1 = parseFloat(String(item.precio).replace(/[^0-9.]/g, '')) || 0;
                     if (item.precio2 && item.precio2 !== "-") {
                         const p2 = parseFloat(String(item.precio2).replace(/[^0-9.]/g, '')) || 0;
-                        // Aquí aplicamos fw-bold y text-dark para los nombres de los platos a la carta
                         bodyHTML += `<div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${item.nombre} (${cat.col1})', ${p1}, '${cat.nombre}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${item.nombre} <b class="text-primary">(${cat.col1})</b></span><strong class="fs-6">S/ ${p1.toFixed(2)}</strong></button></div>
                                      <div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${item.nombre} (${cat.col2})', ${p2}, '${cat.nombre}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${item.nombre} <b class="text-success">(${cat.col2})</b></span><strong class="fs-6">S/ ${p2.toFixed(2)}</strong></button></div>`;
                     } else {
-                        // Lo mismo para los platos de un solo precio
                         bodyHTML += `<div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${item.nombre}', ${p1}, '${cat.nombre}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${item.nombre}</span><strong class="fs-6">S/ ${p1.toFixed(2)}</strong></button></div>`;
                     }
                 });
@@ -364,13 +375,13 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
     try {
         await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
         
-        // FEEDBACK VISUAL: Mensaje flotante verde sin cerrar el modal
+        // FEEDBACK VISUAL
         const toast = document.createElement('div');
         toast.className = 'position-fixed top-0 start-50 translate-middle-x p-3 mt-5';
         toast.style.zIndex = '9999';
         toast.innerHTML = `<div class="badge bg-success fs-6 shadow px-4 py-2 rounded-pill"><i class="fas fa-check-circle me-1"></i> ${nombre} agregado</div>`;
         document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 1000); // Desaparece en 1 segundo
+        setTimeout(() => toast.remove(), 1000); 
 
     } catch (e) { console.error(e); }
 };
@@ -383,24 +394,25 @@ window.eliminarDelPedido = async (index) => {
 };
 
 // =========================================================
-// SISTEMA DE IMPRESIÓN EN CASCADA (Evita bloqueos del navegador)
+// SISTEMA DE IMPRESIÓN EN CASCADA
 // =========================================================
-function enviarAImpresora(htmlContent, callback) {
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
+function enviarAImpresora(htmlContent, windowName) {
+    const printWindow = window.open('', windowName, 'width=400,height=600');
     
-    // Si el navegador bloquea la ventana, le avisamos al mozo/cajera
     if (!printWindow) {
         alert("⚠️ EL NAVEGADOR BLOQUEÓ EL TICKET.\n\nPor favor, ve a la barra de direcciones de Chrome arriba a la derecha, haz clic en el ícono de ventana con una 'X' roja y selecciona 'Permitir siempre ventanas emergentes'.");
         return;
     }
 
     printWindow.document.write(`
-        <html><head><title>Comanda</title>
+        <html><head><title>${windowName}</title>
         <style>
             @page { margin: 0; }
             body { font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 10px; margin: 0; color: #000; font-size: 16px; }
             h2, p { margin: 5px 0; text-align: center; }
             hr { border-top: 1px dashed #000; margin: 10px 0; }
+            table { width: 100%; font-size: 15px; }
+            th, td { padding: 4px 0; }
         </style></head><body>${htmlContent}
         <script>
             window.onload = () => { window.print(); };
@@ -409,16 +421,6 @@ function enviarAImpresora(htmlContent, callback) {
         </body></html>
     `);
     printWindow.document.close();
-
-    // Si hay un segundo ticket (bebidas), ESPERAMOS a que se cierre el primero
-    if (callback) {
-        let checkClose = setInterval(() => {
-            if (printWindow.closed) {
-                clearInterval(checkClose);
-                setTimeout(callback, 500); // Medio segundo después lanza el ticket de bebidas
-            }
-        }, 500);
-    }
 }
 
 window.imprimirComandasSeparadas = async () => {
@@ -434,10 +436,8 @@ window.imprimirComandasSeparadas = async () => {
 
     let htmlCocina = ""; let htmlBarra = "";
     
-    // Si hay nota general, la preparamos para el ticket
     let notaGeneralHtml = mesa.nota_general ? `<div style="border: 1px solid #000; padding: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; text-transform: uppercase;">📝 ${mesa.nota_general}</div>` : '';
 
-    // 1. Armamos el ticket de Cocina
     if (itemsCocina.length > 0) {
         htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}`;
         itemsCocina.forEach(item => {
@@ -448,7 +448,6 @@ window.imprimirComandasSeparadas = async () => {
         htmlCocina += `<hr><p>---</p>`;
     }
     
-    // 2. Armamos el ticket de Barra
     if (itemsBarra.length > 0) {
         htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}`;
         itemsBarra.forEach(item => {
@@ -459,16 +458,8 @@ window.imprimirComandasSeparadas = async () => {
         htmlBarra += `<hr><p>---</p>`;
     }
 
-    // 3. ENVIAMOS EN CASCADA
-    if (itemsCocina.length > 0 && itemsBarra.length > 0) {
-        enviarAImpresora(htmlCocina, () => {
-            enviarAImpresora(htmlBarra);
-        });
-    } else if (itemsCocina.length > 0) {
-        enviarAImpresora(htmlCocina);
-    } else if (itemsBarra.length > 0) {
-        enviarAImpresora(htmlBarra);
-    }
+    if (itemsCocina.length > 0) enviarAImpresora(htmlCocina, 'Ticket_Cocina');
+    if (itemsBarra.length > 0) enviarAImpresora(htmlBarra, 'Ticket_Barra');
 
     let nuevoPedido = mesa.pedido_actual.map(item => ({ ...item, estado_envio: 'enviado' }));
     try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido }); } catch (e) { console.error(e); }
