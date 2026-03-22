@@ -92,7 +92,13 @@ function iniciarSistemaMozos() {
     onSnapshot(collection(db, "mesas_pos"), (snapshot) => {
         mesasData = [];
         snapshot.forEach((doc) => { mesasData.push({ id: doc.id, ...doc.data() }); });
-        mesasData.sort((a, b) => a.numero - b.numero);
+        mesasData.sort((a, b) => {
+            const aEsNum = !isNaN(a.numero); const bEsNum = !isNaN(b.numero);
+            if (aEsNum && bEsNum) return parseInt(a.numero) - parseInt(b.numero);
+            if (aEsNum && !bEsNum) return -1; // Los números (Salón) van primero
+            if (!aEsNum && bEsNum) return 1;  // Las letras (Delivery) van después
+            return String(a.numero).localeCompare(String(b.numero));
+        });
         dibujarMesas(); actualizarComandera(); 
     });
     cargarCartaDesdeWeb();
@@ -100,23 +106,38 @@ function iniciarSistemaMozos() {
 
 function dibujarMesas() {
     contenedorMesas.innerHTML = ""; 
+    let htmlSalon = `<h5 class="w-100 mt-2 mb-3 fw-bold text-secondary border-bottom pb-2"><i class="fas fa-store"></i> Salón Calletano</h5>`;
+    let htmlVirtuales = `<h5 class="w-100 mt-4 mb-3 fw-bold text-secondary border-bottom pb-2"><i class="fas fa-motorcycle"></i> Mostrador y Delivery</h5>`;
+    
+    let haySalon = false; let hayVirtuales = false;
+
     mesasData.forEach(mesa => {
         const esOcupada = mesa.estado === "ocupada";
         const claseEstado = esOcupada ? "mesa-ocupada" : "mesa-libre";
         const esSeleccionada = mesa.id === mesaSeleccionadaId ? "mesa-seleccionada" : "";
-        const div = document.createElement('div'); div.className = "col-md-6 col-lg-4 mb-3"; 
-        
-        div.innerHTML = `
-            <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada} d-flex flex-column p-3" onclick="seleccionarMesa('${mesa.id}')" style="height: 140px; cursor: pointer;">
-                <h3 class="fw-bold mb-1">Mesa ${mesa.numero}</h3>
-                <div><span class="badge bg-white text-dark mb-2 border shadow-sm">${esOcupada ? 'Ocupada' : 'Libre'}</span></div>
-                <div class="mt-auto border-top pt-2 d-flex justify-content-between align-items-center w-100">
-                    <strong class="text-secondary small">${mesa.pedido_actual ? mesa.pedido_actual.length : 0} items</strong>
-                    <strong class="text-primary fw-bold">S/ ${(mesa.total_consumo || 0).toFixed(2)}</strong>
+        const esVirtual = isNaN(mesa.numero); // Detecta si es texto ("DLV 1")
+
+        let icono = esVirtual ? (String(mesa.numero).toLowerCase().includes('dlv') ? "fa-motorcycle text-info" : "fa-shopping-bag text-warning") : "fa-utensils";
+        let titulo = esVirtual ? mesa.numero : `Mesa ${mesa.numero}`;
+
+        const cardHTML = `
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada} d-flex flex-column p-3" onclick="seleccionarMesa('${mesa.id}')" style="height: 140px; cursor: pointer;">
+                    <h3 class="fw-bold mb-1"><i class="fas ${icono} fs-5 me-1"></i> ${titulo}</h3>
+                    <div><span class="badge bg-white text-dark mb-2 border shadow-sm">${esOcupada ? 'Ocupada' : 'Libre'}</span></div>
+                    <div class="mt-auto border-top pt-2 d-flex justify-content-between align-items-center w-100">
+                        <strong class="text-secondary small">${mesa.pedido_actual ? mesa.pedido_actual.length : 0} items</strong>
+                        <strong class="text-primary fw-bold">S/ ${(mesa.total_consumo || 0).toFixed(2)}</strong>
+                    </div>
                 </div>
             </div>`;
-        contenedorMesas.appendChild(div);
+
+        if (esVirtual) { htmlVirtuales += cardHTML; hayVirtuales = true; } 
+        else { htmlSalon += cardHTML; haySalon = true; }
     });
+
+    if (haySalon) contenedorMesas.innerHTML += `<div class="row w-100 m-0">${htmlSalon}</div>`;
+    if (hayVirtuales) contenedorMesas.innerHTML += `<div class="row w-100 m-0">${htmlVirtuales}</div>`;
 }
 
 window.seleccionarMesa = (id) => { mesaSeleccionadaId = id; dibujarMesas(); actualizarComandera(); };
