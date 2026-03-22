@@ -86,7 +86,7 @@ function iniciarSistemaMozos() {
 
     if (esDomingo && colHumita && colRefresco) {
         colHumita.style.display = 'block'; colRefresco.className = 'col-6';
-        if (btnHumita) btnHumita.setAttribute('onclick', `agregarAlPedido('Humita', 3, 'entrada')`);
+        if (btnHumita) btnHumita.setAttribute('onclick', `agregarAlPedido('Humita', 4, 'entrada')`);
     } else if (colRefresco) { colRefresco.className = 'col-12'; }
 
     onSnapshot(collection(db, "mesas_pos"), (snapshot) => {
@@ -142,6 +142,14 @@ function actualizarComandera() {
         zonaEnvio.style.display = 'block';
         
         let itemsHTML = ""; let itemsPendientes = 0;
+
+        // --- MOSTRAMOS LA NOTA GENERAL AL INICIO DE LA LISTA ---
+        if (mesa.nota_general) {
+            itemsHTML += `
+            <div class="alert alert-warning py-2 px-3 mb-2 d-flex justify-content-between align-items-center shadow-sm">
+                <div><i class="fas fa-motorcycle me-2"></i><strong>Datos:</strong> ${mesa.nota_general}</div>
+            </div>`;
+        }
         
         mesa.pedido_actual.forEach((item, index) => {
             if (item.estado_envio === 'enviado') return;
@@ -270,7 +278,7 @@ async function cargarCartaDesdeWeb() {
             if (esDomingo) {
                 bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical (S/ 30)</h5>`;
                 if (d.segundos) d.segundos.forEach(s => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30, 'segundo')"><i class="fas fa-star"></i> ${s.nombre}</button>`);
-                bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Humita', 3, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 3.00)</button>`;
+                bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Humita', 4, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 3.00)</button>`;
             } else {
                 if (d.entradas && d.entradas.length > 0) {
                     const precios = d.entradas.map(e => e.precio); const todosIguales = precios.every(p => p === precios[0]);
@@ -404,10 +412,13 @@ window.imprimirComandasSeparadas = async () => {
     const itemsBarra = itemsPendientes.filter(item => catBebidas.includes(item.categoria) || item.nombre === 'Refresco');
 
     let htmlCocina = ""; let htmlBarra = "";
+    
+    // Si hay nota general, la preparamos para el ticket
+    let notaGeneralHtml = mesa.nota_general ? `<div style="border: 1px solid #000; padding: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; text-transform: uppercase;">📝 ${mesa.nota_general}</div>` : '';
 
     // 1. Armamos el ticket de Cocina
     if (itemsCocina.length > 0) {
-        htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
+        htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}`;
         itemsCocina.forEach(item => {
             let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
             htmlCocina += `<div style="margin-top: 8px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
@@ -418,7 +429,7 @@ window.imprimirComandasSeparadas = async () => {
     
     // 2. Armamos el ticket de Barra
     if (itemsBarra.length > 0) {
-        htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>`;
+        htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${mesa.numero}</h2><p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}`;
         itemsBarra.forEach(item => {
             let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
             htmlBarra += `<div style="margin-top: 8px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${item.nombre}${modLabel}</div>`;
@@ -427,7 +438,7 @@ window.imprimirComandasSeparadas = async () => {
         htmlBarra += `<hr><p>---</p>`;
     }
 
-    // 3. ENVIAMOS EN CASCADA (El ticket 2 espera al ticket 1)
+    // 3. ENVIAMOS EN CASCADA
     if (itemsCocina.length > 0 && itemsBarra.length > 0) {
         enviarAImpresora(htmlCocina, () => {
             enviarAImpresora(htmlBarra);
