@@ -33,7 +33,7 @@ async function cargarItemsProhibidos() {
 }
 
 function esPlatoParaRanking(nombre) {
-    const terminosBase = ['Taper', 'Refresco', '(Extra)', '(Entrada)', '(Segundo)'];
+    const terminosBase = ['Taper', 'Refresco', '(Extra)'];
     if (terminosBase.some(t => nombre.includes(t))) return false;
     if (itemsProhibidosDeCarta.includes(nombre)) return false; return true; 
 }
@@ -356,7 +356,7 @@ btnConfirmarCobro.addEventListener('click', async () => {
         const datosMetodos = { efectivo: parseFloat(document.getElementById('pago-efectivo').value) || 0, yape: parseFloat(document.getElementById('pago-yape').value) || 0, plin: parseFloat(document.getElementById('pago-plin').value) || 0, tarjeta: parseFloat(document.getElementById('pago-tarjeta').value) || 0 };
         let { vista } = obtenerVistaPedido(mesa.pedido_actual);
         
-        await addDoc(collection(db, "ventas_historicas"), { mesa: mesa.numero, fecha: new Date(), items: mesa.pedido_actual, total_cobrado: totalACobrarActual, metodos_pago: datosMetodos });
+        await addDoc(collection(db, "ventas_historicas"), { mesa: mesa.numero, fecha: new Date(), items: vista, total_cobrado: totalACobrarActual, metodos_pago: datosMetodos });
         await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "libre", pedido_actual: [], total_consumo: 0 });
         
         modalCobroInstance.hide();
@@ -406,11 +406,40 @@ btnGuardarGasto.addEventListener('click', async () => {
 
 let modalArqueoInstance = null; const btnArqueo = document.getElementById('btn-arqueo');
 
-btnArqueo.addEventListener('click', async () => {
+btnArqueo.addEventListener('click', () => {
     if (!modalArqueoInstance) modalArqueoInstance = new bootstrap.Modal(document.getElementById('modalArqueo'));
-    const inicioDia = new Date(); inicioDia.setHours(0, 0, 0, 0);
-    const qVentas = query(collection(db, "ventas_historicas"), where("fecha", ">=", inicioDia));
-    const qGastos = query(collection(db, "gastos"), where("fecha", ">=", inicioDia));
+    
+    // Inyectamos el calendario en la pantalla de arqueo
+    const modalBody = document.querySelector('#modalArqueo .modal-body');
+    if (!document.getElementById('filtro-fecha-arqueo')) {
+        const divFiltro = document.createElement('div');
+        divFiltro.className = "bg-light p-3 rounded border mb-3 d-flex justify-content-between align-items-center shadow-sm";
+        divFiltro.innerHTML = `<strong class="text-dark"><i class="far fa-calendar-alt me-2"></i>Fecha:</strong> <input type="date" id="filtro-fecha-arqueo" class="form-control w-50 fw-bold text-primary">`;
+        modalBody.insertBefore(divFiltro, modalBody.firstChild);
+
+        document.getElementById('filtro-fecha-arqueo').addEventListener('change', (e) => {
+            const partes = e.target.value.split('-'); 
+            if(partes.length === 3) generarArqueo(new Date(partes[0], partes[1] - 1, partes[2]));
+        });
+    }
+
+    // Seleccionamos "Hoy" por defecto al abrir
+    const hoy = new Date();
+    const mesStr = String(hoy.getMonth() + 1).padStart(2, '0');
+    const diaStr = String(hoy.getDate()).padStart(2, '0');
+    document.getElementById('filtro-fecha-arqueo').value = `${hoy.getFullYear()}-${mesStr}-${diaStr}`;
+    
+    generarArqueo(hoy);
+    modalArqueoInstance.show();
+});
+
+async function generarArqueo(fechaFiltro) {
+    // Calculamos el inicio y fin exacto del día seleccionado
+    const inicioDia = new Date(fechaFiltro); inicioDia.setHours(0, 0, 0, 0);
+    const finDia = new Date(fechaFiltro); finDia.setHours(23, 59, 59, 999);
+
+    const qVentas = query(collection(db, "ventas_historicas"), where("fecha", ">=", inicioDia), where("fecha", "<=", finDia));
+    const qGastos = query(collection(db, "gastos"), where("fecha", ">=", inicioDia), where("fecha", "<=", finDia));
     
     try {
         const [ventasSnap, gastosSnap] = await Promise.all([getDocs(qVentas), getDocs(qGastos)]);
@@ -424,15 +453,18 @@ btnArqueo.addEventListener('click', async () => {
         document.getElementById('arq-plin').innerText = `S/ ${totPlin.toFixed(2)}`; document.getElementById('arq-tarjeta').innerText = `S/ ${totTarjeta.toFixed(2)}`;
         document.getElementById('arq-ingresos').innerText = `S/ ${totalIngresos.toFixed(2)}`; document.getElementById('arq-gastos').innerText = `S/ ${totalGastos.toFixed(2)}`;
         document.getElementById('arq-neta').innerText = `S/ ${(totalIngresos - totalGastos).toFixed(2)}`;
-        document.getElementById('arq-neta').className = (totalIngresos - totalGastos) < 0 ? "text-danger fw-bold m-0" : "text-white fw-bold m-0";
+        document.getElementById('arq-neta').className = (totalIngresos - totalGastos) < 0 ? "text-danger fw-bold m-0" : "text-success fw-bold m-0";
         
         let conteoPlatosHoy = {};
         ventasSnap.forEach((doc) => { const data = doc.data(); if (data.items) { data.items.forEach(item => { if (esPlatoParaRanking(item.nombre)) conteoPlatosHoy[item.nombre] = (conteoPlatosHoy[item.nombre] || 0) + item.cantidad; }); } });
-        let rankingHoy = Object.keys(conteoPlatosHoy).map(n => ({ nombre: n, cant: conteoPlatosHoy[n] })).sort((a, b) => b.cant - a.cant).slice(0, 3);
-        const containerTop = document.getElementById('arq-top-platos'); containerTop.innerHTML = rankingHoy.length > 0 ? rankingHoy.map((p, i) => `<div>${i+1}. ${p.nombre} (${p.cant})</div>`).join("") : "Sin ventas registradas hoy.";
-        modalArqueoInstance.show();
-    } catch (error) { console.error("Error:", error); }
-});
+        
+        // AHORA CORTAMOS EN 5 (Top 5) Y MEJORAMOS EL DISEÑO
+        let rankingHoy = Object.keys(conteoPlatosHoy).map(n => ({ nombre: n, cant: conteoPlatosHoy[n] })).sort((a, b) => b.cant - a.cant).slice(0, 5);
+        const containerTop = document.getElementById('arq-top-platos'); 
+        containerTop.innerHTML = rankingHoy.length > 0 ? rankingHoy.map((p, i) => `<div class="mb-1 border-bottom pb-1">${i+1}. ${p.nombre} <span class="badge bg-warning text-dark float-end">${p.cant}</span></div>`).join("") : "<div class='text-muted'>Sin ventas en esta fecha.</div>";
+        
+    } catch (error) { console.error("Error al generar arqueo:", error); }
+}
 
 // =========================================================
 //  7. DASHBOARD GRÁFICO (CHART.JS) Y RANKING
