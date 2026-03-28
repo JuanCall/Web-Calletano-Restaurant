@@ -1,6 +1,8 @@
 import { doc, getDoc, getDocs, setDoc, collection, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { db, auth } from "./firebase-config.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { db, appFirebase } from "./firebase-config.js";
+
+const auth = getAuth(appFirebase);
 
 async function cargarDocumento(id, cb) { try { const s = await getDoc(doc(db, "contenido", id)); cb(s.exists() ? s.data() : {}); } catch (e) { console.error(e); } }
 
