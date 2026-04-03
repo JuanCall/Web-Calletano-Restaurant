@@ -38,10 +38,12 @@ function iniciarPanelAdmin() {
         container.appendChild(row);
     };
 
-    window.addSegundoRow = (nombre = "", acomp = "") => {
+    window.addSegundoRow = (nombre = "", acomp = "", precio = null) => {
         const container = document.getElementById('admin-segundos-container'); const row = document.createElement('div'); row.className = "border border-danger-subtle rounded p-2 mb-2 bg-white segundo-item animate__animated animate__fadeIn";
-        const precioSugerido = new Date().getDay() === 0 ? 30 : 15;
-        row.innerHTML = `<div class="d-flex gap-2 mb-2"><input type="text" class="form-control form-control-sm seg-nombre fw-bold" placeholder="Plato de fondo" value="${nombre}"><div class="input-group input-group-sm" style="width: 100px; flex-shrink:0;"><span class="input-group-text bg-danger text-white border-danger">S/</span><input type="number" class="form-control seg-precio text-center fw-bold text-danger border-danger bg-light" value="${precioSugerido}" disabled></div><button class="btn btn-sm text-danger border-0 px-1" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button></div><input type="text" class="form-control form-control-sm text-muted fst-italic seg-acomp" placeholder="Acompañamiento..." value="${acomp}">`;
+        const precioSugerido = precio !== null ? precio : (new Date().getDay() === 0 ? 30 : 15);
+        
+        // Quitado el atributo 'disabled' del input del precio
+        row.innerHTML = `<div class="d-flex gap-2 mb-2"><input type="text" class="form-control form-control-sm seg-nombre fw-bold" placeholder="Plato de fondo" value="${nombre}"><div class="input-group input-group-sm" style="width: 100px; flex-shrink:0;"><span class="input-group-text bg-danger text-white border-danger">S/</span><input type="number" class="form-control seg-precio text-center fw-bold text-danger border-danger bg-light" value="${precioSugerido}"></div><button class="btn btn-sm text-danger border-0 px-1" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button></div><input type="text" class="form-control form-control-sm text-muted fst-italic seg-acomp" placeholder="Acompañamiento..." value="${acomp}">`;
         container.appendChild(row);
     };
 
@@ -57,7 +59,8 @@ function iniciarPanelAdmin() {
         if (d.entradas && d.entradas.length > 0) d.entradas.forEach(e => addEntradaRow(e.nombre, e.precio)); else addEntradaRow("", 6);
         
         document.getElementById('admin-segundos-container').innerHTML = "";
-        if (d.segundos && d.segundos.length > 0) d.segundos.forEach(s => addSegundoRow(s.nombre, s.acomp)); else addSegundoRow("", "");
+        // Pasamos s.precio para que cargue el precio guardado
+        if (d.segundos && d.segundos.length > 0) d.segundos.forEach(s => addSegundoRow(s.nombre, s.acomp, s.precio)); else addSegundoRow("", "", null);
     });
 
     const checkDomingo = document.getElementById('check-modo-domingo'); const inputTitulo = document.getElementById('input-titulo-menu'); const colEntradasAdmin = document.getElementById('admin-col-entradas');
@@ -67,7 +70,8 @@ function iniciarPanelAdmin() {
 
     asignarGuardado('btn-save-menu', "menuDiario", () => ({
         entradas: Array.from(document.querySelectorAll('.entrada-item')).map(el => ({ nombre: el.querySelector('.ent-nombre').value.trim(), precio: parseFloat(el.querySelector('.ent-precio').value) || 6 })).filter(e => e.nombre !== ""),
-        segundos: Array.from(document.querySelectorAll('.segundo-item')).map(el => ({ nombre: el.querySelector('.seg-nombre').value.trim(), acomp: el.querySelector('.seg-acomp').value.trim(), precio: 15 })).filter(s => s.nombre !== ""),
+        // Ahora capturamos el precio del input seg-precio
+        segundos: Array.from(document.querySelectorAll('.segundo-item')).map(el => ({ nombre: el.querySelector('.seg-nombre').value.trim(), acomp: el.querySelector('.seg-acomp').value.trim(), precio: parseFloat(el.querySelector('.seg-precio').value) || 15 })).filter(s => s.nombre !== ""),
         refresco: document.getElementById('input-refresco').value, titulo: document.getElementById('input-titulo-menu').value, modoDomingo: document.getElementById('check-modo-domingo').checked, entrada: "", segundo: "" 
     }));
 

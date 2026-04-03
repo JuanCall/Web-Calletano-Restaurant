@@ -306,12 +306,16 @@ async function cargarCartaDesdeWeb() {
 
         if(snapMenu.exists()) {
             const d = snapMenu.data();
-            navHTML += `<button type="button" class="btn btn-dark rounded-pill fw-bold px-4 flex-shrink-0 shadow-sm" onclick="document.getElementById('seccion-menu').scrollIntoView({behavior: 'smooth', block: 'start'})">${esDomingo ? "Almuerzo" : "Menú del Día"}</button>`;
+            navHTML += `<button type="button" class="btn btn-sm btn-dark rounded-pill fw-bold px-3 flex-shrink-0 shadow-sm" onclick="document.getElementById('seccion-menu').scrollIntoView({behavior: 'smooth', block: 'start'})">${esDomingo ? "Almuerzo" : "Menú del Día"}</button>`;
             bodyHTML += `<div id="seccion-menu" style="scroll-margin-top: 80px;">`;
 
             if (esDomingo) {
-                bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical (S/ 30)</h5>`;
-                if (d.segundos) d.segundos.forEach(s => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', 30, 'segundo')"><i class="fas fa-star"></i> ${s.nombre}</button>`);
+                // TÍTULO DOMINGO
+                bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical</h5>`;
+                if (d.segundos) d.segundos.forEach(s => {
+                    let p = s.precio || 30; // Precio dinámico de Firebase o 30 por defecto
+                    bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', ${p}, 'segundo')"><i class="fas fa-star"></i> ${s.nombre} (S/ ${p.toFixed(2)})</button>`;
+                });
                 bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Humita', 4, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 4.00)</button>`;
             } else {
                 if (d.entradas && d.entradas.length > 0) {
@@ -319,8 +323,12 @@ async function cargarCartaDesdeWeb() {
                     bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Opciones de Entrada ${todosIguales ? `(S/ ${precios[0]})` : ''}</h5>`;
                     d.entradas.forEach(e => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${e.precio}, 'entrada')">${e.nombre} ${!todosIguales ? `(S/ ${e.precio})` : ''}</button>`);
                 }
-                bodyHTML += `<h5 class="fw-bold text-danger border-bottom mt-3">Segundos (S/ 15)</h5>`;
-                if (d.segundos) d.segundos.forEach(s => bodyHTML += `<button class="btn btn-danger w-100 mb-4 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('${s.nombre} (Segundo)', 15, 'segundo')">${s.nombre}</button>`);
+                // TÍTULO DÍAS DE SEMANA
+                bodyHTML += `<h5 class="fw-bold text-danger border-bottom mt-3">Segundos</h5>`;
+                if (d.segundos) d.segundos.forEach(s => {
+                    let p = s.precio || 15; // Precio dinámico de Firebase o 15 por defecto
+                    bodyHTML += `<button class="btn btn-danger w-100 mb-4 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('${s.nombre} (Segundo)', ${p}, 'segundo')">${s.nombre} (S/ ${p.toFixed(2)})</button>`;
+                });
             }
             bodyHTML += `</div>`; 
         }
@@ -328,7 +336,7 @@ async function cargarCartaDesdeWeb() {
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach((cat, index) => {
                 const catId = `seccion-carta-${index}`;
-                navHTML += `<button type="button" class="btn btn-outline-primary rounded-pill fw-bold px-4 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
+                navHTML += `<button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
                 bodyHTML += `<div id="${catId}" style="scroll-margin-top: 80px;"><h6 class="mt-2 fw-bold text-primary border-bottom fs-5">${cat.nombre}</h6><div class="row g-2 mb-4">`;
                 
                 cat.items.forEach(item => {
