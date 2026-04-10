@@ -15,20 +15,20 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// --- FUNCIÓN DE SANITIZACIÓN (XSS PROTECTION) ---
-function sanitizar(str) {
-    if (!str) return '';
-    const temp = document.createElement('div');
-    temp.textContent = str;
-    return temp.innerHTML;
-}
-
 let mesaSeleccionadaId = null; let mesasData = []; 
 const contenedorMesas = document.getElementById('contenedor-mesas'); const tituloMesa = document.getElementById('titulo-mesa'); const estadoMesa = document.getElementById('estado-mesa');
 const btnAgregarProducto = document.getElementById('btn-agregar-producto'); const btnTaper1 = document.getElementById('btn-taper-1'); const btnTaper2 = document.getElementById('btn-taper-2');
 const btnRefresco = document.getElementById('btn-refresco'); const btnCobrar = document.getElementById('btn-cobrar'); const totalCuenta = document.getElementById('total-cuenta'); const listaPedidos = document.getElementById('lista-pedidos');
 
 let modalProductosInstance = null; let itemsProhibidosDeCarta = []; 
+
+// --- FUNCIÓN DE SEGURIDAD (XSS PROTECTION) ---
+function sanitizar(str) {
+    if (!str) return '';
+    const temp = document.createElement('div');
+    temp.textContent = str;
+    return temp.innerHTML;
+}
 
 async function cargarItemsProhibidos() {
     try {
@@ -48,7 +48,9 @@ function esPlatoParaRanking(nombre) {
 
 // --- CEREBRO CAJA ---
 function calcularRecargoTaper(modalidad, categoria, nombre) {
-    if (modalidad === 'delivery') return 3; if (modalidad !== 'llevar') return 0;   
+    if (modalidad === 'delivery_centro') return 5;
+    if (modalidad === 'delivery') return 3; 
+    if (modalidad !== 'llevar') return 0;   
     const cats1Sol = ['Guarniciones', 'Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza', 'entrada'];
     if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) return 1; return 2; 
 }
@@ -74,7 +76,8 @@ function obtenerVistaPedido(pedido_actual) {
         let E = expE.shift(); let S = expS.shift();
         let recargo = 0; let modName = 'local'; let notaMod = '';
 
-        if (E.modalidad === 'delivery' || S.modalidad === 'delivery') { recargo = 3; modName = 'delivery'; if (E.modalidad !== S.modalidad) notaMod = ` (Mxt)`; } 
+        if (E.modalidad === 'delivery_centro' || S.modalidad === 'delivery_centro') { recargo = 5; modName = 'delivery_centro'; if (E.modalidad !== S.modalidad) notaMod = ` (Mxt)`; } 
+        else if (E.modalidad === 'delivery' || S.modalidad === 'delivery') { recargo = 3; modName = 'delivery'; if (E.modalidad !== S.modalidad) notaMod = ` (Mxt)`; } 
         else if (E.modalidad === 'llevar' && S.modalidad === 'llevar') { recargo = 2; modName = 'llevar'; } 
         else if (S.modalidad === 'llevar') { recargo = 2; modName = 'mixto'; notaMod = ` (S/Llevar)`; } 
         else if (E.modalidad === 'llevar') { recargo = 1; modName = 'mixto'; notaMod = ` (E/Llevar)`; }
@@ -130,12 +133,12 @@ function dibujarMesas() {
         const esVirtual = isNaN(mesa.numero); 
 
         let icono = esVirtual ? (String(mesa.numero).toLowerCase().includes('dlv') ? "fa-motorcycle text-info" : "fa-shopping-bag text-warning") : "fa-utensils";
-        let titulo = esVirtual ? sanitizar(mesa.numero) : `Mesa ${sanitizar(mesa.numero)}`;
+        let titulo = esVirtual ? mesa.numero : `Mesa ${mesa.numero}`;
 
         const cardHTML = `
             <div class="col-4 mb-3">
                 <div class="card mesa-card shadow-sm ${claseEstado} ${esSeleccionada} d-flex flex-column p-3" onclick="seleccionarMesa('${mesa.id}')" style="height: 140px; cursor: pointer;">
-                    <h3 class="fw-bold mb-1"><i class="fas ${icono} fs-5 me-1"></i> ${titulo}</h3>
+                    <h3 class="fw-bold mb-1"><i class="fas ${icono} fs-5 me-1"></i> ${sanitizar(titulo)}</h3>
                     <div><span class="badge bg-white text-dark mb-2 border shadow-sm">${esOcupada ? 'Ocupada' : 'Libre'}</span></div>
                     <div class="mt-auto border-top pt-2 d-flex justify-content-between align-items-center w-100">
                         <strong class="text-secondary small">${mesa.pedido_actual ? mesa.pedido_actual.length : 0} items</strong>
@@ -182,7 +185,13 @@ function actualizarComandera() {
             let btnColor = modalidad === 'llevar' ? 'btn-warning text-dark' : 'btn-outline-secondary';
             let iconMod = modalidad === 'llevar' ? 'fa-shopping-bag' : 'fa-store'; let textoMod = modalidad === 'llevar' ? 'Llevar' : 'Local';
 
-            if (modalidad === 'delivery') { badgeMod = `<span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">+S/${costoTaper} Delivery</span>`; btnColor = 'btn-info text-dark'; iconMod = 'fa-motorcycle'; textoMod = 'Delivery'; }
+            if (modalidad === 'delivery') { 
+                badgeMod = `<span class="badge bg-info text-dark ms-1" style="font-size:0.65rem;">+S/${costoTaper} Delivery</span>`; 
+                btnColor = 'btn-info text-dark'; iconMod = 'fa-motorcycle'; textoMod = 'Delivery'; 
+            } else if (modalidad === 'delivery_centro') {
+                badgeMod = `<span class="badge bg-primary text-white ms-1" style="font-size:0.65rem;">+S/${costoTaper} Centro</span>`; 
+                btnColor = 'btn-primary text-white'; iconMod = 'fa-map-marker-alt'; textoMod = 'Centro';
+            }
 
             let txtNota = item.nota ? `<br><span class="text-danger fw-bold fst-italic mt-1 d-block" style="font-size: 0.75rem;"><i class="fas fa-comment-dots"></i> ${sanitizar(item.nota)}</span>` : '';
 
@@ -264,7 +273,13 @@ window.modificarVistaCantidad = async (nombre, modalidad, cambio) => {
 window.cambiarModalidadVista = async (nombre, modalidad) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return; let pedido = [...mesa.pedido_actual];
-    let nuevaMod = modalidad === 'local' ? 'llevar' : (modalidad === 'llevar' ? 'delivery' : 'local');
+    
+    // Ciclo de modalidades: Local -> Llevar -> Delivery -> Delivery Centro -> Local
+    let nuevaMod;
+    if (modalidad === 'local') nuevaMod = 'llevar';
+    else if (modalidad === 'llevar') nuevaMod = 'delivery';
+    else if (modalidad === 'delivery') nuevaMod = 'delivery_centro';
+    else nuevaMod = 'local';
 
     if (nombre.startsWith('Menú Completo')) {
         let idxE = pedido.findIndex(i => i.categoria === 'entrada' && (i.modalidad||'local') === (modalidad==='mixto'?'local':modalidad));
@@ -329,19 +344,19 @@ async function cargarCartaDesdeWeb() {
                 bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Almuerzo Dominical</h5>`;
                 if (d.segundos) d.segundos.forEach(s => {
                     let p = s.precio || 30;
-                    bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Almuerzo: ${sanitizar(s.nombre)}', ${p}, 'segundo')"><i class="fas fa-star"></i> ${sanitizar(s.nombre)} (S/ ${p.toFixed(2)})</button>`;
+                    bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Almuerzo: ${s.nombre}', ${p}, 'segundo')"><i class="fas fa-star"></i> ${s.nombre} (S/ ${p.toFixed(2)})</button>`;
                 });
                 bodyHTML += `<button class="btn btn-outline-warning w-100 mb-3 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('Humita', 4, 'entrada')"><i class="fas fa-plus-circle"></i> Humita (S/ 4.00)</button>`;
             } else {
                 if (d.entradas && d.entradas.length > 0) {
                     const precios = d.entradas.map(e => e.precio); const todosIguales = precios.every(p => p === precios[0]);
                     bodyHTML += `<h5 class="fw-bold text-warning border-bottom">Opciones de Entrada ${todosIguales ? `(S/ ${precios[0]})` : ''}</h5>`;
-                    d.entradas.forEach(e => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('${sanitizar(e.nombre)} (Entrada)', ${e.precio}, 'entrada')">${sanitizar(e.nombre)} ${!todosIguales ? `(S/ ${e.precio})` : ''}</button>`);
+                    d.entradas.forEach(e => bodyHTML += `<button class="btn btn-warning w-100 mb-2 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('${e.nombre} (Entrada)', ${e.precio}, 'entrada')">${e.nombre} ${!todosIguales ? `(S/ ${e.precio})` : ''}</button>`);
                 }
                 bodyHTML += `<h5 class="fw-bold text-danger border-bottom mt-3">Segundos</h5>`;
                 if (d.segundos) d.segundos.forEach(s => {
                     let p = s.precio || 15;
-                    bodyHTML += `<button class="btn btn-danger w-100 mb-4 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('${sanitizar(s.nombre)} (Segundo)', ${p}, 'segundo')">${sanitizar(s.nombre)} (S/ ${p.toFixed(2)})</button>`;
+                    bodyHTML += `<button class="btn btn-danger w-100 mb-4 fw-bold text-start shadow-sm py-2" onclick="agregarAlPedido('${s.nombre} (Segundo)', ${p}, 'segundo')">${s.nombre} (S/ ${p.toFixed(2)})</button>`;
                 });
             }
             bodyHTML += `</div>`; 
@@ -350,17 +365,17 @@ async function cargarCartaDesdeWeb() {
         if(snapCarta.exists() && snapCarta.data().categorias) {
             snapCarta.data().categorias.forEach((cat, index) => {
                 const catId = `seccion-carta-${index}`;
-                navHTML += `<button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${sanitizar(cat.nombre)}</button>`;
-                bodyHTML += `<div id="${catId}" style="scroll-margin-top: 80px;"><h6 class="mt-2 fw-bold text-primary border-bottom fs-5">${sanitizar(cat.nombre)}</h6><div class="row g-2 mb-4">`;
+                navHTML += `<button type="button" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3 flex-shrink-0 shadow-sm" onclick="document.getElementById('${catId}').scrollIntoView({behavior: 'smooth', block: 'start'})">${cat.nombre}</button>`;
+                bodyHTML += `<div id="${catId}" style="scroll-margin-top: 80px;"><h6 class="mt-2 fw-bold text-primary border-bottom fs-5">${cat.nombre}</h6><div class="row g-2 mb-4">`;
                 
                 cat.items.forEach(item => {
                     const p1 = parseFloat(String(item.precio).replace(/[^0-9.]/g, '')) || 0;
                     if (item.precio2 && item.precio2 !== "-") {
                         const p2 = parseFloat(String(item.precio2).replace(/[^0-9.]/g, '')) || 0;
-                        bodyHTML += `<div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${sanitizar(item.nombre)} (${sanitizar(cat.col1)})', ${p1}, '${sanitizar(cat.nombre)}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${sanitizar(item.nombre)} <b class="text-primary">(${sanitizar(cat.col1)})</b></span><strong class="fs-6">S/ ${p1.toFixed(2)}</strong></button></div>
-                                     <div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${sanitizar(item.nombre)} (${sanitizar(cat.col2)})', ${p2}, '${sanitizar(cat.nombre)}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${sanitizar(item.nombre)} <b class="text-success">(${sanitizar(cat.col2)})</b></span><strong class="fs-6">S/ ${p2.toFixed(2)}</strong></button></div>`;
+                        bodyHTML += `<div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${item.nombre} (${cat.col1})', ${p1}, '${cat.nombre}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${item.nombre} <b class="text-primary">(${cat.col1})</b></span><strong class="fs-6">S/ ${p1.toFixed(2)}</strong></button></div>
+                                     <div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${item.nombre} (${cat.col2})', ${p2}, '${cat.nombre}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${item.nombre} <b class="text-success">(${cat.col2})</b></span><strong class="fs-6">S/ ${p2.toFixed(2)}</strong></button></div>`;
                     } else {
-                        bodyHTML += `<div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${sanitizar(item.nombre)}', ${p1}, '${sanitizar(cat.nombre)}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${sanitizar(item.nombre)}</span><strong class="fs-6">S/ ${p1.toFixed(2)}</strong></button></div>`;
+                        bodyHTML += `<div class="col-6"><button class="btn btn-outline-secondary w-100 text-start shadow-sm h-100 py-2" onclick="agregarAlPedido('${item.nombre}', ${p1}, '${cat.nombre}')"><span class="d-block lh-sm mb-1 fw-bold text-dark">${item.nombre}</span><strong class="fs-6">S/ ${p1.toFixed(2)}</strong></button></div>`;
                     }
                 });
                 bodyHTML += `</div></div>`; 
@@ -377,7 +392,7 @@ btnAgregarProducto.addEventListener('click', () => {
 
 window.agregarPlatoPersonalizado = () => {
     const n = prompt("Nombre del plato:"); const p = parseFloat(prompt("Precio (S/):"));
-    if (n && !isNaN(p)) agregarAlPedido(sanitizar(n) + " (Extra)", p, 'general');
+    if (n && !isNaN(p)) agregarAlPedido(n + " (Extra)", p, 'general');
 };
 
 window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
@@ -436,7 +451,6 @@ btnConfirmarCobro.addEventListener('click', async () => {
         
         await addDoc(collection(db, "ventas_historicas"), { mesa: mesa.numero, fecha: new Date(), items: vista, total_cobrado: totalACobrarActual, metodos_pago: datosMetodos });
         
-        // BORRAMOS LA NOTA GENERAL AL COBRAR LA MESA
         await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "libre", pedido_actual: [], total_consumo: 0, nota_general: "" });
         
         modalCobroInstance.hide();
@@ -459,7 +473,7 @@ async function cargarGastosHoy() {
         if (snap.empty) { listaGastos.innerHTML = "<div class='text-center text-muted small py-2'>No hay gastos registrados hoy.</div>"; return; }
         snap.forEach(documento => {
             const d = documento.data();
-            listaGastos.innerHTML += `<div class="d-flex justify-content-between align-items-center bg-white border shadow-sm p-2 rounded mb-1 animate__animated animate__fadeIn"><div><strong class="d-block text-dark small">${sanitizar(d.concepto)}</strong><span class="badge bg-secondary mt-1" style="font-size: 0.65rem;">${sanitizar(d.categoria)}</span></div><div class="d-flex align-items-center"><strong class="text-danger me-3 fw-bold">S/ ${d.monto.toFixed(2)}</strong><button class="btn btn-sm text-danger border-0 px-2" onclick="eliminarGasto('${documento.id}')"><i class="fas fa-trash-alt"></i></button></div></div>`;
+            listaGastos.innerHTML += `<div class="d-flex justify-content-between align-items-center bg-white border shadow-sm p-2 rounded mb-1 animate__animated animate__fadeIn"><div><strong class="d-block text-dark small">${sanitizar(d.concepto)}</strong><span class="badge bg-secondary mt-1" style="font-size: 0.65rem;">${d.categoria}</span></div><div class="d-flex align-items-center"><strong class="text-danger me-3 fw-bold">S/ ${d.monto.toFixed(2)}</strong><button class="btn btn-sm text-danger border-0 px-2" onclick="eliminarGasto('${documento.id}')"><i class="fas fa-trash-alt"></i></button></div></div>`;
         });
     } catch (error) { console.error(error); }
 }
@@ -574,7 +588,7 @@ async function cargarDatosDashboard(anioMes) {
         document.getElementById('rep-neta').innerText = `S/ ${gananciaNeta.toFixed(2)}`; document.getElementById('rep-neta').className = gananciaNeta < 0 ? "text-danger fw-bold m-0" : "text-white fw-bold m-0";
 
         let rankingArray = Object.keys(conteoPlatos).map(nombre => { return { nombre: nombre, cantidad: conteoPlatos[nombre] }; }); rankingArray.sort((a, b) => b.cantidad - a.cantidad);
-        const topN = 12; const labelsRanking = rankingArray.slice(0, topN).map(item => sanitizar(item.nombre)); const dataRanking = rankingArray.slice(0, topN).map(item => item.cantidad);
+        const topN = 12; const labelsRanking = rankingArray.slice(0, topN).map(item => item.nombre); const dataRanking = rankingArray.slice(0, topN).map(item => item.cantidad);
         dibujarGraficoFinanzas(labelsDias, dataIngresos, dataGastos); dibujarGraficoRanking(labelsRanking, dataRanking);
     } catch (error) { console.error("Error en dashboard:", error); }
 }
@@ -615,7 +629,7 @@ function enviarAImpresora(htmlContent, windowName) {
     }
 
     printWindow.document.write(`
-        <html><head><title>${sanitizar(windowName)}</title>
+        <html><head><title>${windowName}</title>
         <style>
             @page { margin: 0; }
             body { font-family: 'Courier New', Courier, monospace; width: 80mm; padding: 10px; margin: 0; color: #000; font-size: 16px; }
@@ -651,6 +665,7 @@ window.imprimirPreCuenta = () => {
         let modInfo = '';
         if (item.modalidad === 'llevar') modInfo = '<br><small><i>(Llevar)</i></small>';
         if (item.modalidad === 'delivery') modInfo = '<br><small><i>(Delivery)</i></small>';
+        if (item.modalidad === 'delivery_centro') modInfo = '<br><small><i>(Delivery Centro)</i></small>';
         if (item.modalidad === 'mixto') modInfo = '<br><small><i>(Taper)</i></small>';
         
         let txtNota = item.nota ? `<br><small style="color: #555;"><i>* ${sanitizar(item.nota)}</i></small>` : '';
@@ -681,7 +696,7 @@ window.imprimirComandasSeparadas = async () => {
     if (itemsCocina.length > 0) {
         htmlCocina = `<h2>** COCINA **</h2><h2>MESA ${sanitizar(mesa.numero)}</h2><p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}`;
         itemsCocina.forEach(item => {
-            let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
+            let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : (item.modalidad === 'delivery_centro' ? ' <b>[DEL. CENTRO]</b>' : ''));
             htmlCocina += `<div style="margin-top: 8px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${sanitizar(item.nombre)}${modLabel}</div>`;
             if (item.nota) htmlCocina += `<div style="font-size: 15px; font-style: italic; font-weight: bold; margin-bottom: 5px;">* NOTA: ${sanitizar(item.nota)}</div>`;
         });
@@ -691,7 +706,7 @@ window.imprimirComandasSeparadas = async () => {
     if (itemsBarra.length > 0) {
         htmlBarra = `<h2>** BARRA **</h2><h2>MESA ${sanitizar(mesa.numero)}</h2><p>${new Date().toLocaleString()}</p><hr>${notaGeneralHtml}`;
         itemsBarra.forEach(item => {
-            let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : '');
+            let modLabel = item.modalidad === 'llevar' ? ' <b>[LLEVAR]</b>' : (item.modalidad === 'delivery' ? ' <b>[DELIVERY]</b>' : (item.modalidad === 'delivery_centro' ? ' <b>[DEL. CENTRO]</b>' : ''));
             htmlBarra += `<div style="margin-top: 8px; font-weight: bold; font-size: 18px;">${item.cantidad}x ${sanitizar(item.nombre)}${modLabel}</div>`;
             if (item.nota) htmlBarra += `<div style="font-size: 15px; font-style: italic; font-weight: bold; margin-bottom: 5px;">* NOTA: ${sanitizar(item.nota)}</div>`;
         });
@@ -718,6 +733,7 @@ window.imprimirNotaVentaHTML = (mesaNum, itemsVista, total, metodos, notaGeneral
         let modInfo = '';
         if (item.modalidad === 'llevar') modInfo = '<br><small><i>(Llevar)</i></small>';
         if (item.modalidad === 'delivery') modInfo = '<br><small><i>(Delivery)</i></small>';
+        if (item.modalidad === 'delivery_centro') modInfo = '<br><small><i>(Delivery Centro)</i></small>';
         if (item.modalidad === 'mixto') modInfo = '<br><small><i>(Taper)</i></small>';
         
         let txtNota = item.nota ? `<br><small style="color: #555;"><i>* ${sanitizar(item.nota)}</i></small>` : '';
