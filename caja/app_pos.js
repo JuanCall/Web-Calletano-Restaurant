@@ -46,13 +46,47 @@ function esPlatoParaRanking(nombre) {
     if (itemsProhibidosDeCarta.includes(nombre)) return false; return true; 
 }
 
-// --- CEREBRO CAJA ---
+// --- CEREBRO CAJA Y MOZO UNIFICADO ---
 function calcularRecargoTaper(modalidad, categoria, nombre) {
     if (modalidad === 'delivery_centro') return 5;
     if (modalidad === 'delivery') return 3; 
     if (modalidad !== 'llevar') return 0;   
     const cats1Sol = ['Guarniciones', 'Jugos naturales', 'Bebidas heladas', 'Bebidas calientes', 'Cerveza', 'entrada'];
     if (cats1Sol.includes(categoria) || nombre.includes('(Entrada)') || nombre.includes('Humita')) return 1; return 2; 
+}
+
+function calcularTotalMesa(pedido) {
+    let total = 0; let combos = 0; let descuento = 0;
+    let no_domingo = new Date().getDay() !== 0;
+    let expE = []; let expS = []; let otros = [];
+
+    pedido.forEach(item => {
+        if (no_domingo && item.categoria === 'entrada') { for(let i=0; i<item.cantidad; i++) expE.push({...item, cantidad: 1}); } 
+        else if (no_domingo && item.categoria === 'segundo') { for(let i=0; i<item.cantidad; i++) expS.push({...item, cantidad: 1}); } 
+        else { for(let i=0; i<item.cantidad; i++) otros.push({...item, cantidad: 1}); }
+    });
+
+    while (expE.length > 0 && expS.length > 0) {
+        combos++; let E = expE.shift(); let S = expS.shift();
+        let recargo = 0;
+        if (E.modalidad === 'delivery_centro' || S.modalidad === 'delivery_centro') recargo = 5;
+        else if (E.modalidad === 'delivery' || S.modalidad === 'delivery') recargo = 3;
+        else if (E.modalidad === 'llevar' && S.modalidad === 'llevar') recargo = 2;
+        else if (S.modalidad === 'llevar') recargo = 2;
+        else if (E.modalidad === 'llevar') recargo = 1;
+
+        total += (15 + recargo);
+        let origE = E.precio + (E.modalidad === 'delivery_centro' ? 5 : (E.modalidad === 'delivery' ? 3 : (E.modalidad === 'llevar' ? 1 : 0)));
+        let origS = S.precio + (S.modalidad === 'delivery_centro' ? 5 : (S.modalidad === 'delivery' ? 3 : (S.modalidad === 'llevar' ? 2 : 0)));
+        descuento += (origE + origS) - (15 + recargo);
+    }
+
+    [...expE, ...expS, ...otros].forEach(item => {
+        let recargo = calcularRecargoTaper(item.modalidad, item.categoria, item.nombre);
+        total += (item.precio + recargo);
+    });
+
+    return { total, combos, descuento };
 }
 
 function obtenerVistaPedido(pedido_actual) {
@@ -169,7 +203,7 @@ function actualizarComandera() {
         listaPedidos.innerHTML = `<div class="text-center text-muted mt-5"><p>Agregue platos para abrir la mesa.</p></div>`; totalCuenta.innerText = "S/ 0.00"; btnCobrar.disabled = true;
     } else {
         estadoMesa.className = "badge bg-danger mt-2"; estadoMesa.innerText = "Ocupada";
-        let { vista, total } = obtenerVistaPedido(mesa.pedido_actual);
+        
         let itemsHTML = "";
 
         if (mesa.nota_general) {
@@ -179,7 +213,8 @@ function actualizarComandera() {
             </div>`;
         }
         
-        vista.forEach((item) => {
+        // AHORA MOSTRAMOS LOS PLATOS RAW COMO EL MOZO PARA PODER EDITAR MODALIDADES INDIVIDUALES
+        mesa.pedido_actual.forEach((item, index) => {
             const modalidad = item.modalidad || 'local'; const costoTaper = calcularRecargoTaper(modalidad, item.categoria, item.nombre);
             let badgeMod = modalidad === 'llevar' ? `<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">+S/${costoTaper} Llevar</span>` : '';
             let btnColor = modalidad === 'llevar' ? 'btn-warning text-dark' : 'btn-outline-secondary';
@@ -194,24 +229,37 @@ function actualizarComandera() {
             }
 
             let txtNota = item.nota ? `<br><span class="text-danger fw-bold fst-italic mt-1 d-block" style="font-size: 0.75rem;"><i class="fas fa-comment-dots"></i> ${sanitizar(item.nota)}</span>` : '';
+            
+            let badgeEnviado = item.estado_envio === 'enviado' ? `<span class="badge bg-success ms-1" style="font-size:0.6rem;"><i class="fas fa-check"></i> Cocina</span>` : '';
 
             itemsHTML += `
             <div class="d-flex flex-column border-bottom py-2">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <div style="width: 70%"><strong class="d-block text-dark small">${sanitizar(item.nombre)}</strong>${badgeMod}${txtNota}</div>
+                    <div style="width: 70%"><strong class="d-block text-dark small">${sanitizar(item.nombre)}</strong>${badgeMod}${badgeEnviado}${txtNota}</div>
                     <strong class="text-primary text-end" style="width: 30%">S/ ${item.subtotal.toFixed(2)}</strong>
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-1">
-                    <button class="btn btn-sm ${btnColor} px-2 py-0 fw-bold shadow-sm" onclick="cambiarModalidadVista('${item.nombre}', '${modalidad}')" style="border-radius: 12px; font-size: 0.75rem;"><i class="fas ${iconMod}"></i> ${textoMod}</button>
+                    <button class="btn btn-sm ${btnColor} px-2 py-0 fw-bold shadow-sm" onclick="cambiarModalidad(${index})" style="border-radius: 12px; font-size: 0.75rem;"><i class="fas ${iconMod}"></i> ${textoMod}</button>
                     <div class="d-flex align-items-center bg-light rounded shadow-sm border">
-                        <button class="btn btn-sm text-secondary px-2 py-0 fw-bold border-0" onclick="modificarVistaCantidad('${item.nombre}', '${modalidad}', -1)">-</button>
+                        <button class="btn btn-sm text-info px-2 py-0 fw-bold border-0 border-end" onclick="agregarNota(${index})" title="Agregar Nota"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm text-secondary px-2 py-0 fw-bold border-0" onclick="modificarCantidad(${index}, -1)">-</button>
                         <span class="mx-2 fw-bold" style="min-width: 12px; text-align: center;">${item.cantidad}</span>
-                        <button class="btn btn-sm text-primary px-2 py-0 fw-bold border-0" onclick="modificarVistaCantidad('${item.nombre}', '${modalidad}', 1)">+</button>
-                        <div class="border-start ms-1 ps-1"><button class="btn btn-sm text-danger border-0 px-2 py-0" onclick="eliminarVistaItem('${item.nombre}', '${modalidad}')"><i class="fas fa-trash-alt"></i></button></div>
+                        <button class="btn btn-sm text-primary px-2 py-0 fw-bold border-0" onclick="modificarCantidad(${index}, 1)">+</button>
+                        <div class="border-start ms-1 ps-1"><button class="btn btn-sm text-danger border-0 px-2 py-0" onclick="eliminarDelPedido(${index})"><i class="fas fa-trash-alt"></i></button></div>
                     </div>
                 </div>
             </div>`;
         });
+
+        let calc = calcularTotalMesa(mesa.pedido_actual);
+        
+        if(calc.combos > 0) {
+            itemsHTML += `
+            <div class="d-flex justify-content-between align-items-center bg-success bg-opacity-10 text-success p-2 mt-2 rounded border border-success border-opacity-25 shadow-sm">
+                <strong><i class="fas fa-gift me-1"></i> Promo: ${calc.combos} Menú(s) Armado(s)</strong>
+                <strong class="text-success fw-bold">-S/ ${calc.descuento.toFixed(2)}</strong>
+            </div>`;
+        }
 
         itemsHTML += `
         <div class="mt-3 mb-2 d-flex gap-2">
@@ -223,108 +271,64 @@ function actualizarComandera() {
             </button>
         </div>`;
 
-        listaPedidos.innerHTML = itemsHTML; totalCuenta.innerText = `S/ ${total.toFixed(2)}`; btnCobrar.disabled = false; 
+        listaPedidos.innerHTML = itemsHTML; totalCuenta.innerText = `S/ ${calc.total.toFixed(2)}`; btnCobrar.disabled = false; 
     }
 }
 
-// CORRECCIÓN VITAL: Forzar la actualización del subtotal real en la base de datos
-function recalcularSubtotalRaw(item) {
-    const recargo = calcularRecargoTaper(item.modalidad || 'local', item.categoria, item.nombre);
-    item.subtotal = item.cantidad * ((item.precio || 0) + recargo);
-}
-
-// BOTONES DE EDICIÓN CAJA
-window.modificarVistaCantidad = async (nombre, modalidad, cambio) => {
+// BOTONES DE EDICIÓN AL ESTILO MOZO
+window.agregarNota = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
-    if (!mesa) return; let pedido = [...mesa.pedido_actual];
-
-    if (cambio === -1) {
-        if (nombre.startsWith('Menú Completo')) {
-            let idxE = pedido.findIndex(i => i.categoria === 'entrada'); 
-            if(idxE > -1) { pedido[idxE].cantidad--; recalcularSubtotalRaw(pedido[idxE]); if(pedido[idxE].cantidad<=0) pedido.splice(idxE, 1); }
-            let idxS = pedido.findIndex(i => i.categoria === 'segundo'); 
-            if(idxS > -1) { pedido[idxS].cantidad--; recalcularSubtotalRaw(pedido[idxS]); if(pedido[idxS].cantidad<=0) pedido.splice(idxS, 1); }
-        } else {
-            let idx = pedido.findIndex(i => i.nombre === nombre && (i.modalidad||'local') === modalidad);
-            if (idx > -1) { pedido[idx].cantidad--; recalcularSubtotalRaw(pedido[idx]); if(pedido[idx].cantidad <= 0) pedido.splice(idx, 1); }
-        }
-    } else if (cambio === 1) {
-        if (nombre.startsWith('Menú Completo')) {
-            let mod = modalidad === 'mixto' ? 'local' : modalidad;
-            pedido.push({nombre: 'Menú Completo', precio: 15, cantidad: 1, modalidad: mod, categoria: 'menu', subtotal: 15 + calcularRecargoTaper(mod, 'menu', 'Menú Completo')});
-        } else {
-            let idx = pedido.findIndex(i => i.nombre === nombre && (i.modalidad||'local') === modalidad);
-            if (idx > -1) {
-                pedido[idx].cantidad++; 
-                recalcularSubtotalRaw(pedido[idx]);
-            } else {
-                let platoBase = pedido.find(i => i.nombre === nombre);
-                if(platoBase) {
-                     let recargo = calcularRecargoTaper(modalidad, platoBase.categoria, platoBase.nombre);
-                     pedido.push({nombre: nombre, precio: platoBase.precio, cantidad: 1, modalidad: modalidad, subtotal: platoBase.precio + recargo, categoria: platoBase.categoria});
-                }
-            }
-        }
-    }
-    let { total } = obtenerVistaPedido(pedido);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: pedido.length === 0 ? "libre" : "ocupada", pedido_actual: pedido, total_consumo: total }); } catch (e) {}
+    if (!mesa) return;
+    let nuevoPedido = [...mesa.pedido_actual];
+    let notaActual = nuevoPedido[index].nota || "";
+    let nuevaNota = prompt(`Comentario para: ${nuevoPedido[index].nombre}\n(Ej: sin aji, tapers separados, poca sal)`, notaActual);
+    if (nuevaNota !== null) { nuevoPedido[index].nota = nuevaNota.trim(); try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido }); } catch (e) { console.error(e); } }
 };
 
-window.cambiarModalidadVista = async (nombre, modalidad) => {
+window.modificarCantidad = async (index, cambio) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
-    if (!mesa) return; let pedido = [...mesa.pedido_actual];
+    if (!mesa) return; let nuevoPedido = [...mesa.pedido_actual];
+    nuevoPedido[index].cantidad += cambio;
+    if (nuevoPedido[index].cantidad <= 0) nuevoPedido.splice(index, 1);
+    else {
+        const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
+        nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
+    }
+    let calc = calcularTotalMesa(nuevoPedido);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) { console.error(e); }
+};
+
+window.cambiarModalidad = async (index) => {
+    const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
+    if (!mesa) return; let nuevoPedido = [...mesa.pedido_actual];
+    let modActual = nuevoPedido[index].modalidad || 'local';
     
-    // Ciclo de modalidades: Local -> Llevar -> Delivery -> Delivery Centro -> Local
-    let nuevaMod;
-    if (modalidad === 'local') nuevaMod = 'llevar';
-    else if (modalidad === 'llevar') nuevaMod = 'delivery';
-    else if (modalidad === 'delivery') nuevaMod = 'delivery_centro';
-    else nuevaMod = 'local';
+    if (modActual === 'local') nuevoPedido[index].modalidad = 'llevar';
+    else if (modActual === 'llevar') nuevoPedido[index].modalidad = 'delivery';
+    else if (modActual === 'delivery') nuevoPedido[index].modalidad = 'delivery_centro';
+    else nuevoPedido[index].modalidad = 'local';
 
-    if (nombre.startsWith('Menú Completo')) {
-        let idxE = pedido.findIndex(i => i.categoria === 'entrada' && (i.modalidad||'local') === (modalidad==='mixto'?'local':modalidad));
-        let idxS = pedido.findIndex(i => i.categoria === 'segundo');
-        if (idxE > -1) { 
-            if(pedido[idxE].cantidad>1){
-                pedido[idxE].cantidad--; recalcularSubtotalRaw(pedido[idxE]); 
-                let nItem = {...pedido[idxE], cantidad:1, modalidad:nuevaMod}; recalcularSubtotalRaw(nItem); pedido.push(nItem);
-            } else { pedido[idxE].modalidad=nuevaMod; recalcularSubtotalRaw(pedido[idxE]); } 
-        }
-        if (idxS > -1) { 
-            if(pedido[idxS].cantidad>1){
-                pedido[idxS].cantidad--; recalcularSubtotalRaw(pedido[idxS]);
-                let nItem = {...pedido[idxS], cantidad:1, modalidad:nuevaMod}; recalcularSubtotalRaw(nItem); pedido.push(nItem);
-            } else { pedido[idxS].modalidad=nuevaMod; recalcularSubtotalRaw(pedido[idxS]); } 
-        }
-    } else {
-        let idx = pedido.findIndex(i => i.nombre === nombre && (i.modalidad||'local') === modalidad);
-        if (idx > -1) { 
-            if(pedido[idx].cantidad>1){
-                pedido[idx].cantidad--; recalcularSubtotalRaw(pedido[idx]);
-                let nItem = {...pedido[idx], cantidad:1, modalidad:nuevaMod}; recalcularSubtotalRaw(nItem); pedido.push(nItem);
-            } else { pedido[idx].modalidad=nuevaMod; recalcularSubtotalRaw(pedido[idx]); } 
-        }
+    const recargo = calcularRecargoTaper(nuevoPedido[index].modalidad, nuevoPedido[index].categoria, nuevoPedido[index].nombre);
+    nuevoPedido[index].subtotal = nuevoPedido[index].cantidad * (nuevoPedido[index].precio + recargo);
+
+    let idxExistente = nuevoPedido.findIndex((i, pos) => i.nombre === nuevoPedido[index].nombre && (i.modalidad || 'local') === nuevoPedido[index].modalidad && i.estado_envio !== 'enviado' && (i.nota||'') === (nuevoPedido[index].nota||'') && pos !== index);
+    if (idxExistente > -1) {
+        nuevoPedido[idxExistente].cantidad += nuevoPedido[index].cantidad;
+        nuevoPedido[idxExistente].subtotal += nuevoPedido[index].subtotal;
+        nuevoPedido.splice(index, 1);
     }
-    let { total } = obtenerVistaPedido(pedido);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: pedido, total_consumo: total }); } catch (e) {}
+    
+    let calc = calcularTotalMesa(nuevoPedido);
+    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { pedido_actual: nuevoPedido, total_consumo: calc.total }); } catch (e) {}
 };
 
-window.eliminarVistaItem = async (nombre, modalidad) => {
+window.eliminarDelPedido = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
-    if (!mesa || !confirm("¿Eliminar plato(s)?")) return; let pedido = [...mesa.pedido_actual];
-    if (nombre.startsWith('Menú Completo')) {
-        let cantE = pedido.filter(i => i.categoria === 'entrada').reduce((a,b)=>a+b.cantidad,0); let cantS = pedido.filter(i => i.categoria === 'segundo').reduce((a,b)=>a+b.cantidad,0);
-        let eFormar = Math.min(cantE, cantS); let sFormar = eFormar;
-        for(let i=pedido.length-1; i>=0; i--) { 
-            if (pedido[i].categoria==='entrada') { let restar = Math.min(pedido[i].cantidad, eFormar); pedido[i].cantidad-=restar; recalcularSubtotalRaw(pedido[i]); eFormar-=restar; if(pedido[i].cantidad<=0) pedido.splice(i, 1); } 
-        }
-        for(let i=pedido.length-1; i>=0; i--) { 
-            if (pedido[i].categoria==='segundo') { let restar = Math.min(pedido[i].cantidad, sFormar); pedido[i].cantidad-=restar; recalcularSubtotalRaw(pedido[i]); sFormar-=restar; if(pedido[i].cantidad<=0) pedido.splice(i, 1); } 
-        }
-    } else { pedido = pedido.filter(i => !(i.nombre === nombre && (i.modalidad||'local') === modalidad)); }
-    let { total } = obtenerVistaPedido(pedido);
-    try { await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: pedido.length === 0 ? "libre" : "ocupada", pedido_actual: pedido, total_consumo: total }); } catch (e) {}
+    if (!mesa || !confirm("¿Eliminar plato?")) return; let nuevoPedido = [...mesa.pedido_actual];
+    nuevoPedido.splice(index, 1); let calc = calcularTotalMesa(nuevoPedido);
+    await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: nuevoPedido.length === 0 ? "libre" : "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
 };
+
 
 async function cargarCartaDesdeWeb() {
     try {
@@ -399,13 +403,16 @@ window.agregarAlPedido = async (nombre, precio, categoria = 'general') => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return; let nuevoPedido = mesa.pedido_actual ? [...mesa.pedido_actual] : [];
     
-    let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local' && !i.nota);
-    if (idx > -1) { nuevoPedido[idx].cantidad += 1; recalcularSubtotalRaw(nuevoPedido[idx]); } 
-    else { nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio) }); }
+    let idx = nuevoPedido.findIndex(i => i.nombre === nombre && (i.modalidad || 'local') === 'local' && i.estado_envio !== 'enviado' && !i.nota);
+    if (idx > -1) { 
+        nuevoPedido[idx].cantidad += 1; 
+        nuevoPedido[idx].subtotal = nuevoPedido[idx].cantidad * nuevoPedido[idx].precio; 
+    } 
+    else { nuevoPedido.push({ nombre: nombre, precio: parseFloat(precio), cantidad: 1, modalidad: 'local', categoria: categoria, subtotal: parseFloat(precio), estado_envio: 'pendiente' }); }
     
-    let { total } = obtenerVistaPedido(nuevoPedido);
+    let calc = calcularTotalMesa(nuevoPedido);
     try { 
-        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: total });
+        await updateDoc(doc(db, "mesas_pos", mesa.id), { estado: "ocupada", pedido_actual: nuevoPedido, total_consumo: calc.total });
         
         const toast = document.createElement('div');
         toast.className = 'position-fixed top-0 start-50 translate-middle-x p-3 mt-5';
@@ -447,6 +454,7 @@ btnConfirmarCobro.addEventListener('click', async () => {
 
     try {
         const datosMetodos = { efectivo: parseFloat(document.getElementById('pago-efectivo').value) || 0, yape: parseFloat(document.getElementById('pago-yape').value) || 0, plin: parseFloat(document.getElementById('pago-plin').value) || 0, tarjeta: parseFloat(document.getElementById('pago-tarjeta').value) || 0 };
+        // FUSIÓN MÁGICA: Para las ventas históricas sí guardamos "Menu Completo"
         let { vista } = obtenerVistaPedido(mesa.pedido_actual);
         
         await addDoc(collection(db, "ventas_historicas"), { mesa: mesa.numero, fecha: new Date(), items: vista, total_cobrado: totalACobrarActual, metodos_pago: datosMetodos });
@@ -651,6 +659,7 @@ window.imprimirPreCuenta = () => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa || !mesa.pedido_actual || mesa.pedido_actual.length === 0) return;
 
+    // FUSIÓN MÁGICA: Para el cliente sí imprimimos "Menú Completo"
     let { vista, total } = obtenerVistaPedido(mesa.pedido_actual);
     let notaGeneralHtml = mesa.nota_general ? `<div style="border: 1px dashed #000; padding: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; text-transform: uppercase;">📝 ${sanitizar(mesa.nota_general)}</div>` : '';
 
