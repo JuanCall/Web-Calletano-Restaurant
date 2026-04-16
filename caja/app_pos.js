@@ -41,7 +41,7 @@ async function cargarItemsProhibidos() {
 }
 
 function esPlatoParaRanking(nombre) {
-    const terminosBase = ['Taper', 'Refresco', '(Extra)'];
+    const terminosBase = ['Taper', 'Refresco', '(Extra)', '(Entrada)', '(Segundo)', 'Humita'];
     if (terminosBase.some(t => nombre.includes(t))) return false;
     if (itemsProhibidosDeCarta.includes(nombre)) return false; return true; 
 }
