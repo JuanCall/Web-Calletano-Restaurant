@@ -70,6 +70,19 @@
       "url": "https://calletano-restaurant.web.app/"
     }
     </script>
+    <script type="speculationrules">
+    {
+    "prerender": [{
+        "where": {
+        "and": [
+            { "href_matches": "/*" },
+            { "not": { "href_matches": "/*admin-secreto.html" } }
+        ]
+        },
+        "eagerness": "moderate"
+    }]
+    }
+    </script>
 </head>
 <body>
 

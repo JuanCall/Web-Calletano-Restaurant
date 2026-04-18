@@ -1,10 +1,17 @@
 {
   "hosting": {
-    "public": ".",
+    "public": "public", 
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "**/venv/**",
+      "**/*.py",
+      "**/*.pyc",
+      "requirements.txt",
+      "firebase-debug.log",
+      "**/*-adminsdk-*.json",
+      "**/credentials/**"
     ],
     "rewrites": [
       {
