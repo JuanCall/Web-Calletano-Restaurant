@@ -213,7 +213,6 @@ function actualizarComandera() {
             </div>`;
         }
         
-        // AHORA MOSTRAMOS LOS PLATOS RAW COMO EL MOZO PARA PODER EDITAR MODALIDADES INDIVIDUALES
         mesa.pedido_actual.forEach((item, index) => {
             const modalidad = item.modalidad || 'local'; const costoTaper = calcularRecargoTaper(modalidad, item.categoria, item.nombre);
             let badgeMod = modalidad === 'llevar' ? `<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem;">+S/${costoTaper} Llevar</span>` : '';
@@ -275,7 +274,12 @@ function actualizarComandera() {
     }
 }
 
-// BOTONES DE EDICIÓN AL ESTILO MOZO
+// CORRECCIÓN VITAL: Forzar la actualización del subtotal real en la base de datos
+function recalcularSubtotalRaw(item) {
+    const recargo = calcularRecargoTaper(item.modalidad || 'local', item.categoria, item.nombre);
+    item.subtotal = item.cantidad * ((item.precio || 0) + recargo);
+}
+
 window.agregarNota = async (index) => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa) return;
@@ -468,6 +472,97 @@ btnConfirmarCobro.addEventListener('click', async () => {
 });
 
 // =========================================================
+// HISTORIAL DE VENTAS (NUEVO)
+// =========================================================
+let modalHistorialInstance = null; 
+const btnHistorialVentas = document.getElementById('btn-historial-ventas');
+const inputFiltroVentas = document.getElementById('filtro-fecha-ventas');
+
+btnHistorialVentas?.addEventListener('click', () => {
+    if (!modalHistorialInstance) modalHistorialInstance = new bootstrap.Modal(document.getElementById('modalHistorial'));
+    
+    const hoy = new Date();
+    const mesStr = String(hoy.getMonth() + 1).padStart(2, '0');
+    const diaStr = String(hoy.getDate()).padStart(2, '0');
+    if (!inputFiltroVentas.value) {
+        inputFiltroVentas.value = `${hoy.getFullYear()}-${mesStr}-${diaStr}`;
+    }
+    
+    cargarHistorialVentas(inputFiltroVentas.value);
+    modalHistorialInstance.show();
+});
+
+inputFiltroVentas?.addEventListener('change', (e) => {
+    cargarHistorialVentas(e.target.value);
+});
+
+async function cargarHistorialVentas(fechaStr) {
+    const listaVentas = document.getElementById('lista-ventas-historicas');
+    if (!listaVentas || !fechaStr) return;
+    
+    const partes = fechaStr.split('-'); 
+    if(partes.length !== 3) return;
+
+    const inicioDia = new Date(partes[0], partes[1] - 1, partes[2]); inicioDia.setHours(0, 0, 0, 0);
+    const finDia = new Date(partes[0], partes[1] - 1, partes[2]); finDia.setHours(23, 59, 59, 999);
+
+    listaVentas.innerHTML = "<div class='text-center text-muted py-3'><div class='spinner-border spinner-border-sm text-primary'></div> Cargando ventas...</div>";
+
+    const q = query(collection(db, "ventas_historicas"), where("fecha", ">=", inicioDia), where("fecha", "<=", finDia));
+    try {
+        const snap = await getDocs(q);
+        if (snap.empty) { 
+            listaVentas.innerHTML = "<div class='text-center text-muted py-4'><i class='fas fa-receipt fa-2x mb-2 opacity-50 d-block'></i>No hay ventas registradas en esta fecha.</div>"; 
+            return; 
+        }
+        
+        let ventasArray = [];
+        snap.forEach(doc => ventasArray.push({id: doc.id, ...doc.data()}));
+        ventasArray.sort((a,b) => b.fecha.seconds - a.fecha.seconds); // Ordenar de más reciente a más antigua
+
+        let html = "";
+        ventasArray.forEach(v => {
+            const hora = v.fecha.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            let itemsResumen = v.items ? v.items.map(i => `${i.cantidad}x ${sanitizar(i.nombre)}`).join(", ") : "Sin detalle de platos";
+            
+            html += `
+            <div class="bg-white p-3 rounded border shadow-sm mb-2 d-flex justify-content-between align-items-center">
+                <div style="width: 75%;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge bg-dark"><i class="fas fa-clock"></i> ${hora}</span>
+                        <strong class="text-primary fs-6">Mesa ${sanitizar(v.mesa)}</strong>
+                    </div>
+                    <p class="mb-0 small text-muted text-truncate" title="${itemsResumen}">${itemsResumen}</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <h5 class="fw-bold text-success m-0">S/ ${(v.total_cobrado||0).toFixed(2)}</h5>
+                    <button class="btn btn-outline-danger btn-sm rounded-circle" onclick="eliminarVentaHistorica('${v.id}')" title="Eliminar Venta">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>`;
+        });
+        listaVentas.innerHTML = html;
+    } catch (error) { 
+        console.error("Error al cargar historial:", error); 
+        listaVentas.innerHTML = "<div class='text-danger text-center fw-bold py-3'>Error de permisos. Acceso denegado.</div>"; 
+    }
+}
+
+window.eliminarVentaHistorica = async (id) => {
+    if (confirm("⚠️ ¿Estás seguro de ELIMINAR esta venta registrada?\n\nAl borrarla, se descontará automáticamente del arqueo y reportes del día.")) {
+        try {
+            await deleteDoc(doc(db, "ventas_historicas", id));
+            cargarHistorialVentas(document.getElementById('filtro-fecha-ventas').value);
+            alert("Venta eliminada con éxito.");
+        } catch (error) {
+            console.error(error);
+            alert("❌ No tienes permiso para eliminar ventas.\n\nSegún la política Antifraude, solo la cuenta de Administrador puede realizar esta acción.");
+        }
+    }
+};
+
+// =========================================================
 //  6. REGISTRO DE GASTOS Y ARQUEO FINAL
 // =========================================================
 let modalGastoInstance = null; const btnNuevoGasto = document.getElementById('btn-nuevo-gasto'); const btnGuardarGasto = document.getElementById('btn-guardar-gasto');
@@ -595,9 +690,27 @@ async function cargarDatosDashboard(anioMes) {
         document.getElementById('rep-ingresos').innerText = `S/ ${totalIngresos.toFixed(2)}`; document.getElementById('rep-gastos').innerText = `S/ ${totalGastos.toFixed(2)}`;
         document.getElementById('rep-neta').innerText = `S/ ${gananciaNeta.toFixed(2)}`; document.getElementById('rep-neta').className = gananciaNeta < 0 ? "text-danger fw-bold m-0" : "text-white fw-bold m-0";
 
-        let rankingArray = Object.keys(conteoPlatos).map(nombre => { return { nombre: nombre, cantidad: conteoPlatos[nombre] }; }); rankingArray.sort((a, b) => b.cantidad - a.cantidad);
-        const topN = 12; const labelsRanking = rankingArray.slice(0, topN).map(item => item.nombre); const dataRanking = rankingArray.slice(0, topN).map(item => item.cantidad);
-        dibujarGraficoFinanzas(labelsDias, dataIngresos, dataGastos); dibujarGraficoRanking(labelsRanking, dataRanking);
+        let rankingArray = Object.keys(conteoPlatos).map(nombre => { return { nombre: nombre, cantidad: conteoPlatos[nombre] }; }); 
+        rankingArray.sort((a, b) => b.cantidad - a.cantidad);
+        
+        // Asignar el Top 1 a la tarjeta destacada
+        const top1Nombre = document.getElementById('top1-nombre');
+        const top1Cant = document.getElementById('top1-cant');
+        if (rankingArray.length > 0) {
+            top1Nombre.innerText = sanitizar(rankingArray[0].nombre);
+            top1Cant.innerText = `${rankingArray[0].cantidad} vendidos`;
+        } else {
+            top1Nombre.innerText = "Sin Datos";
+            top1Cant.innerText = "0 vendidos";
+        }
+
+        // Asignar el resto al gráfico circular (Del puesto 2 al 11)
+        const restoRanking = rankingArray.slice(1, 11);
+        const labelsRanking = restoRanking.map(item => item.nombre); 
+        const dataRanking = restoRanking.map(item => item.cantidad);
+        
+        dibujarGraficoFinanzas(labelsDias, dataIngresos, dataGastos); 
+        dibujarGraficoRanking(labelsRanking, dataRanking);
     } catch (error) { console.error("Error en dashboard:", error); }
 }
 
@@ -605,9 +718,43 @@ function dibujarGraficoFinanzas(labels, dataIngresos, dataGastos) {
     const ctx = document.getElementById('graficoFinanciero').getContext('2d'); if (chartFinanzasInstance) chartFinanzasInstance.destroy();
     chartFinanzasInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [ { label: 'Ingresos (S/)', data: dataIngresos, borderColor: '#198754', backgroundColor: 'rgba(25, 135, 84, 0.15)', borderWidth: 3, fill: true, tension: 0.4 }, { label: 'Gastos (S/)', data: dataGastos, borderColor: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.1)', borderWidth: 3, fill: true, tension: 0.4 } ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { tooltip: { callbacks: { label: function(context) { return ` ${context.dataset.label}: S/ ${context.parsed.y.toFixed(2)}`; } } } } } });
 }
+
 function dibujarGraficoRanking(labels, dataCants) {
-    const ctx = document.getElementById('graficoRanking').getContext('2d'); if (chartRankingInstance) chartRankingInstance.destroy();
-    chartRankingInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Cantidades Vendidas', data: dataCants, backgroundColor: 'rgba(255, 193, 7, 0.7)', borderColor: '#ffc107', borderWidth: 1, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(context) { return ` Vendidos: ${context.parsed.x} unidades`; } } } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } }, y: { ticks: { font: { weight: 'bold' } } } } } });
+    const ctx = document.getElementById('graficoRanking').getContext('2d'); 
+    if (chartRankingInstance) chartRankingInstance.destroy();
+    
+    if (labels.length === 0) return; // Evitar dibujar si no hay datos secundarios
+
+    chartRankingInstance = new Chart(ctx, { 
+        type: 'doughnut', 
+        data: { 
+            labels: labels, 
+            datasets: [{ 
+                label: 'Vendidos', 
+                data: dataCants, 
+                backgroundColor: [
+                    '#17a2b8', '#20c997', '#0d6efd', '#6f42c1', '#d63384', 
+                    '#fd7e14', '#198754', '#dc3545', '#6c757d', '#adb5bd'
+                ], 
+                borderWidth: 2,
+                hoverOffset: 4
+            }] 
+        }, 
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { 
+                    position: 'right', 
+                    labels: { boxWidth: 12, font: {size: 11} } 
+                }, 
+                tooltip: { 
+                    callbacks: { label: function(context) { return ` ${context.label}: ${context.parsed} unidades`; } } 
+                } 
+            },
+            cutout: '60%' // Groso del anillo
+        } 
+    });
 }
 
 // =========================================================
