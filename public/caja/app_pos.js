@@ -457,8 +457,16 @@ btnConfirmarCobro.addEventListener('click', async () => {
     btnConfirmarCobro.disabled = true; btnConfirmarCobro.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
 
     try {
-        const datosMetodos = { efectivo: parseFloat(document.getElementById('pago-efectivo').value) || 0, yape: parseFloat(document.getElementById('pago-yape').value) || 0, plin: parseFloat(document.getElementById('pago-plin').value) || 0, tarjeta: parseFloat(document.getElementById('pago-tarjeta').value) || 0 };
-        // FUSIÓN MÁGICA: Para las ventas históricas sí guardamos "Menu Completo"
+        let ef = parseFloat(document.getElementById('pago-efectivo').value) || 0;
+        let yp = parseFloat(document.getElementById('pago-yape').value) || 0;
+        let pl = parseFloat(document.getElementById('pago-plin').value) || 0;
+        let tr = parseFloat(document.getElementById('pago-tarjeta').value) || 0;
+
+        // CORRECCIÓN DEL VUELTO: Se resta el exceso del ingreso en efectivo
+        let vuelto = (ef + yp + pl + tr) - totalACobrarActual;
+        if (vuelto > 0) ef -= vuelto;
+
+        const datosMetodos = { efectivo: ef, yape: yp, plin: pl, tarjeta: tr };
         let { vista } = obtenerVistaPedido(mesa.pedido_actual);
         
         await addDoc(collection(db, "ventas_historicas"), { mesa: mesa.numero, fecha: new Date(), items: vista, total_cobrado: totalACobrarActual, metodos_pago: datosMetodos });
@@ -518,7 +526,7 @@ async function cargarHistorialVentas(fechaStr) {
         
         let ventasArray = [];
         snap.forEach(doc => ventasArray.push({id: doc.id, ...doc.data()}));
-        ventasArray.sort((a,b) => b.fecha.seconds - a.fecha.seconds); // Ordenar de más reciente a más antigua
+        ventasArray.sort((a,b) => b.fecha.seconds - a.fecha.seconds);
 
         let html = "";
         ventasArray.forEach(v => {
@@ -639,7 +647,22 @@ async function generarArqueo(fechaFiltro) {
         const [ventasSnap, gastosSnap] = await Promise.all([getDocs(qVentas), getDocs(qGastos)]);
         let totEfectivo = 0, totYape = 0, totPlin = 0, totTarjeta = 0, totalGastos = 0;
 
-        ventasSnap.forEach((doc) => { const data = doc.data(); if (data.metodos_pago) { totEfectivo += data.metodos_pago.efectivo || 0; totYape += data.metodos_pago.yape || 0; totPlin += data.metodos_pago.plin || 0; totTarjeta += data.metodos_pago.tarjeta || 0; } });
+        ventasSnap.forEach((doc) => { 
+            const data = doc.data(); 
+            if (data.metodos_pago) { 
+                let ef = data.metodos_pago.efectivo || 0;
+                let yp = data.metodos_pago.yape || 0;
+                let pl = data.metodos_pago.plin || 0;
+                let tr = data.metodos_pago.tarjeta || 0;
+
+                // PARCHE RETROACTIVO: Si la suma de pagos es mayor al total, restamos el exceso del efectivo.
+                let exceso = (ef + yp + pl + tr) - (data.total_cobrado || 0);
+                if (exceso > 0) ef -= exceso;
+
+                totEfectivo += ef; totYape += yp; totPlin += pl; totTarjeta += tr; 
+            } 
+        });
+
         gastosSnap.forEach((doc) => { totalGastos += doc.data().monto || 0; });
         const totalIngresos = totEfectivo + totYape + totPlin + totTarjeta;
         
