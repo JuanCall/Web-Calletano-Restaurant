@@ -30,6 +30,15 @@ function sanitizar(str) {
     return temp.innerHTML;
 }
 
+// --- NORMALIZACIÓN DE NOMBRES (Corrector de dobles espacios y mayúsculas) ---
+function normalizarNombrePlato(nombre) {
+    if (!nombre) return "DESCONOCIDO";
+    // 1. Mayúsculas 2. Reemplaza dobles/triples espacios por 1 solo 3. Quita espacios al inicio/final
+    let norm = nombre.toUpperCase().replace(/\s+/g, ' ').trim();
+    if (norm.startsWith('MENÚ COMPLETO')) return 'MENÚ COMPLETO';
+    return norm;
+}
+
 async function cargarItemsProhibidos() {
     try {
         const snapCarta = await getDoc(doc(db, "contenido", "cartaCompleta"));
@@ -274,7 +283,6 @@ function actualizarComandera() {
     }
 }
 
-// CORRECCIÓN VITAL: Forzar la actualización del subtotal real en la base de datos
 function recalcularSubtotalRaw(item) {
     const recargo = calcularRecargoTaper(item.modalidad || 'local', item.categoria, item.nombre);
     item.subtotal = item.cantidad * ((item.precio || 0) + recargo);
@@ -462,7 +470,6 @@ btnConfirmarCobro.addEventListener('click', async () => {
         let pl = parseFloat(document.getElementById('pago-plin').value) || 0;
         let tr = parseFloat(document.getElementById('pago-tarjeta').value) || 0;
 
-        // CORRECCIÓN DEL VUELTO: Se resta el exceso del ingreso en efectivo
         let vuelto = (ef + yp + pl + tr) - totalACobrarActual;
         if (vuelto > 0) ef -= vuelto;
 
@@ -480,7 +487,7 @@ btnConfirmarCobro.addEventListener('click', async () => {
 });
 
 // =========================================================
-// HISTORIAL DE VENTAS (NUEVO)
+// HISTORIAL DE VENTAS
 // =========================================================
 let modalHistorialInstance = null; 
 const btnHistorialVentas = document.getElementById('btn-historial-ventas');
@@ -655,7 +662,6 @@ async function generarArqueo(fechaFiltro) {
                 let pl = data.metodos_pago.plin || 0;
                 let tr = data.metodos_pago.tarjeta || 0;
 
-                // PARCHE RETROACTIVO: Si la suma de pagos es mayor al total, restamos el exceso del efectivo.
                 let exceso = (ef + yp + pl + tr) - (data.total_cobrado || 0);
                 if (exceso > 0) ef -= exceso;
 
@@ -673,7 +679,18 @@ async function generarArqueo(fechaFiltro) {
         document.getElementById('arq-neta').className = (totalIngresos - totalGastos) < 0 ? "text-danger fw-bold m-0" : "text-success fw-bold m-0";
         
         let conteoPlatosHoy = {};
-        ventasSnap.forEach((doc) => { const data = doc.data(); if (data.items) { data.items.forEach(item => { if (esPlatoParaRanking(item.nombre)) conteoPlatosHoy[item.nombre] = (conteoPlatosHoy[item.nombre] || 0) + item.cantidad; }); } });
+        ventasSnap.forEach((doc) => { 
+            const data = doc.data(); 
+            if (data.items) { 
+                data.items.forEach(item => { 
+                    if (esPlatoParaRanking(item.nombre)) { 
+                        // NORMALIZACIÓN APLICADA AQUÍ
+                        let nombreNorm = normalizarNombrePlato(item.nombre);
+                        conteoPlatosHoy[nombreNorm] = (conteoPlatosHoy[nombreNorm] || 0) + item.cantidad; 
+                    } 
+                }); 
+            } 
+        });
         
         let rankingHoy = Object.keys(conteoPlatosHoy).map(n => ({ nombre: n, cant: conteoPlatosHoy[n] })).sort((a, b) => b.cant - a.cant).slice(0, 5);
         const containerTop = document.getElementById('arq-top-platos'); 
@@ -685,7 +702,7 @@ async function generarArqueo(fechaFiltro) {
 // =========================================================
 //  7. DASHBOARD GRÁFICO (CHART.JS) Y RANKING
 // =========================================================
-let modalReportesInstance = null; let chartFinanzasInstance = null; let chartRankingInstance = null; const btnReportes = document.getElementById('btn-reportes'); const inputFiltroMes = document.getElementById('filtro-mes-reporte');
+let modalReportesInstance = null; let chartFinanzasInstance = null; let chartRankingAlmuerzosInstance = null; let chartRankingCartaInstance = null; const btnReportes = document.getElementById('btn-reportes'); const inputFiltroMes = document.getElementById('filtro-mes-reporte');
 btnReportes.addEventListener('click', () => {
     if (!modalReportesInstance) modalReportesInstance = new bootstrap.Modal(document.getElementById('modalReportes'));
     if (!inputFiltroMes.value) { const hoy = new Date(); const mesStr = (hoy.getMonth() + 1).toString().padStart(2, '0'); inputFiltroMes.value = `${hoy.getFullYear()}-${mesStr}`; }
@@ -700,12 +717,20 @@ async function cargarDatosDashboard(anioMes) {
     try {
         const [ventasSnap, gastosSnap] = await Promise.all([getDocs(qVentas), getDocs(qGastos)]);
         let totalIngresos = 0; let totalGastos = 0;
-        const numDias = finMes.getDate(); const labelsDias = Array.from({length: numDias}, (_, i) => `Día ${i + 1}`); const dataIngresos = new Array(numDias).fill(0); const dataGastos = new Array(numDias).fill(0); let conteoPlatos = {};
+        const numDias = finMes.getDate(); const labelsDias = Array.from({length: numDias}, (_, i) => `${i + 1}`); const dataIngresos = new Array(numDias).fill(0); const dataGastos = new Array(numDias).fill(0); let conteoPlatos = {};
 
         ventasSnap.forEach(doc => {
             const data = doc.data(); const fecha = data.fecha.toDate(); const diaIndex = fecha.getDate() - 1; 
             dataIngresos[diaIndex] += data.total_cobrado || 0; totalIngresos += data.total_cobrado || 0;
-            if (data.items && Array.isArray(data.items)) { data.items.forEach(item => { if (esPlatoParaRanking(item.nombre)) { if (conteoPlatos[item.nombre]) conteoPlatos[item.nombre] += item.cantidad; else conteoPlatos[item.nombre] = item.cantidad; } }); }
+            if (data.items && Array.isArray(data.items)) { 
+                data.items.forEach(item => { 
+                    if (esPlatoParaRanking(item.nombre)) { 
+                        // NORMALIZACIÓN APLICADA AQUÍ
+                        let nombreNorm = normalizarNombrePlato(item.nombre);
+                        conteoPlatos[nombreNorm] = (conteoPlatos[nombreNorm] || 0) + item.cantidad; 
+                    } 
+                }); 
+            }
         });
         gastosSnap.forEach(doc => { const data = doc.data(); const fecha = data.fecha.toDate(); const diaIndex = fecha.getDate() - 1; dataGastos[diaIndex] += data.monto || 0; totalGastos += data.monto || 0; });
 
@@ -727,13 +752,19 @@ async function cargarDatosDashboard(anioMes) {
             top1Cant.innerText = "0 vendidos";
         }
 
-        // Asignar el resto al gráfico circular (Del puesto 2 al 11)
-        const restoRanking = rankingArray.slice(1, 11);
-        const labelsRanking = restoRanking.map(item => item.nombre); 
-        const dataRanking = restoRanking.map(item => item.cantidad);
+        // Separar el resto de platos (del puesto 2 en adelante)
+        const restoRanking = rankingArray.slice(1);
+        
+        // Filtro para separar Menús/Almuerzos de Platos a la Carta (Funciona perfecto por la normalización mayúscula)
+        const esMenu = (n) => n === 'MENÚ COMPLETO' || n.startsWith('ALMUERZO:');
+        
+        let rankingAlmuerzos = restoRanking.filter(item => esMenu(item.nombre)).slice(0, 10);
+        let rankingCarta = restoRanking.filter(item => !esMenu(item.nombre)).slice(0, 10);
         
         dibujarGraficoFinanzas(labelsDias, dataIngresos, dataGastos); 
-        dibujarGraficoRanking(labelsRanking, dataRanking);
+        chartRankingAlmuerzosInstance = dibujarGraficoDoughnut('graficoRankingAlmuerzos', chartRankingAlmuerzosInstance, rankingAlmuerzos.map(i=>i.nombre), rankingAlmuerzos.map(i=>i.cantidad));
+        chartRankingCartaInstance = dibujarGraficoDoughnut('graficoRankingCarta', chartRankingCartaInstance, rankingCarta.map(i=>i.nombre), rankingCarta.map(i=>i.cantidad));
+        
     } catch (error) { console.error("Error en dashboard:", error); }
 }
 
@@ -742,13 +773,13 @@ function dibujarGraficoFinanzas(labels, dataIngresos, dataGastos) {
     chartFinanzasInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [ { label: 'Ingresos (S/)', data: dataIngresos, borderColor: '#198754', backgroundColor: 'rgba(25, 135, 84, 0.15)', borderWidth: 3, fill: true, tension: 0.4 }, { label: 'Gastos (S/)', data: dataGastos, borderColor: '#dc3545', backgroundColor: 'rgba(220, 53, 69, 0.1)', borderWidth: 3, fill: true, tension: 0.4 } ] }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { tooltip: { callbacks: { label: function(context) { return ` ${context.dataset.label}: S/ ${context.parsed.y.toFixed(2)}`; } } } } } });
 }
 
-function dibujarGraficoRanking(labels, dataCants) {
-    const ctx = document.getElementById('graficoRanking').getContext('2d'); 
-    if (chartRankingInstance) chartRankingInstance.destroy();
+function dibujarGraficoDoughnut(canvasId, chartInstance, labels, dataCants) {
+    const ctx = document.getElementById(canvasId).getContext('2d'); 
+    if (chartInstance) chartInstance.destroy();
     
-    if (labels.length === 0) return; // Evitar dibujar si no hay datos secundarios
+    if (labels.length === 0) return null; 
 
-    chartRankingInstance = new Chart(ctx, { 
+    return new Chart(ctx, { 
         type: 'doughnut', 
         data: { 
             labels: labels, 
@@ -769,13 +800,13 @@ function dibujarGraficoRanking(labels, dataCants) {
             plugins: { 
                 legend: { 
                     position: 'right', 
-                    labels: { boxWidth: 12, font: {size: 11} } 
+                    labels: { boxWidth: 10, font: {size: 10} } 
                 }, 
                 tooltip: { 
                     callbacks: { label: function(context) { return ` ${context.label}: ${context.parsed} unidades`; } } 
                 } 
             },
-            cutout: '60%' // Groso del anillo
+            cutout: '60%' 
         } 
     });
 }
@@ -796,7 +827,7 @@ document.getElementById('btn-login').addEventListener('click', () => {
 document.getElementById('btn-logout').addEventListener('click', () => { if(confirm("¿Cerrar la caja y salir?")) signOut(auth); });
 
 // =========================================================
-// SISTEMA DE IMPRESIÓN (Disparo simultáneo antibloqueos)
+// SISTEMA DE IMPRESIÓN 
 // =========================================================
 function enviarAImpresora(htmlContent, windowName) {
     const printWindow = window.open('', windowName, 'width=400,height=600');
@@ -829,7 +860,6 @@ window.imprimirPreCuenta = () => {
     const mesa = mesasData.find(m => m.id === mesaSeleccionadaId);
     if (!mesa || !mesa.pedido_actual || mesa.pedido_actual.length === 0) return;
 
-    // FUSIÓN MÁGICA: Para el cliente sí imprimimos "Menú Completo"
     let { vista, total } = obtenerVistaPedido(mesa.pedido_actual);
     let notaGeneralHtml = mesa.nota_general ? `<div style="border: 1px dashed #000; padding: 5px; margin-bottom: 10px; font-weight: bold; text-align: center; text-transform: uppercase;">📝 ${sanitizar(mesa.nota_general)}</div>` : '';
 

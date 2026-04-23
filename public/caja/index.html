@@ -330,7 +330,7 @@
 </div>
 
 <div class="modal fade" id="modalReportes" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 80%;">
         <div class="modal-content border-0 shadow-lg" style="height:90vh;">
             <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title fw-bold">
@@ -382,17 +382,24 @@
                             </h6>
                             
                             <div class="row align-items-center">
-                                <div class="col-md-4 mb-3 mb-md-0">
-                                    <div class="p-4 bg-warning bg-opacity-10 border border-warning rounded text-center shadow-sm h-100 d-flex flex-column justify-content-center">
-                                        <i class="fas fa-crown fa-4x text-warning mb-3"></i>
-                                        <h6 class="text-muted fw-bold text-uppercase mb-1">El más vendido</h6>
-                                        <h3 class="fw-bold text-dark mb-2" id="top1-nombre">Sin Datos</h3>
-                                        <div><span class="badge bg-warning text-dark fs-6 shadow-sm" id="top1-cant">0 vendidos</span></div>
+                                <div class="col-md-3 mb-3 mb-md-0">
+                                    <div class="p-3 bg-warning bg-opacity-10 border border-warning rounded text-center shadow-sm h-100 d-flex flex-column justify-content-center">
+                                        <i class="fas fa-crown fa-3x text-warning mb-2"></i>
+                                        <h6 class="text-muted fw-bold text-uppercase mb-1" style="font-size:0.75rem;">El más vendido</h6>
+                                        <h4 class="fw-bold text-dark mb-2 fs-5" id="top1-nombre">Sin Datos</h4>
+                                        <div><span class="badge bg-warning text-dark shadow-sm" id="top1-cant">0 vendidos</span></div>
                                     </div>
                                 </div>
-                                <div class="col-md-8">
-                                    <div class="position-relative d-flex justify-content-center" style="height:320px;">
-                                        <canvas id="graficoRanking"></canvas>
+                                <div class="col-md-4 border-end">
+                                    <h6 class="text-center text-muted fw-bold small mb-2">Menús / Almuerzos</h6>
+                                    <div class="position-relative d-flex justify-content-center" style="height:220px;">
+                                        <canvas id="graficoRankingAlmuerzos"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-5">
+                                    <h6 class="text-center text-muted fw-bold small mb-2">Platos a la Carta</h6>
+                                    <div class="position-relative d-flex justify-content-center" style="height:220px;">
+                                        <canvas id="graficoRankingCarta"></canvas>
                                     </div>
                                 </div>
                             </div>
