@@ -368,6 +368,13 @@ async function cargarCartaDesdeWeb() {
 }
 
 btnAgregarProducto.addEventListener('click', () => {
+    // Auto-limpiar el buscador al abrir la ventana
+    const buscador = document.getElementById('buscador-platos');
+    if(buscador) {
+        buscador.value = '';
+        buscador.dispatchEvent(new Event('input')); // Forzar el reseteo visual
+    }
+    
     if (!modalProductosInstance) modalProductosInstance = new bootstrap.Modal(document.getElementById('modalProductos'));
     modalProductosInstance.show();
 });
@@ -496,3 +503,64 @@ document.getElementById('btn-login').addEventListener('click', () => {
     signInWithEmailAndPassword(auth, email, pass).catch(error => { alert("Acceso denegado."); }).finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar'; });
 });
 document.getElementById('btn-logout').addEventListener('click', () => { if(confirm("¿Cerrar sesión de mozo?")) signOut(auth); });
+
+// =========================================================
+// BUSCADOR EN TIEMPO REAL (Filtro inteligente)
+// =========================================================
+document.getElementById('buscador-platos')?.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase().trim();
+    const catalogo = document.getElementById('catalogo-productos');
+    if (!catalogo) return;
+
+    // 1. Ocultar/Mostrar barra de categorías superior y botón de "Fuera de carta"
+    const navCategorias = catalogo.querySelector('.sticky-top');
+    const btnFueraCarta = catalogo.querySelector('button[onclick="agregarPlatoPersonalizado()"]');
+    
+    if (navCategorias) navCategorias.style.display = term ? 'none' : 'flex';
+    if (btnFueraCarta) btnFueraCarta.style.display = term ? 'none' : 'block';
+
+    // 2. Filtrar sección Menú del Día
+    const seccionMenu = catalogo.querySelector('#seccion-menu');
+    if (seccionMenu) {
+        let matchesMenu = 0;
+        const titulos = seccionMenu.querySelectorAll('h5');
+        const botones = seccionMenu.querySelectorAll('button');
+
+        // Ocultar títulos (Entradas/Segundos) si estamos buscando algo específico
+        titulos.forEach(t => t.style.display = term ? 'none' : 'block');
+
+        botones.forEach(btn => {
+            if (btn.textContent.toLowerCase().includes(term)) {
+                btn.style.setProperty('display', 'block', 'important');
+                btn.classList.add('mb-2'); // Mantener un buen margen
+                matchesMenu++;
+            } else {
+                btn.style.setProperty('display', 'none', 'important');
+            }
+        });
+        // Si no hay resultados en el menú, ocultar todo el bloque del menú
+        seccionMenu.style.display = (matchesMenu > 0 || !term) ? 'block' : 'none';
+    }
+
+    // 3. Filtrar sección de la Carta Completa
+    const seccionesCarta = catalogo.querySelectorAll('div[id^="seccion-carta-"]');
+    seccionesCarta.forEach(sec => {
+        let matchesCarta = 0;
+        const titulo = sec.querySelector('h6');
+        const columnas = sec.querySelectorAll('.col-6');
+
+        if (titulo) titulo.style.display = term ? 'none' : 'block';
+
+        columnas.forEach(col => {
+            if (col.textContent.toLowerCase().includes(term)) {
+                col.style.setProperty('display', 'block', 'important');
+                matchesCarta++;
+            } else {
+                col.style.setProperty('display', 'none', 'important');
+            }
+        });
+        
+        // Mostrar la categoría solo si tiene platos que coincidan
+        sec.style.display = (matchesCarta > 0 || !term) ? 'block' : 'none';
+    });
+});

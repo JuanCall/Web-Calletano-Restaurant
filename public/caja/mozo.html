@@ -97,13 +97,25 @@
 <div class="modal fade" id="modalProductos" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title fw-bold"><i class="fas fa-book-open text-warning me-2"></i>Nuestra Carta</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-dark text-white flex-column align-items-stretch">
+                <div class="d-flex justify-content-between w-100 mb-3">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fas fa-book-open text-warning me-2"></i>Nuestra Carta
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="position-relative w-100">
+                    <i class="fas fa-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                    <input type="text" id="buscador-platos" class="form-control form-control-lg ps-5 rounded-pill border-0 shadow-sm fw-bold" placeholder="Escribe para buscar (Ej: Ceviche, Chicha, Arroz...)">
+                </div>
             </div>
+            
             <div class="modal-body bg-light">
                 <div id="catalogo-productos">
-                    <div class="text-center mt-4"><div class="spinner-border text-primary"></div></div>
+                    <div class="text-center mt-4">
+                        <div class="spinner-border text-primary"></div>
+                        <p class="mt-2 text-muted">Cargando platos desde la web...</p>
+                    </div>
                 </div>
             </div>
         </div>
