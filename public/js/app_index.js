@@ -1,12 +1,118 @@
 import { doc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { db, registrarTokenPush, tieneTokenRegistrado } from "./firebase-config.js";
+
+// ============================================
+// SCROLL REVEAL - Intersection Observer
+// ============================================
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            revealObserver.unobserve(entry.target);
+        }
+    });
+}, {
+    threshold: 0.1,
+    rootMargin: '0px 0px -40px 0px'
+});
+
+// type="module" es defer, DOM ya está listo
+document.querySelectorAll('[data-reveal]').forEach(el => {
+    revealObserver.observe(el);
+});
 
 async function cargarDocumento(id, cb) { 
     try { const s = await getDoc(doc(db, "contenido", id)); cb(s.exists() ? s.data() : {}); } catch (e) { console.error(e); } 
 }
 function setHref(id, v) { const e = document.getElementById(id); if (e && v) e.href = v; }
-function crearTarjetaPlato(p, c) { return `<div class="${c === 4 ? 'col-md-4' : 'col-md-3'} mb-4"><div class="card h-100 shadow-sm border-0"><img src="${p.img}" class="card-img-top" style="height:${c === 4 ? '200px' : '150px'};object-fit:cover;"><div class="card-body text-center"><h5 class="fw-bold">${p.titulo}</h5><p class="text-muted small">${p.desc}</p></div></div></div>`; }
-function generarEstrellasHTML(pts) { let h = ""; for (let i = 1; i <= 5; i++) h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star text-warning"></i>`; return h; }
+function crearTarjetaPlato(p, c) { return `<div class="${c === 4 ? 'col-md-4' : 'col-md-3'} mb-4"><div class="card h-100 shadow-sm border-0"><img src="${p.img}" class="card-img-top" style="height:${c === 4 ? '200px' : '150px'};object-fit:cover;" alt="${p.titulo}" loading="lazy"><div class="card-body text-center"><h5 class="fw-bold">${p.titulo}</h5><p class="text-muted small">${p.desc}</p></div></div></div>`; }
+function generarEstrellasHTML(pts) { let h = ""; for (let i = 1; i <= 5; i++) h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star text-warning" aria-hidden="true"></i>`; return h; }
+
+// ============================================
+// BANNER DE NOTIFICACIONES PUSH
+// ============================================
+
+async function initBannerNotificaciones() {
+    const banner = document.getElementById('notif-banner');
+    const btnSuscribir = document.getElementById('btn-notif-suscribir');
+    const btnCerrar = document.getElementById('btn-notif-cerrar');
+    
+    if (!banner || !btnSuscribir || !btnCerrar) return;
+    
+    // Verificar si el navegador soporta notificaciones
+    if (!('Notification' in window)) {
+        console.log('[Notif] Navegador no soporta notificaciones.');
+        return;
+    }
+    
+    // Si ya tiene permiso, verificar si ya tiene token registrado
+    if (Notification.permission === 'granted') {
+        const tieneToken = await tieneTokenRegistrado();
+        if (tieneToken) {
+            console.log('[Notif] Usuario ya registrado para notificaciones.');
+            return; // No mostrar banner
+        }
+    }
+    
+    // Si ya denegó permiso, no mostrar banner
+    if (Notification.permission === 'denied') {
+        console.log('[Notif] Permiso denegado previamente.');
+        return;
+    }
+    
+    // Mostrar banner después de 3 segundos
+    setTimeout(() => {
+        banner.classList.remove('d-none');
+        banner.classList.add('notif-banner-show');
+    }, 3000);
+    
+    // Botón de suscripción
+    btnSuscribir.addEventListener('click', async () => {
+        btnSuscribir.disabled = true;
+        btnSuscribir.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        const token = await registrarTokenPush();
+        
+        if (token) {
+            // Éxito
+            banner.innerHTML = `
+                <div class="notif-banner-content notif-success">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    <span>¡Notificaciones activadas! Te avisaremos del menú del día. 🎉</span>
+                </div>
+            `;
+            setTimeout(() => { banner.remove(); }, 4000);
+        } else {
+            // Error o denegado
+            btnSuscribir.disabled = false;
+            btnSuscribir.innerHTML = '<i class="fas fa-bell me-1"></i> Activar';
+            banner.classList.add('d-none');
+        }
+    });
+    
+    // Botón de cerrar (ahora no)
+    btnCerrar.addEventListener('click', () => {
+        banner.classList.add('d-none');
+        // Guardar en localStorage para no molestar por 7 días
+        try {
+            localStorage.setItem('notif_banner_dismissed', Date.now().toString());
+        } catch(e) {}
+    });
+    
+    // Verificar si ya cerró el banner en los últimos 7 días
+    try {
+        const dismissed = localStorage.getItem('notif_banner_dismissed');
+        if (dismissed) {
+            const diff = Date.now() - parseInt(dismissed);
+            const dias = diff / (1000 * 60 * 60 * 24);
+            if (dias < 7) {
+                banner.classList.add('d-none');
+            }
+        }
+    } catch(e) {}
+}
+
+initBannerNotificaciones();
 
 cargarDocumento("configuracion", (config) => {
     const statusDiv = document.getElementById('status-restaurante');
@@ -26,8 +132,8 @@ cargarDocumento("configuracion", (config) => {
         else { estaAbierto = false; mensaje = "CERRADO POR AHORA"; }
     }
 
-    if (estaAbierto) statusDiv.innerHTML = `<span class="badge rounded-pill bg-success px-3 py-2 shadow animate__animated animate__fadeIn"><i class="fas fa-door-open me-1"></i> ${mensaje}</span>`;
-    else statusDiv.innerHTML = `<span class="badge rounded-pill bg-danger px-3 py-2 shadow animate__animated animate__fadeIn"><i class="fas fa-door-closed me-1"></i> ${mensaje}</span>`;
+    if (estaAbierto) statusDiv.innerHTML = `<span class="badge rounded-pill bg-success px-3 py-2 shadow animate__animated animate__fadeIn"><i class="fas fa-door-open me-1" aria-hidden="true"></i> ${mensaje}</span>`;
+    else statusDiv.innerHTML = `<span class="badge rounded-pill bg-danger px-3 py-2 shadow animate__animated animate__fadeIn"><i class="fas fa-door-closed me-1" aria-hidden="true"></i> ${mensaje}</span>`;
 });
 
 cargarDocumento("contacto", (data) => {
@@ -40,10 +146,10 @@ cargarDocumento("menuDiario", (d) => {
     
     const titleEl = document.getElementById('main-menu-title'); const colEntradas = document.getElementById('col-entradas'); const colSegundos = document.getElementById('col-segundos'); const headerSegundos = document.getElementById('header-segundos'); const listaEntradas = document.getElementById('menu-entradas-list'); const listaSegundos = document.getElementById('menu-segundos-list');
     
-    if (titleEl) titleEl.innerText = d.titulo || "Menú del Día 🍽️";
+    if (titleEl) titleEl.innerHTML = d.titulo || '<i class="fas fa-utensils me-2" aria-hidden="true"></i> Menú del Día';
 
     if (listaEntradas) {
-        if (d.entradas && Array.isArray(d.entradas) && d.entradas.length > 0) listaEntradas.innerHTML = d.entradas.map(e => `<li class="fs-5 fw-bold text-dark border-bottom border-warning-subtle py-2"><i class="fas fa-check text-warning me-2 small"></i>${e.nombre}</li>`).join("");
+        if (d.entradas && Array.isArray(d.entradas) && d.entradas.length > 0) listaEntradas.innerHTML = d.entradas.map(e => `<li class="fs-5 fw-bold text-dark border-bottom border-warning-subtle py-2"><i class="fas fa-check text-warning me-2 small" aria-hidden="true"></i>${e.nombre}</li>`).join("");
         else listaEntradas.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${d.entrada || "Por definir"}</li>`;
     }
 
@@ -57,13 +163,13 @@ cargarDocumento("menuDiario", (d) => {
                 platos.forEach((nombre, idx) => {
                     const isLast = (idx === platos.length - 1); const hasAcomp = (acomp !== "");
                     const borderClass = (isLast && hasAcomp) ? "" : "border-bottom border-danger-subtle pb-2";
-                    htmlSegundos += `<li class="pt-2 ${borderClass}"><div class="fs-5 fw-bold text-dark"><i class="fas fa-check text-danger me-2 small"></i>${nombre}</div></li>`;
+                    htmlSegundos += `<li class="pt-2 ${borderClass}"><div class="fs-5 fw-bold text-dark"><i class="fas fa-check text-danger me-2 small" aria-hidden="true"></i>${nombre}</div></li>`;
                 });
                 if (acomp !== "") {
                     let textoPrefijo = "Con:";
                     if (Object.keys(gruposAcomp).length === 1 && platos.length > 1) textoPrefijo = "Todos salen con:";
                     else if (platos.length > 1) textoPrefijo = "Salen con:";
-                    htmlSegundos += `<li class="pb-2 mb-2 border-bottom border-danger-subtle"><div class="d-inline-block bg-danger bg-opacity-10 rounded px-2 py-1 mt-1 ms-4 border border-danger-subtle shadow-sm"><span class="small text-danger fw-bold fst-italic"><i class="fas fa-utensils me-1"></i>${textoPrefijo} ${acomp}</span></div></li>`;
+                    htmlSegundos += `<li class="pb-2 mb-2 border-bottom border-danger-subtle"><div class="d-inline-block bg-danger bg-opacity-10 rounded px-2 py-1 mt-1 ms-4 border border-danger-subtle shadow-sm"><span class="small text-danger fw-bold fst-italic"><i class="fas fa-utensils me-1" aria-hidden="true"></i>${textoPrefijo} ${acomp}</span></div></li>`;
                 }
             });
             listaSegundos.innerHTML = htmlSegundos;
@@ -83,25 +189,60 @@ const cargarLista = (docId, containerId, cols) => {
     const el = document.getElementById(containerId);
     if(el) {
         let skeletonHTML = "";
-        for(let i=0; i<cols; i++) skeletonHTML += `<div class="${cols === 4 ? 'col-md-3' : 'col-md-4'} mb-4"><div class="skeleton skeleton-img"></div><div class="skeleton skeleton-text mt-2" style="width: 60%"></div><div class="skeleton skeleton-text" style="width: 80%"></div></div>`;
+        for(let i=0; i<cols; i++) {
+            const delay = i * 0.12;
+            skeletonHTML += `<div class="${cols === 4 ? 'col-md-3' : 'col-md-4'} mb-4">
+                <div class="skeleton-card shadow-sm">
+                    <div class="skeleton skeleton-img" style="--sk-delay: ${delay}s"></div>
+                    <div class="skeleton-card-body">
+                        <div class="skeleton skeleton-text" style="width: 70%; --sk-delay: ${delay}s"></div>
+                        <div class="skeleton skeleton-text skeleton-text-short" style="--sk-delay: ${delay + 0.1}s"></div>
+                    </div>
+                </div>
+            </div>`;
+        }
         el.innerHTML = skeletonHTML;
     }
     cargarDocumento(docId, (data) => {
         if (el) {
             if (data.lista && data.lista.length > 0) { el.innerHTML = ""; data.lista.forEach(p => el.innerHTML += crearTarjetaPlato(p, cols)); } 
-            else { el.innerHTML = `<div class="col-12 text-center mt-4"><p class="text-muted fst-italic"><i class="fas fa-utensils"></i> Actualizando nuestra lista de platos...</p></div>`; }
+            else { el.innerHTML = `<div class="col-12 text-center mt-4"><p class="text-muted fst-italic"><i class="fas fa-utensils" aria-hidden="true"></i> Actualizando nuestra lista de platos...</p></div>`; }
         }
     });
 };
 cargarLista("favoritos", "favoritos-container", 4);
 cargarLista("domingo", "domingo-container", 3);
 
+// ============================================
+// RESEÑAS
+// ============================================
 const group1 = document.getElementById('reviews-group-1'); const group2 = document.getElementById('reviews-group-2'); const genericReviewContainer = document.getElementById('reviews-container') || document.getElementById('resenas-container') || document.querySelector('.reviews-section');
 const renderContenedorResenas = (html) => {
     if (group1 && group2) { group1.innerHTML = html; group2.innerHTML = html; } else if (group1) { group1.innerHTML = html; } else if (genericReviewContainer) { genericReviewContainer.innerHTML = html; }
 };
 
+// Mostrar skeletons mientras cargan las reseñas
+function mostrarSkeletonsResenas() {
+    let html = "";
+    for (let i = 0; i < 4; i++) {
+        const delay = i * 0.15;
+        html += `<div class="skeleton-review" style="--sk-delay: ${delay}s">
+            <div class="d-flex gap-2">
+                <div class="skeleton skeleton-circle" style="--sk-delay: ${delay}s"></div>
+                <div class="flex-grow-1" style="padding-top: 4px;">
+                    <div class="skeleton skeleton-text" style="width: 50%; --sk-delay: ${delay}s"></div>
+                    <div class="skeleton skeleton-text-short" style="--sk-delay: ${delay + 0.08}s"></div>
+                </div>
+            </div>
+            <div class="skeleton skeleton-text" style="width: 90%; --sk-delay: ${delay + 0.05}s"></div>
+            <div class="skeleton skeleton-text" style="width: 75%; --sk-delay: ${delay + 0.1}s"></div>
+        </div>`;
+    }
+    renderContenedorResenas(html);
+}
+
 if (group1 || genericReviewContainer) {
+    mostrarSkeletonsResenas();
     getDocs(query(collection(db, "resenas"), where("aprobada", "==", true))).then((snapshot) => {
         if (snapshot.empty) { renderContenedorResenas(`<div class="w-100 text-center p-4"><p class="text-muted fst-italic">Aún no hay reseñas publicadas. ¡Sé el primero en visitarnos!</p></div>`); } 
         else {

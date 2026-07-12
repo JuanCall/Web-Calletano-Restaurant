@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <title>Calletano Restaurant | Menú Criollo y Marino en Máncora</title>
-    <meta name="description" content="Restaurante en Máncora especializado en pescados, mariscos y comida criolla. Menú del día económico, especiales de domingo y almuerzos familiares. 📍 Barrio Nicaragua.">
+    <meta name="description" content="Restaurante en Máncora especializado en pescados, mariscos y comida criolla. Menú del día económico, especiales de domingo y almuerzos familiares. Barrio Nicaragua.">
     <meta name="keywords" content="Restaurante Máncora, Menú del día, Comida Criolla, Ceviche, Almuerzo Máncora, Calletano">
     
     <meta property="og:title" content="Calletano Restaurant - El Sabor de Máncora">
@@ -136,12 +136,12 @@
         </div>
     </header>
 
-    <section id="menu-dia">
+    <section id="menu-dia" data-reveal>
         <div class="container text-center">
-            <h2 id="main-menu-title" class="section-title">Menú del Día 🍽️</h2>
+            <h2 id="main-menu-title" class="section-title"><i class="fas fa-utensils me-2" aria-hidden="true"></i> Menú del Día</h2>
             
             <div class="row justify-content-center g-4">
-                <div id="col-entradas" class="col-md-5">
+                <div id="col-entradas" class="col-md-5" data-reveal data-reveal-delay="100">
                     <div class="menu-dia-card">
                         <div class="card-header-custom header-entradas">
                             <h3>ENTRADAS</h3>
@@ -154,7 +154,7 @@
                     </div>
                 </div>
 
-                <div id="col-segundos" class="col-md-5">
+                <div id="col-segundos" class="col-md-5" data-reveal data-reveal-delay="200">
                     <div class="menu-dia-card">
                         <div id="header-segundos" class="card-header-custom header-segundos">
                             <h3>SEGUNDOS</h3>
@@ -168,14 +168,14 @@
                 </div>
             </div>
 
-            <div class="mt-5">
+            <div class="mt-5" data-reveal data-reveal-delay="300">
                 <h5 class="text-muted text-uppercase small ls-2 fw-bold mb-3">Bebida Incluida</h5>
                 <p class="display-6 mt-2" id="menu-refresco">Refresco de temporada</p>
             </div>
         </div>
     </section>
 
-    <section id="favoritos" class="bg-playa">
+    <section id="favoritos" class="bg-playa" data-reveal>
         <div class="container">
             <h2 class="text-center section-title">Nuestros Platos Favoritos</h2>
             <p class="text-center text-muted mb-4">Lo más pedido por nuestros clientes en Máncora</p>
@@ -188,7 +188,7 @@
         </div>
     </section>
 
-    <section id="domingo">
+    <section id="domingo" data-reveal>
         <div class="container">
             <h2 class="text-center section-title">Especiales de Domingo</h2>
             <div id="domingo-container" class="row g-4">
@@ -199,7 +199,7 @@
         </div>
     </section>
 
-    <section id="resenas" class="bg-light overflow-hidden">
+    <section id="resenas" class="bg-light overflow-hidden" data-reveal>
         <div class="container"> 
             <h2 class="text-center section-title mb-5">Opiniones de Clientes</h2>
             
@@ -218,7 +218,7 @@
         </div>
     </section>
 
-    <section id="visitanos" class="text-center bg-visitanos">
+    <section id="visitanos" class="text-center bg-visitanos" data-reveal>
         <div class="container">
             <h2 class="section-title mb-5">Visítanos en Máncora</h2>
             
@@ -283,7 +283,44 @@
         </a>
     </div>
 
+    <!-- Banner de notificaciones push -->
+    <div id="notif-banner" class="notif-banner d-none">
+        <div class="notif-banner-content">
+            <div class="notif-banner-icon">
+                <i class="fas fa-bell"></i>
+            </div>
+            <div class="notif-banner-text">
+                <strong>¡No te pierdas el menú del día!</strong>
+                <p>Recibe notificaciones cuando publiquemos nuevos platos y promociones.</p>
+            </div>
+            <div class="notif-banner-actions">
+                <button id="btn-notif-suscribir" class="btn btn-sm btn-notif-primary">
+                    <i class="fas fa-bell me-1"></i> Activar
+                </button>
+                <button id="btn-notif-cerrar" class="btn btn-sm btn-notif-cerrar">
+                    Ahora no
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/firebase-messaging-sw.js')
+                    .then(function(registration) {
+                        console.log('[SW] Service Worker registrado:', registration.scope);
+                    })
+                    .catch(function(err) {
+                        console.warn('[SW] Error al registrar SW:', err);
+                    });
+            });
+        }
+    </script>
+    
     <script type="module" src="js/app_index.js"></script>
 </body>
 </html>

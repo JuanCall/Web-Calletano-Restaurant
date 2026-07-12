@@ -155,17 +155,93 @@ header .lead {
 @keyframes moveWave3 { 0% { transform: translateX(0); } 100% { transform: translateX(25%); } }
 
 /* ============================================
-   SECCIONES
+   SECCIONES — TRANSICIONES SUAVES
    ============================================ */
-section { padding: 80px 0; }
+section {
+    padding: 100px 0;
+    position: relative;
+}
+
+/* Transición de fondo suave entre secciones */
+section::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Gradiente difuminado entre fondos */
+#menu-dia::after {
+    background: linear-gradient(to bottom, transparent 0%, rgba(255,254,248,1) 100%);
+}
+
+/* De fondo claro a fondo playa */
+#favoritos::after {
+    background: linear-gradient(to bottom, transparent, var(--amarillo-suave));
+}
+
+/* De fondo playa a bg-light (siguiente sección) */
+#domingo::after {
+    background: linear-gradient(to bottom, transparent 0%, #f8f9fa 100%);
+}
+
+/* resenas usa overflow-hidden, no necesita ::after (el gradiente se pierde) */
+#resenas::after {
+    display: none;
+}
+
+/* De gris a fondo final */
+#visitanos::after {
+    background: linear-gradient(to bottom, transparent 0%, #fffef8 100%);
+}
+
+/* Scroll reveal: fade + slide suave */
+[data-reveal] {
+    will-change: transform, opacity;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), 
+                transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-reveal].revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+[data-reveal-delay="100"] { transition-delay: 0.1s; }
+[data-reveal-delay="200"] { transition-delay: 0.2s; }
+[data-reveal-delay="300"] { transition-delay: 0.3s; }
+[data-reveal-delay="400"] { transition-delay: 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+    section { animation: none; }
+    [data-reveal] {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
 
 .section-title {
-    color: var(--naranja-logo); position: relative;
-    display: inline-block; margin-bottom: 50px; font-size: 2.5rem;
+    color: var(--naranja-logo);
+    position: relative;
+    display: inline-block;
+    margin-bottom: 50px;
+    font-size: clamp(2rem, 3vw, 2.8rem);
 }
 .section-title::after {
-    content: ''; display: block; width: 60%; height: 4px;
-    background: var(--cyan-logo); margin: 10px auto 0; border-radius: 2px;
+    content: '';
+    display: block;
+    width: 60%;
+    height: 4px;
+    background: var(--cyan-logo);
+    margin: 12px auto 0;
+    border-radius: 2px;
 }
 
 /* ============================================
@@ -286,7 +362,19 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
         background: white; padding: 20px; border-radius: 15px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 10px;
     }
-    .btn-nav-carta { text-align: center; display: block; width: 100%; margin-top: 10px; }
+    .nav-link {
+        padding: 12px 16px;
+        margin: 2px 0;
+        font-size: 1rem;
+    }
+    .btn-nav-carta {
+        text-align: center;
+        display: block;
+        width: 100%;
+        margin-top: 10px;
+        padding: 14px 20px;
+        font-size: 1rem;
+    }
 }
 @media (max-width: 768px) {
     header { min-height: 450px; }
@@ -295,18 +383,333 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
 }
 
 /* ============================================
-   MEJORA UX: SKELETON LOADING (OPTIMIZADO)
+   SKELETON LOADING — Efecto Onda (Wave Shimmer)
+   Gradiente animado que simula una ola de luz
+   inspirada en las olas del mar de Máncora.
    ============================================ */
-@keyframes shimmer {
-    0% { opacity: 0.4; }
-    50% { opacity: 0.8; }
-    100% { opacity: 0.4; }
+
+@keyframes waveShimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
 }
 
 .skeleton {
-    animation: shimmer 1.5s infinite ease-in-out;
-    background-color: #e0e0e0;
+    background: linear-gradient(
+        90deg,
+        #e8e8e8 0%,
+        #e8e8e8 25%,
+        #f5f5f5 37%,
+        #fefefe 45%,
+        #f5f5f5 53%,
+        #e8e8e8 65%,
+        #e8e8e8 100%
+    );
+    background-size: 200% 100%;
+    animation: waveShimmer 1.8s ease-in-out infinite;
+    animation-delay: var(--sk-delay, 0s);
+    border-radius: 8px;
 }
 
-.skeleton-text { height: 20px; margin-bottom: 10px; border-radius: 4px; }
-.skeleton-img { height: 200px; width: 100%; border-radius: 15px; }
+/* Variante más oscura para cuando el fondo no es blanco */
+.skeleton-dark {
+    background: linear-gradient(
+        90deg,
+        #d0d0d0 0%,
+        #d0d0d0 25%,
+        #e0e0e0 37%,
+        #ececec 45%,
+        #e0e0e0 53%,
+        #d0d0d0 65%,
+        #d0d0d0 100%
+    );
+    background-size: 200% 100%;
+    animation: waveShimmer 1.8s ease-in-out infinite;
+    border-radius: 8px;
+}
+
+/* === Variantes de skeleton === */
+
+/* Imagen del plato */
+.skeleton-img {
+    height: 200px;
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+}
+
+/* Texto de una línea */
+.skeleton-text {
+    height: 18px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+/* Texto más corto */
+.skeleton-text-short {
+    height: 18px;
+    width: 60%;
+    margin-bottom: 10px;
+    border-radius: 4px;
+}
+
+/* Círculo (avatar, icono) */
+.skeleton-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+/* Badge / etiqueta pequeña */
+.skeleton-badge {
+    height: 12px;
+    width: 40%;
+    border-radius: 20px;
+}
+
+/* Targeta completa de reseña */
+.skeleton-review {
+    min-width: 320px;
+    max-width: 320px;
+    padding: 25px;
+    border-radius: 16px;
+    background: white;
+    border: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* === Delays escalonados para múltiples skeletons === */
+/* Aplicado inline desde JS con style=\"--sk-delay: 0.1s\" */
+.skeleton-delayed {
+    animation-delay: var(--sk-delay, 0s);
+}
+
+/* Targeta de plato completa (skeleton) */
+.skeleton-card {
+    border: none;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    background: white;
+}
+.skeleton-card-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton,
+    .skeleton-dark,
+    .skeleton-delayed {
+        animation: none;
+        background: #e8e8e8;
+    }
+}
+
+/* ============================================
+   NOTIFICACIONES PUSH — BANNER DE SUSCRIPCION
+   ============================================ */
+
+.notif-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 9999;
+    background: white;
+    box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
+    border-top: 4px solid var(--naranja-logo);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.notif-banner-show {
+    transform: translateY(0);
+}
+
+.notif-banner-content {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.notif-banner-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--amarillo-suave);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.notif-banner-icon i {
+    font-size: 1.5rem;
+    color: var(--naranja-logo);
+}
+
+.notif-banner-text {
+    flex: 1;
+    min-width: 0;
+}
+.notif-banner-text strong {
+    display: block;
+    font-size: 0.95rem;
+    color: #333;
+    margin-bottom: 2px;
+}
+.notif-banner-text p {
+    font-size: 0.85rem;
+    color: #777;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.notif-banner-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-notif-primary {
+    background: var(--naranja-logo);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 8px 18px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.btn-notif-primary:hover {
+    background: #d48930;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(232, 153, 61, 0.3);
+    color: white;
+}
+
+.btn-notif-cerrar {
+    background: transparent;
+    color: #999;
+    border: 1px solid #ddd;
+    border-radius: 50px;
+    padding: 8px 16px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.btn-notif-cerrar:hover {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.notif-success {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    font-weight: 600;
+    color: #2e7d32;
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   NOTIFICACIONES TOAST EN PRIMER PLANO
+   ============================================ */
+
+.notification-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    border-left: 5px solid var(--naranja-logo);
+    max-width: 380px;
+    width: calc(100% - 40px);
+    animation: toastSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow: hidden;
+}
+
+.notification-toast-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+}
+
+.notification-toast-icon {
+    flex-shrink: 0;
+}
+
+.notification-toast-text {
+    flex: 1;
+    min-width: 0;
+}
+.notification-toast-text strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #333;
+    margin-bottom: 2px;
+}
+.notification-toast-text p {
+    font-size: 0.8rem;
+    color: #777;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.notification-toast-close {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: #ccc;
+    cursor: pointer;
+    padding: 0 4px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+}
+.notification-toast-close:hover {
+    color: #666;
+}
+
+@keyframes toastSlideIn {
+    from {
+        transform: translateX(120%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@media (max-width: 480px) {
+    .notif-banner-content {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 16px;
+    }
+    .notif-banner-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+    .notification-toast {
+        top: 10px;
+        right: 10px;
+        max-width: none;
+        width: calc(100% - 20px);
+    }
+}

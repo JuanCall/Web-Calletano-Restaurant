@@ -4,6 +4,30 @@ import { db, appFirebase } from "./firebase-config.js";
 
 const auth = getAuth(appFirebase);
 
+// ============================================
+// NOTIFICACIONES PUSH A CLIENTES
+// ============================================
+
+/**
+ * Encola una notificación para enviar a todos los clientes suscritos.
+ * El backend POS (server.js) recoge estas notificaciones y las envía por FCM.
+ */
+async function encolarNotificacionClientes(titulo, cuerpo, url = '/') {
+    try {
+        await addDoc(collection(db, 'notificaciones_pendientes'), {
+            titulo: titulo,
+            cuerpo: cuerpo,
+            url: url,
+            creado: new Date(),
+            enviado: false,
+            tipo: 'cliente'
+        });
+        console.log('[Notif] Notificación encolada:', titulo);
+    } catch (e) {
+        console.error('[Notif] Error al encolar notificación:', e);
+    }
+}
+
 async function cargarDocumento(id, cb) { try { const s = await getDoc(doc(db, "contenido", id)); cb(s.exists() ? s.data() : {}); } catch (e) { console.error(e); } }
 
 onAuthStateChanged(auth, (user) => {
@@ -21,13 +45,32 @@ function iniciarPanelAdmin() {
     cargarDocumento("configuracion", (data) => {
         if (inputApertura) inputApertura.value = data.apertura || 12;
         if (inputCierre) inputCierre.value = data.cierre || 22;
-        if (data.cierreForzado === new Date().toISOString().split('T')[0]) { if (btnCerrado) btnCerrado.checked = true; } 
+        const estaAbierto = data.cierreForzado !== new Date().toISOString().split('T')[0];
+        ultimoEstadoAbierto = estaAbierto;
+        if (!estaAbierto) { if (btnCerrado) btnCerrado.checked = true; } 
         else { if (btnAbierto) btnAbierto.checked = true; }
     });
 
+    // Guardar estado anterior para evitar notificaciones duplicadas
+    let ultimoEstadoAbierto = null;
+    
     const guardarHorario = async () => {
         const cierreForzado = btnCerrado.checked ? new Date().toISOString().split('T')[0] : "";
-        try { await setDoc(doc(db, "contenido", "configuracion"), { apertura: parseInt(inputApertura.value), cierre: parseInt(inputCierre.value), cierreForzado: cierreForzado }, { merge: true }); alert("✅ Configuración actualizada"); } catch (e) { alert("Error: " + e.message); }
+        const abierto = !btnCerrado.checked;
+        try { 
+            await setDoc(doc(db, "contenido", "configuracion"), { apertura: parseInt(inputApertura.value), cierre: parseInt(inputCierre.value), cierreForzado: cierreForzado }, { merge: true });
+            alert("✅ Configuración actualizada");
+            
+            // Encolar notificación SOLO si cambió de cerrado a abierto (evita spam)
+            if (abierto && ultimoEstadoAbierto === false) {
+                encolarNotificacionClientes(
+                    '🔓 ¡Ya abrimos! 🎉',
+                    'Ven a disfrutar del mejor sabor de Máncora. Hoy tenemos platos deliciosos esperándote 🤤',
+                    '/'
+                );
+            }
+            ultimoEstadoAbierto = abierto;
+        } catch (e) { alert("Error: " + e.message); }
     };
     document.getElementById('btn-save-horario')?.addEventListener('click', guardarHorario); btnCerrado?.addEventListener('click', async () => { if(confirm("¿Seguro?")) await guardarHorario(); }); btnAbierto?.addEventListener('click', async () => { await guardarHorario(); });
 
@@ -51,7 +94,7 @@ function iniciarPanelAdmin() {
 
     cargarDocumento("menuDiario", (d) => {
         if (document.getElementById('input-refresco')) document.getElementById('input-refresco').value = d.refresco || "";
-        if (document.getElementById('input-titulo-menu')) document.getElementById('input-titulo-menu').value = d.titulo || "Menú del Día 🍽️";
+        if (document.getElementById('input-titulo-menu')) document.getElementById('input-titulo-menu').value = d.titulo || "Menú del Día";
         if (document.getElementById('check-modo-domingo')) document.getElementById('check-modo-domingo').checked = d.modoDomingo || false;
         if (document.getElementById('admin-col-entradas')) document.getElementById('admin-col-entradas').style.display = (d.modoDomingo || false) ? 'none' : 'block';
         
@@ -65,15 +108,10 @@ function iniciarPanelAdmin() {
 
     const checkDomingo = document.getElementById('check-modo-domingo'); const inputTitulo = document.getElementById('input-titulo-menu'); const colEntradasAdmin = document.getElementById('admin-col-entradas');
     if (checkDomingo && inputTitulo) {
-        checkDomingo.addEventListener('change', () => { const activo = checkDomingo.checked; inputTitulo.value = activo ? "ESPECIALES DE DOMINGO 🍽️" : "Menú del Día 🍽️"; if (colEntradasAdmin) colEntradasAdmin.style.display = activo ? 'none' : 'block'; });
+        checkDomingo.addEventListener('change', () => { const activo = checkDomingo.checked; inputTitulo.value = activo ? "ESPECIALES DE DOMINGO" : "Menú del Día"; if (colEntradasAdmin) colEntradasAdmin.style.display = activo ? 'none' : 'block'; });
     }
 
-    asignarGuardado('btn-save-menu', "menuDiario", () => ({
-        entradas: Array.from(document.querySelectorAll('.entrada-item')).map(el => ({ nombre: el.querySelector('.ent-nombre').value.trim(), precio: parseFloat(el.querySelector('.ent-precio').value) || 6 })).filter(e => e.nombre !== ""),
-        // Ahora capturamos el precio del input seg-precio
-        segundos: Array.from(document.querySelectorAll('.segundo-item')).map(el => ({ nombre: el.querySelector('.seg-nombre').value.trim(), acomp: el.querySelector('.seg-acomp').value.trim(), precio: parseFloat(el.querySelector('.seg-precio').value) || 15 })).filter(s => s.nombre !== ""),
-        refresco: document.getElementById('input-refresco').value, titulo: document.getElementById('input-titulo-menu').value, modoDomingo: document.getElementById('check-modo-domingo').checked, entrada: "", segundo: "" 
-    }));
+    asignarGuardadoMenu('btn-save-menu');
 
     // --- CONTACTO ---
     cargarDocumento("contacto", (d) => { if (document.getElementById('conf-wsp')) document.getElementById('conf-wsp').value = d.whatsapp || ""; if (document.getElementById('conf-fb')) document.getElementById('conf-fb').value = d.facebook || ""; if (document.getElementById('conf-ig')) document.getElementById('conf-ig').value = d.instagram || ""; });
@@ -91,7 +129,7 @@ function iniciarPanelAdmin() {
             reviews.forEach(r => {
                 const li = document.createElement('li'); li.className = "list-group-item p-3 mb-2 border rounded";
                 const renderDisplay = () => {
-                    li.innerHTML = `<div class="d-flex justify-content-between align-items-start mb-2"><div><strong class="text-dark">${r.autor}</strong><div class="text-warning small">${"⭐".repeat(r.estrellas)}</div></div><div><button class="btn btn-sm btn-outline-primary btn-edit me-1"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger btn-delete"><i class="fas fa-trash"></i></button></div></div><p class="text-muted small mb-0 fst-italic">"${r.mensaje}"</p><div class="form-check form-switch mt-2"><input class="form-check-input btn-toggle-status" type="checkbox" ${r.aprobada ? 'checked' : ''}><label class="form-check-label small text-muted">Visible</label></div>`;
+                    li.innerHTML = `<div class="d-flex justify-content-between align-items-start mb-2"><div><strong class="text-dark">${r.autor}</strong><div class="text-warning small">${generarEstrellasAdmin(r.estrellas)}</div></div><div><button class="btn btn-sm btn-outline-primary btn-edit me-1"><i class="fas fa-edit"></i></button><button class="btn btn-sm btn-outline-danger btn-delete"><i class="fas fa-trash"></i></button></div></div><p class="text-muted small mb-0 fst-italic">"${r.mensaje}"</p><div class="form-check form-switch mt-2"><input class="form-check-input btn-toggle-status" type="checkbox" ${r.aprobada ? 'checked' : ''}><label class="form-check-label small text-muted">Visible</label></div>`;
                     li.querySelector('.btn-delete').onclick = async () => { if(confirm("¿Eliminar?")) { await deleteDoc(doc(db, "resenas", r.id)); cargarResenasAdmin(); } };
                     li.querySelector('.btn-toggle-status').onchange = async (e) => { await updateDoc(doc(db, "resenas", r.id), { aprobada: e.target.checked }); };
                     li.querySelector('.btn-edit').onclick = () => {
@@ -149,9 +187,72 @@ window.updateCatHeader = (idx, f, v) => { cartaLocal[idx][f] = v; }; window.upda
 window.addItem = (catIdx) => { const name = document.getElementById(`new-item-name-${catIdx}`).value; const desc = document.getElementById(`new-item-desc-${catIdx}`).value; const price = document.getElementById(`new-item-price-${catIdx}`).value; const price2 = document.getElementById(`new-item-price2-${catIdx}`).value; if (name && price) { cartaLocal[catIdx].items.push({ nombre: name, desc: desc, precio: price, precio2: price2 }); renderCartaAdmin(); setTimeout(() => { const el = document.getElementById(`collapse-${catIdx}`); if (el) new bootstrap.Collapse(el, { show: true }); }, 100); } };
 
 async function generarEditorPlatosBase64(contId, docId, cant, btnId) { 
-    const cont = document.getElementById(contId); if (!cont) return; const snap = await getDoc(doc(db, "contenido", docId)); let list = snap.exists() ? (snap.data().lista || []) : []; while (list.length < cant) list.push({ titulo: "", desc: "", img: "plato1.png" }); let html = ""; list.forEach((it, i) => { if (i < cant) html += `<div class="card p-3 mb-3 item-plato-${docId} border-0 shadow-sm bg-white"><div class="row align-items-center"><div class="col-md-2 text-center"><strong class="d-block mb-2 text-muted">Plato #${i + 1}</strong><div class="upload-box justify-content-center"><img src="${it.img}" class="current-img img-preview-tag"><label class="btn-upload-custom"><i class="fas fa-plus"></i><span>Subir</span><input type="file" class="img-file-input" accept="image/*" onchange="previsualizar(this)"></label><input type="hidden" class="img-url-hidden" value="${it.img}"></div></div><div class="col-md-10"><div class="row g-2"><div class="col-md-6"><label class="small text-muted">Título</label><input type="text" class="form-control title-input" value="${it.titulo}"></div><div class="col-md-6"><label class="small text-muted">Descripción</label><input type="text" class="form-control desc-input" value="${it.desc}"></div></div></div></div></div>`; }); cont.innerHTML = html; const btn = document.getElementById(btnId); if (btn) { const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn); newBtn.addEventListener('click', async () => { newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; newBtn.disabled = true; const items = cont.querySelectorAll(`.item-plato-${docId}`); const newList = []; for (const div of items) { const fileInput = div.querySelector('.img-file-input'); const hiddenInput = div.querySelector('.img-url-hidden'); let finalImg = hiddenInput.value; if (fileInput.files.length > 0) finalImg = await comprimirImagen(fileInput.files[0]); newList.push({ img: finalImg, titulo: div.querySelector('.title-input').value, desc: div.querySelector('.desc-input').value }); } await setDoc(doc(db, "contenido", docId), { lista: newList }); alert("✅ Guardado"); generarEditorPlatosBase64(contId, docId, cant, btnId); newBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Todo'; newBtn.disabled = false; }); }
+    const cont = document.getElementById(contId); if (!cont) return; const snap = await getDoc(doc(db, "contenido", docId)); let list = snap.exists() ? (snap.data().lista || []) : []; while (list.length < cant) list.push({ titulo: "", desc: "", img: "https://cdn-icons-png.flaticon.com/512/3448/3448609.png" }); let html = ""; list.forEach((it, i) => { if (i < cant) html += `<div class="card p-3 mb-3 item-plato-${docId} border-0 shadow-sm bg-white"><div class="row align-items-center"><div class="col-md-2 text-center"><strong class="d-block mb-2 text-muted">Plato #${i + 1}</strong><div class="upload-box justify-content-center"><img src="${it.img}" class="current-img img-preview-tag"><label class="btn-upload-custom"><i class="fas fa-plus"></i><span>Subir</span><input type="file" class="img-file-input" accept="image/*" onchange="previsualizar(this)"></label><input type="hidden" class="img-url-hidden" value="${it.img}"></div></div><div class="col-md-10"><div class="row g-2"><div class="col-md-6"><label class="small text-muted">Título</label><input type="text" class="form-control title-input" value="${it.titulo}"></div><div class="col-md-6"><label class="small text-muted">Descripción</label><input type="text" class="form-control desc-input" value="${it.desc}"></div></div></div></div></div>`; }); cont.innerHTML = html; const btn = document.getElementById(btnId); if (btn) { const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn); newBtn.addEventListener('click', async () => { newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; newBtn.disabled = true; const items = cont.querySelectorAll(`.item-plato-${docId}`); const newList = []; for (const div of items) { const fileInput = div.querySelector('.img-file-input'); const hiddenInput = div.querySelector('.img-url-hidden'); let finalImg = hiddenInput.value; if (fileInput.files.length > 0) finalImg = await comprimirImagen(fileInput.files[0]); newList.push({ img: finalImg, titulo: div.querySelector('.title-input').value, desc: div.querySelector('.desc-input').value }); } await setDoc(doc(db, "contenido", docId), { lista: newList }); alert("✅ Guardado"); generarEditorPlatosBase64(contId, docId, cant, btnId); newBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Todo'; newBtn.disabled = false; }); }
 }
+
+function generarEstrellasAdmin(pts) { let h = ""; for (let i = 1; i <= 5; i++) h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star text-warning"></i>`; return h; }
 
 window.previsualizar = function (i) { if (i.files && i.files[0]) { const r = new FileReader(); r.onload = function (e) { i.closest('.upload-box').querySelector('.current-img').src = e.target.result; }; r.readAsDataURL(i.files[0]); } }
 function comprimirImagen(f) { return new Promise((res, rej) => { const r = new FileReader(); r.readAsDataURL(f); r.onload = (e) => { const i = new Image(); i.src = e.target.result; i.onload = () => { const c = document.createElement('canvas'); const s = 500 / i.width; c.width = 500; c.height = i.height * s; c.getContext('2d').drawImage(i, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', 0.7)); }; }; r.onerror = rej; }); }
-function asignarGuardado(btnId, docId, getDataCallback) { const btn = document.getElementById(btnId); if (!btn) return; const newBtn = btn.cloneNode(true); btn.parentNode.replaceChild(newBtn, btn); newBtn.addEventListener('click', async (e) => { e.preventDefault(); const originalText = newBtn.innerHTML; newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; newBtn.disabled = true; try { const datos = getDataCallback(); await updateDoc(doc(db, "contenido", docId), datos); alert("✅ Guardado"); } catch (error) { alert("Error: " + error.message); } finally { newBtn.innerHTML = originalText; newBtn.disabled = false; } }); }
+/**
+ * Función base para guardar datos en Firestore con UI de loading.
+ * @param {string} btnId - ID del botón
+ * @param {string} docId - ID del documento en Firestore
+ * @param {Function} getDataCallback - Devuelve los datos a guardar
+ * @param {Function} onSuccess - Callback opcional después de guardar exitosamente
+ */
+function asignarGuardado(btnId, docId, getDataCallback, onSuccess) { 
+    const btn = document.getElementById(btnId); 
+    if (!btn) return; 
+    const newBtn = btn.cloneNode(true); 
+    btn.parentNode.replaceChild(newBtn, btn); 
+    newBtn.addEventListener('click', async (e) => { 
+        e.preventDefault(); 
+        const originalText = newBtn.innerHTML; 
+        newBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; 
+        newBtn.disabled = true; 
+        try { 
+            const datos = getDataCallback(); 
+            await updateDoc(doc(db, "contenido", docId), datos); 
+            alert("✅ Guardado"); 
+            if (typeof onSuccess === 'function') await onSuccess(datos);
+        } catch (error) { 
+            alert("Error: " + error.message); 
+        } finally { 
+            newBtn.innerHTML = originalText; 
+            newBtn.disabled = false; 
+        } 
+    }); 
+}
+
+/**
+ * Guarda el menú diario y encola notificación a clientes.
+ */
+function asignarGuardadoMenu(btnId) {
+    asignarGuardado(btnId, "menuDiario", () => ({
+        entradas: Array.from(document.querySelectorAll('.entrada-item')).map(el => ({ nombre: el.querySelector('.ent-nombre').value.trim(), precio: parseFloat(el.querySelector('.ent-precio').value) || 6 })).filter(e => e.nombre !== ""),
+        segundos: Array.from(document.querySelectorAll('.segundo-item')).map(el => ({ nombre: el.querySelector('.seg-nombre').value.trim(), acomp: el.querySelector('.seg-acomp').value.trim(), precio: parseFloat(el.querySelector('.seg-precio').value) || 15 })).filter(s => s.nombre !== ""),
+        refresco: document.getElementById('input-refresco').value, titulo: document.getElementById('input-titulo-menu').value, modoDomingo: document.getElementById('check-modo-domingo').checked, entrada: "", segundo: "" 
+    }), async (datos) => {
+        // Encolar notificación a clientes
+        const esDomingo = datos.modoDomingo || false;
+        
+        let tituloNotif, cuerpoNotif;
+        if (esDomingo) {
+            tituloNotif = '🎵 ¡Especiales de Domingo en Calletano!';
+            const platos = datos.segundos?.slice(0, 3).map(s => s.nombre).join(', ') || '';
+            cuerpoNotif = platos 
+                ? `Hoy tenemos: ${platos} y más. Ven con toda la familia 🤤`
+                : 'Descubre nuestros platos especiales de fin de semana 🎉';
+        } else {
+            const entradas = datos.entradas?.slice(0, 2).map(e => e.nombre).join(', ') || '';
+            const segundos = datos.segundos?.slice(0, 2).map(s => s.nombre).join(', ') || '';
+            const refresco = datos.refresco || 'refresco de temporada';
+            
+            tituloNotif = `🍽️ ¡Nuevo Menú del Día en Calletano!`;
+            cuerpoNotif = `Hoy: ${entradas} | ${segundos}. Acompañado de ${refresco} 🤤 Ven a disfrutar`;
+        }
+        
+        await encolarNotificacionClientes(tituloNotif, cuerpoNotif, '/');
+    });
+}

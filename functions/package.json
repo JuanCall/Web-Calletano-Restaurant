@@ -1,0 +1,17 @@
+{
+  "name": "calletano-notificaciones-functions",
+  "description": "Cloud Functions para enviar notificaciones push a clientes de Calletano Restaurant",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^11.11.0",
+    "firebase-functions": "^4.9.0"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^3.1.0"
+  }
+}
