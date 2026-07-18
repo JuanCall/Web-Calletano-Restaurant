@@ -1,5 +1,5 @@
 import { doc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db, registrarTokenPush, tieneTokenRegistrado } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 
 // ============================================
 // SCROLL REVEAL - Intersection Observer
@@ -29,90 +29,16 @@ function crearTarjetaPlato(p, c) { return `<div class="${c === 4 ? 'col-md-4' : 
 function generarEstrellasHTML(pts) { let h = ""; for (let i = 1; i <= 5; i++) h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star text-warning" aria-hidden="true"></i>`; return h; }
 
 // ============================================
-// BANNER DE NOTIFICACIONES PUSH
+// 🚫 [DESACTIVADO] BANNER DE NOTIFICACIONES PUSH
+// Por decisión del dueño, no se envían notificaciones push a clientes
+// por la página web. El código se mantiene comentado.
 // ============================================
 
-async function initBannerNotificaciones() {
-    const banner = document.getElementById('notif-banner');
-    const btnSuscribir = document.getElementById('btn-notif-suscribir');
-    const btnCerrar = document.getElementById('btn-notif-cerrar');
-    
-    if (!banner || !btnSuscribir || !btnCerrar) return;
-    
-    // Verificar si el navegador soporta notificaciones
-    if (!('Notification' in window)) {
-        console.log('[Notif] Navegador no soporta notificaciones.');
-        return;
-    }
-    
-    // Si ya tiene permiso, verificar si ya tiene token registrado
-    if (Notification.permission === 'granted') {
-        const tieneToken = await tieneTokenRegistrado();
-        if (tieneToken) {
-            console.log('[Notif] Usuario ya registrado para notificaciones.');
-            return; // No mostrar banner
-        }
-    }
-    
-    // Si ya denegó permiso, no mostrar banner
-    if (Notification.permission === 'denied') {
-        console.log('[Notif] Permiso denegado previamente.');
-        return;
-    }
-    
-    // Mostrar banner después de 3 segundos
-    setTimeout(() => {
-        banner.classList.remove('d-none');
-        banner.classList.add('notif-banner-show');
-    }, 3000);
-    
-    // Botón de suscripción
-    btnSuscribir.addEventListener('click', async () => {
-        btnSuscribir.disabled = true;
-        btnSuscribir.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
-        const token = await registrarTokenPush();
-        
-        if (token) {
-            // Éxito
-            banner.innerHTML = `
-                <div class="notif-banner-content notif-success">
-                    <i class="fas fa-check-circle text-success me-2"></i>
-                    <span>¡Notificaciones activadas! Te avisaremos del menú del día. 🎉</span>
-                </div>
-            `;
-            setTimeout(() => { banner.remove(); }, 4000);
-        } else {
-            // Error o denegado
-            btnSuscribir.disabled = false;
-            btnSuscribir.innerHTML = '<i class="fas fa-bell me-1"></i> Activar';
-            banner.classList.add('d-none');
-        }
-    });
-    
-    // Botón de cerrar (ahora no)
-    btnCerrar.addEventListener('click', () => {
-        banner.classList.add('d-none');
-        // Guardar en localStorage para no molestar por 7 días
-        try {
-            localStorage.setItem('notif_banner_dismissed', Date.now().toString());
-        } catch(e) {}
-    });
-    
-    // Verificar si ya cerró el banner en los últimos 7 días
-    try {
-        const dismissed = localStorage.getItem('notif_banner_dismissed');
-        if (dismissed) {
-            const diff = Date.now() - parseInt(dismissed);
-            const dias = diff / (1000 * 60 * 60 * 24);
-            if (dias < 7) {
-                banner.classList.add('d-none');
-            }
-        }
-    } catch(e) {}
-}
-
-initBannerNotificaciones();
+// async function initBannerNotificaciones() {
+//     const banner = document.getElementById('notif-banner');
+//     ... código de notificaciones ...
+// }
+// initBannerNotificaciones();
 
 cargarDocumento("configuracion", (config) => {
     const statusDiv = document.getElementById('status-restaurante');

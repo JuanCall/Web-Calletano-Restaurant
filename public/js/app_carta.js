@@ -1,8 +1,48 @@
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "./firebase-config.js";
 
+// ============================================
+// SCROLL REVEAL - Intersection Observer
+// ============================================
+const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            revealObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.15, rootMargin: '0px 0px -30px 0px' });
+
 const navContainer = document.getElementById('nav-categorias');
 const mainContainer = document.getElementById('menu-render');
+
+// Skeleton loading mientras carga Firebase
+function mostrarSkeletons() {
+    if (!mainContainer) return;
+    let html = '';
+    for (let i = 0; i < 3; i++) {
+        const delay = i * 0.15;
+        html += `<div class="skeleton-card" style="--sk-delay: ${delay}s">
+            <div style="padding: 25px;">
+                <div class="skeleton skeleton-header" style="--sk-delay: ${delay}s"></div>
+                <div class="skeleton-items">
+                    ${[1,2,3].map(j => `
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                                <div class="skeleton skeleton-line" style="width: 60%; --sk-delay: ${delay + j * 0.05}s"></div>
+                                <div class="skeleton skeleton-price" style="--sk-delay: ${delay + j * 0.05}s"></div>
+                            </div>
+                            <div class="skeleton skeleton-line-short" style="--sk-delay: ${delay + j * 0.08}s"></div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>`;
+    }
+    mainContainer.innerHTML = html;
+}
+
+mostrarSkeletons();
 
 getDoc(doc(db, "contenido", "cartaCompleta")).then((docSnap) => {
     if (!docSnap.exists() || !docSnap.data().categorias) {
@@ -33,5 +73,13 @@ getDoc(doc(db, "contenido", "cartaCompleta")).then((docSnap) => {
         bodyHTML += `<div id="${catId}" class="menu-card"><h3 class="cat-title">${cat.nombre} <i class="fas fa-utensils" style="font-size:1rem; opacity:0.3;"></i></h3>${headerHTML}${itemsHTML}</div>`;
     });
     if (navContainer) navContainer.innerHTML = navHTML;
-    if (mainContainer) mainContainer.innerHTML = bodyHTML;
+    if (mainContainer) {
+        mainContainer.innerHTML = bodyHTML;
+        // Observar cada tarjeta para scroll reveal
+        mainContainer.querySelectorAll('.menu-card').forEach((card, i) => {
+            card.style.setProperty('--reveal-delay', `${i * 0.1}s`);
+            card.style.transitionDelay = `${i * 0.1}s`;
+            revealObserver.observe(card);
+        });
+    }
 }).catch(e => console.error("Error cargando carta:", e));

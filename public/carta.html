@@ -13,26 +13,41 @@
 </head>
 <body>
 
-    <div class="deco-float d1">🍤</div>
-    <div class="deco-float d2">🐟</div>
-    <div class="deco-float d3">⭐</div>
+    <!-- Decoraciones SVG elegantes -->
+    <div class="deco-float d1" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 10C60 20 65 35 60 50C55 65 40 75 30 70C20 65 25 50 35 45C30 60 40 70 50 65C60 60 55 45 50 35C45 25 40 15 50 10Z" fill="#e8993d" opacity="0.6"/>
+            <path d="M55 20C62 28 65 40 58 50C51 60 38 65 32 58C26 51 35 40 45 42C38 52 48 60 55 55C62 50 55 38 50 30C45 22 48 12 55 20Z" fill="#0ff1f3" opacity="0.4"/>
+        </svg>
+    </div>
+    <div class="deco-float d2" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 50C20 35 35 20 50 20C65 20 80 35 80 50C80 65 65 80 50 80C35 80 20 65 20 50Z" stroke="#0ff1f3" stroke-width="2" opacity="0.5"/>
+            <path d="M35 50C35 40 40 35 50 35C60 35 65 40 65 50C65 60 60 65 50 65C40 65 35 60 35 50Z" stroke="#0ff1f3" stroke-width="1.5" opacity="0.3"/>
+        </svg>
+    </div>
+    <div class="deco-float d3" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M50 15L55 40L80 45L55 50L50 75L45 50L20 45L45 40L50 15Z" fill="#e8993d" opacity="0.5"/>
+        </svg>
+    </div>
 
     <header class="hero-header">
         <div class="hero-content">
-            <img src="img/logo.webp" alt="Logo" class="hero-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3448/3448609.png'">
+            <img src="img/logo.webp" alt="Logo Calletano Restaurant" class="hero-logo" width="140" height="140" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3448/3448609.png'">
             <h1 class="hero-title">Calletano</h1>
             <p class="hero-subtitle">Restaurant</p>
             <div style="font-size: 0.9rem; opacity: 0.9;">Máncora - Perú</div>
         </div>
-        <div class="wave-container">
+        <div class="wave-container" aria-hidden="true">
             <div class="wave wave1"></div>
             <div class="wave wave2"></div>
             <div class="wave wave3"></div>
         </div>
     </header>
 
-    <nav class="sticky-nav">
-        <div class="nav-scroll" id="nav-categorias">
+    <nav class="sticky-nav" aria-label="Categorías del menú">
+        <div class="nav-scroll" id="nav-categorias" role="tablist">
             <span style="padding:10px;">Cargando sabores...</span>
         </div>
     </nav>
@@ -42,23 +57,23 @@
 
     <div class="fab-container">
         
-        <a href="index.html" class="fab fab-back" title="Volver al Menú del Día">
-            <i class="fas fa-arrow-left"></i>
+        <a href="index.html" class="fab fab-back" title="Volver al inicio" aria-label="Volver al inicio">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
         </a>
 
-        <a href="https://wa.me/51949523901" target="_blank" class="fab fab-wsp" title="Pedir por WhatsApp">
-            <i class="fab fa-whatsapp"></i>
+        <a href="https://wa.me/51949523901" target="_blank" rel="noopener noreferrer" class="fab fab-wsp" title="Pedir por WhatsApp" aria-label="Pedir por WhatsApp">
+            <i class="fab fa-whatsapp" aria-hidden="true"></i>
         </a>
 
-        <a href="#" class="fab fab-top" title="Subir" onclick="window.scrollTo(0,0); return false;">
-            <i class="fas fa-arrow-up"></i>
+        <a href="#" class="fab fab-top" title="Subir" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;" aria-label="Volver arriba">
+            <i class="fas fa-arrow-up" aria-hidden="true"></i>
         </a>
     </div>
 
     <footer>
-        <h3 style="font-family:'Playfair Display'; margin-bottom:10px;">Calletano Restaurant</h3>
-        <p style="font-size:0.9rem; opacity:0.8;">Gracias por su preferencia</p>
-        <p style="font-size:0.8rem; margin-top:20px;">© 2025</p>
+        <h3>Calletano Restaurant</h3>
+        <p>Gracias por su preferencia</p>
+        <p class="copy">© 2025</p>
     </footer>
 
     <script type="module" src="js/app_carta.js"></script>

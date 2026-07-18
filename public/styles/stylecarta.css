@@ -7,10 +7,10 @@
 
 :root {
     /* Paleta Logo Calletano */
-    --cyan-logo: #0ff1f3;       /* Agua / Cielo */
-    --naranja-logo: #e8993d;    /* Títulos / Acentos / Atardecer */
-    --amarillo-suave: #fffba4;  /* Arena / Fondo */
-    --amarillo-fuerte: #f6d35f; /* Bordes / Sol */
+    --cyan-logo: #0ff1f3;
+    --naranja-logo: #e8993d;
+    --amarillo-suave: #fffba4;
+    --amarillo-fuerte: #f6d35f;
     --blanco: #ffffff;
     
     /* Mapeo funcional */
@@ -18,10 +18,20 @@
     --color-texto: #444;
     --color-precio: var(--naranja-logo);
     --bg-header-start: var(--cyan-logo);
-    --bg-header-end: var(--naranja-logo); /* Efecto atardecer */
+    --bg-header-end: var(--naranja-logo);
+    --color-fondo: #fffef8;
+    
+    /* Tipografía */
+    --font-display: 'Playfair Display', serif;
+    --font-body: 'Montserrat', sans-serif;
     
     /* Sombras */
     --sombra-card: 0 8px 20px rgba(232, 153, 61, 0.15);
+    --sombra-card-hover: 0 12px 32px rgba(232, 153, 61, 0.22);
+    
+    /* Transiciones */
+    --transition-fast: 0.2s ease;
+    --transition-base: 0.3s ease;
 }
 
 /* --- CONFIGURACIÓN BASICA --- */
@@ -34,6 +44,13 @@ body {
     font-family: 'Montserrat', sans-serif;
     color: var(--color-texto);
     overflow-x: hidden;
+}
+
+/* --- ACCESIBILIDAD --- */
+:focus-visible {
+    outline: 3px solid var(--naranja-logo);
+    outline-offset: 3px;
+    border-radius: 4px;
 }
 
 /* --- HEADER / PORTADA --- */
@@ -57,19 +74,25 @@ body {
     text-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
+/* Logo circular perfecto */
 .hero-logo {
-    width: 200px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     border-radius: 50%;
-    border: 5px solid white;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-    margin-bottom: 10px;
+    border: 4px solid rgba(255,255,255,0.9);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+    margin-bottom: 12px;
     object-fit: cover;
     background: white;
+    transition: transform var(--transition-base), box-shadow var(--transition-base);
+}
+.hero-logo:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.25);
 }
 
 .hero-title {
-    font-family: 'Playfair Display', serif;
+    font-family: var(--font-display);
     font-size: 3rem;
     font-weight: 900;
     margin-bottom: 0;
@@ -84,8 +107,8 @@ body {
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-bottom: 15px;
-    background: rgba(232, 153, 61, 0.8);
-    padding: 5px 15px;
+    background: rgba(232, 153, 61, 0.85);
+    padding: 6px 18px;
     border-radius: 50px;
     display: inline-block;
 }
@@ -111,14 +134,91 @@ body {
     100% { background-position-x: 1200px; }
 }
 
+/* --- SCROLL REVEAL (para tarjetas generadas por JS) --- */
+.menu-card {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow var(--transition-base);
+}
+.menu-card.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu-card { opacity: 1; transform: none; transition: none; }
+    .deco-float { animation: none !important; }
+}
+
+/* --- SKELETON LOADING (mientras carga Firebase) --- */
+@keyframes waveShimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.skeleton-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--sombra-card);
+    border: 2px solid var(--amarillo-suave);
+    margin-bottom: 30px;
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #e8e8e8 0%, #e8e8e8 25%, #f5f5f5 37%, #fefefe 45%, #f5f5f5 53%, #e8e8e8 65%, #e8e8e8 100%);
+    background-size: 200% 100%;
+    animation: waveShimmer 1.8s ease-in-out infinite;
+    animation-delay: var(--sk-delay, 0s);
+    border-radius: 8px;
+}
+
+.skeleton-line {
+    height: 16px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.skeleton-line-short {
+    height: 16px;
+    width: 60%;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.skeleton-header {
+    height: 30px;
+    width: 50%;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.skeleton-price {
+    height: 20px;
+    width: 70px;
+    border-radius: 4px;
+    align-self: flex-end;
+}
+
+.skeleton-items {
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
 /* --- BARRA DE NAVEGACIÓN --- */
 .sticky-nav {
     position: sticky; top: 0; z-index: 1000;
     background: rgba(255,255,255,0.95);
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-bottom: 3px solid var(--amarillo-fuerte);
     padding: 12px 0;
     box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    transition: box-shadow var(--transition-base);
 }
 .nav-scroll {
     display: flex; gap: 10px; overflow-x: auto; 
@@ -127,14 +227,21 @@ body {
 .nav-scroll::-webkit-scrollbar { display: none; }
 
 .nav-btn {
-    white-space: nowrap; padding: 8px 20px;
+    white-space: nowrap; padding: 10px 22px;
     border-radius: 50px; 
     border: 2px solid var(--cyan-logo);
     color: var(--naranja-logo); font-weight: 700; font-size: 0.9rem;
-    text-decoration: none; background: white; transition: 0.3s;
+    text-decoration: none; background: white; 
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
 }
-.nav-btn:hover, .nav-btn.active {
+.nav-btn:hover {
     background: var(--cyan-logo); color: white; border-color: var(--cyan-logo);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15,241,243,0.3);
+}
+.nav-btn:active {
+    transform: translateY(0);
 }
 
 /* --- CONTENEDOR PRINCIPAL --- */
@@ -221,22 +328,45 @@ body {
     color: white;
 }
 
-/* --- DECORACIONES --- */
+/* --- DECORACIONES SVG --- */
 .deco-float {
-    position: fixed; z-index: 0; opacity: 0.2;
-    font-size: 3rem; animation: float 6s infinite ease-in-out; pointer-events: none;
-    color: var(--naranja-logo);
+    position: fixed;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.12;
+    width: 80px;
+    height: 80px;
 }
-.d1 { top: 20%; left: -10px; }
-.d2 { top: 50%; right: -10px; animation-delay: 2s; color: var(--cyan-logo); }
-.d3 { bottom: 15%; left: 10px; animation-delay: 4s; }
-@keyframes float { 0%,100%{transform:translateY(0) rotate(0deg);} 50%{transform:translateY(-20px) rotate(10deg);} }
+.deco-float svg {
+    width: 100%;
+    height: 100%;
+}
+.d1 {
+    top: 15%; left: -15px;
+    animation: floatSlow 8s infinite ease-in-out;
+}
+.d2 {
+    top: 45%; right: -15px;
+    animation: floatSlow 10s infinite ease-in-out 2s;
+}
+.d3 {
+    bottom: 20%; left: 10px;
+    animation: floatSlow 9s infinite ease-in-out 4s;
+}
+@keyframes floatSlow {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+}
 
 /* --- FOOTER --- */
 footer {
-    text-align: center; padding: 40px 20px;
+    text-align: center; padding: 40px 24px;
     background: var(--naranja-logo); color: white; margin-top: 40px;
     border-top: 5px solid var(--cyan-logo);
 }
+footer h3 {
+    font-family: var(--font-display);
+    margin-bottom: 10px;
+}
 
-@keyframes fadeInUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(24px);} to{opacity:1;transform:translateY(0);} }
