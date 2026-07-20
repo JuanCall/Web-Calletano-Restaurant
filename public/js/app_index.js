@@ -1,5 +1,6 @@
 import { doc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "./firebase-config.js";
+import { renderMenuDiario } from './menuRenderer.js';
 
 // ============================================
 // SCROLL REVEAL - Intersection Observer
@@ -67,48 +68,15 @@ cargarDocumento("contacto", (data) => {
 });
 
 cargarDocumento("menuDiario", (d) => {
-    const setTxt = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt || "No disponible"; };
-    setTxt('menu-refresco', d.refresco);
-    
-    const titleEl = document.getElementById('main-menu-title'); const colEntradas = document.getElementById('col-entradas'); const colSegundos = document.getElementById('col-segundos'); const headerSegundos = document.getElementById('header-segundos'); const listaEntradas = document.getElementById('menu-entradas-list'); const listaSegundos = document.getElementById('menu-segundos-list');
-    
-    if (titleEl) titleEl.innerHTML = d.titulo || '<i class="fas fa-utensils me-2" aria-hidden="true"></i> Menú del Día';
-
-    if (listaEntradas) {
-        if (d.entradas && Array.isArray(d.entradas) && d.entradas.length > 0) listaEntradas.innerHTML = d.entradas.map(e => `<li class="fs-5 fw-bold text-dark border-bottom border-warning-subtle py-2"><i class="fas fa-check text-warning me-2 small" aria-hidden="true"></i>${e.nombre}</li>`).join("");
-        else listaEntradas.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${d.entrada || "Por definir"}</li>`;
-    }
-
-    if (listaSegundos) {
-        if (d.segundos && Array.isArray(d.segundos) && d.segundos.length > 0) {
-            let htmlSegundos = ""; const gruposAcomp = {};
-            d.segundos.forEach(s => { const acomp = (s.acomp || "").trim(); if (!gruposAcomp[acomp]) gruposAcomp[acomp] = []; gruposAcomp[acomp].push(s.nombre); });
-
-            Object.keys(gruposAcomp).forEach(acomp => {
-                const platos = gruposAcomp[acomp];
-                platos.forEach((nombre, idx) => {
-                    const isLast = (idx === platos.length - 1); const hasAcomp = (acomp !== "");
-                    const borderClass = (isLast && hasAcomp) ? "" : "border-bottom border-danger-subtle pb-2";
-                    htmlSegundos += `<li class="pt-2 ${borderClass}"><div class="fs-5 fw-bold text-dark"><i class="fas fa-check text-danger me-2 small" aria-hidden="true"></i>${nombre}</div></li>`;
-                });
-                if (acomp !== "") {
-                    let textoPrefijo = "Con:";
-                    if (Object.keys(gruposAcomp).length === 1 && platos.length > 1) textoPrefijo = "Todos salen con:";
-                    else if (platos.length > 1) textoPrefijo = "Salen con:";
-                    htmlSegundos += `<li class="pb-2 mb-2 border-bottom border-danger-subtle"><div class="d-inline-block bg-danger bg-opacity-10 rounded px-2 py-1 mt-1 ms-4 border border-danger-subtle shadow-sm"><span class="small text-danger fw-bold fst-italic"><i class="fas fa-utensils me-1" aria-hidden="true"></i>${textoPrefijo} ${acomp}</span></div></li>`;
-                }
-            });
-            listaSegundos.innerHTML = htmlSegundos;
-        } else { listaSegundos.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${d.segundo || "Por definir"}</li>`; }
-    }
-
-    if (d.modoDomingo) {
-        if (colEntradas) colEntradas.style.display = 'none';
-        if (colSegundos) { colSegundos.className = "col-md-8 mb-4 mx-auto"; if (headerSegundos) headerSegundos.innerHTML = "<h3>PLATOS ESPECIALES</h3>"; }
-    } else {
-        if (colEntradas) colEntradas.style.display = 'block';
-        if (colSegundos) { colSegundos.className = "col-md-5 mb-4"; if (headerSegundos) headerSegundos.innerHTML = "<h3>SEGUNDOS</h3>"; }
-    }
+    renderMenuDiario(d, {
+        titleEl: document.getElementById('main-menu-title'),
+        colEntradas: document.getElementById('col-entradas'),
+        colSegundos: document.getElementById('col-segundos'),
+        headerSegundos: document.getElementById('header-segundos'),
+        listaEntradas: document.getElementById('menu-entradas-list'),
+        listaSegundos: document.getElementById('menu-segundos-list'),
+        refrescoEl: document.getElementById('menu-refresco'),
+    });
 });
 
 const cargarLista = (docId, containerId, cols) => {
