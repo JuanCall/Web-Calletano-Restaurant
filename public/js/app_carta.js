@@ -1,5 +1,5 @@
-import { doc, getDoc, getDocFromServer } from './lib/firebase-bundle.js?v=4';
-import { db, track } from "./firebase-config.js?v=4";
+import { doc, getDoc, getDocFromServer } from './lib/firebase-bundle.js?v=5';
+import { db, track } from "./firebase-config.js?v=5";
 
 // ============================================
 // SCROLL REVEAL - Intersection Observer
