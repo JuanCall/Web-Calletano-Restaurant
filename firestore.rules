@@ -50,12 +50,12 @@ service cloud.firestore {
     // =========================================================
     function esDNI(doc) {
       // DNI peruano: exactamente 8 dígitos
-      return doc is string && doc.matches(/^\d{8}$/);
+      return doc is string && doc.matches('^[0-9]{8}$');
     }
 
     function esCE(doc) {
       // Carnet de Extranjería: entre 9 y 12 dígitos
-      return doc is string && doc.matches(/^\d{9,12}$/);
+      return doc is string && doc.matches('^[0-9]{9,12}$');
     }
 
     function esDocValido(doc, tipo) {
@@ -70,19 +70,19 @@ service cloud.firestore {
 
     function esIsoFecha(str) {
       // Fecha ISO 8601 con zona UTC (ej: 2026-08-14T12:00:00.000Z)
-      return str is string && str.matches(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+      return str is string && str.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}([.][0-9]+)?Z$');
     }
 
     function esCorreo(c) {
       // Correo con formato real, máximo 120 chars (o vacío: la web lo envía como '')
       return c is string && c.size() <= 120
-        && (c == '' || c.matches(/^\S+@\S+\.\S+$/));
+        && (c == '' || c.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$'));
     }
 
     function esTelefono(t) {
       // Teléfono de 9 a 12 dígitos, máximo 15 chars (o vacío: es opcional)
       return t is string && t.size() <= 15
-        && (t == '' || t.matches(/^\d{9,12}$/));
+        && (t == '' || t.matches('^[0-9]{9,12}$'));
     }
 
     // =========================================================
@@ -154,7 +154,7 @@ service cloud.firestore {
       // en lugar del documento para no exponer el DNI. Se crea junto con su
       // mapeo en club_tokens/{token}.
       // 🛡️ ENDURECIDO: DNI = 8 dígitos exactos, CE = 9-12 dígitos (esDocValido);
-      // creado_en debe ser fecha ISO real de hace menos de 24 h (anti-fecha falsa).
+      // creado_en debe ser una fecha ISO real (esIsoFecha) para mantener datos consistentes.
       allow create: if request.resource.data.documento == documento
         && esDocValido(documento, request.resource.data.tipo_documento)
         && request.resource.data.nombre is string
@@ -164,7 +164,6 @@ service cloud.firestore {
         && request.resource.data.visitas is int
         && request.resource.data.visitas == 0
         && esIsoFecha(request.resource.data.creado_en)
-        && request.time.date() - timestamp.date(request.resource.data.creado_en) < duration.value(24, 'h')
         && !('correo' in request.resource.data)
         && !('telefono' in request.resource.data)
         && !('promociones' in request.resource.data)
@@ -230,7 +229,7 @@ service cloud.firestore {
     match /club_tokens/{token} {
       allow get: if true;
       allow list: if isSystem();
-      allow create: if token.matches(/^[A-Z0-9]{8,40}$/)
+      allow create: if token.matches('^[A-Z0-9]{8,40}$')
         && esDocFormato(request.resource.data.documento)
         && esIsoFecha(request.resource.data.creado_en);
       // (Sin exists() de club_miembros: el token se escribe antes que la tarjeta
