@@ -1,8 +1,5 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-// 🚫 [DESACTIVADO] FCM Messaging — no se usan notificaciones push a clientes web
-// import { getMessaging, getToken, onMessage, deleteToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
-
+import { initializeApp, initializeFirestore, doc, getDoc, setDoc, deleteDoc } from './lib/firebase-bundle.js?v=4';
+import './consent.js'; // 🍪 Banner de cookies + actualización de Consent Mode v2
 const firebaseConfig = {
     apiKey: "AIzaSyC2RKkuY_aEQaHVDvAt_-T_29sPQ6HUp50",
     authDomain: "calletano-restaurant.firebaseapp.com",
@@ -14,33 +11,42 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// ⚡ experimentalForceLongPolling: true — evita que adblockers bloqueen Firebase
+// Los adblockers (uBlock, Brave, etc.) suelen bloquear WebSocket/WebChannel.
+// Long polling usa HTTP normal, que los adblockers no pueden distinguir.
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 export const appFirebase = app;
-// 🚫 [DESACTIVADO] No se usa FCM
-// export const messaging = getMessaging(app);
-
-
-// Analytics a prueba de bloqueos
-import("https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js")
+// 📊 Analytics — Google Consent Mode v2
+// Cargamos el SDK SIEMPRE, pero el consentimiento lo gobierna gtag:
+//  - El <head> de cada página fija gtag('consent','default',...) según lo que
+//    el usuario guardó antes (granted/denied) ANTES de que Firebase cargue.
+//  - consent.js llama gtag('consent','update',...) cuando el usuario decide
+//    aquí en esta visita; Firebase lo respeta aunque el SDK ya esté cargado.
+//  - Con analytics_storage='denied' el SDK no recopila ni envía eventos.
+// El SDK inyecta gtag.js por su cuenta (no hace falta un <script> estático).
+import('./lib/firebase-bundle.js?v=4')
     .then((module) => {
-        module.getAnalytics(app);
-        console.log("Analytics activado.");
+        if (module.getAnalytics) {
+            module.getAnalytics(app);
+            console.log('Analytics cargado (Consent Mode v2).');
+        }
     })
     .catch(() => {
-        console.warn("Analytics bloqueado por privacidad (Safari/AdBlocker).");
+        console.warn('Analytics bloqueado por privacidad (Safari/AdBlocker).');
     });
 
-// ============================================
-// 🚫 [DESACTIVADO] GESTIÓN DE TOKENS FCM PARA NOTIFICACIONES A CLIENTES WEB
-// Por decisión del dueño, no se envían notificaciones push a clientes
-// por la página web. El código se mantiene comentado para posible reactivación.
-// ============================================
+// 🎯 Eventos personalizados de conversión.
+// Usamos la API global gtag('event', ...) sobre el dataLayer: funciona con el
+// gtag.js que el SDK de Firebase inyecta y respeta el Consent Mode v2
+// (si analytics_storage='denied', gtag.js descarta el evento).
+// Nunca debe romper la página, por eso todo va dentro de try/catch.
+export function track(eventName, params = {}) {
+    try {
+        if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+            window.gtag('event', eventName, params);
+        }
+    } catch (e) {
+        /* silencioso */
+    }
+}
 
-// function delay(ms) {
-//     return new Promise(resolve => setTimeout(resolve, ms));
-// }
-
-// export async function registrarTokenPush() { ... }
-// export async function desregistrarTokenPush(token) { ... }
-// function mostrarNotificacionLocal(payload) { ... }
-// export async function tieneTokenRegistrado() { ... }

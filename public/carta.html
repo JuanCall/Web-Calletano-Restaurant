@@ -4,31 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carta - Calletano Restaurant</title>
+    <meta name="description" content="Carta de Calletano Restaurant en Máncora: pescados, mariscos y comida criolla. Precios actualizados, especiales de domingo y pedidos por WhatsApp.">
+    <link rel="canonical" href="https://calletano-restaurant.web.app/carta.html">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Calletano Restaurant">
+    <meta property="og:title" content="Carta - Calletano Restaurant | El Sabor de Máncora">
+    <meta property="og:description" content="Pescados, mariscos y el mejor menú criollo del distrito. Precios actualizados y pedidos por WhatsApp.">
+    <meta property="og:image" content="https://calletano-restaurant.web.app/img/fondo.webp">
+    <meta property="og:url" content="https://calletano-restaurant.web.app/carta.html">
+    <meta property="og:locale" content="es_PE">
+    <meta name="twitter:card" content="summary_large_image">
+
     <link rel="icon" href="img/fondo.webp" type="image/webp">
+
+    <!-- 🍪 Google Consent Mode v2 — fija el estado de consentimiento ANTES de cargar Firebase -->
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        (function () {
+            var consent = null;
+            try { consent = localStorage.getItem('calletano_cookie_consent'); } catch (e) {}
+            var estado = consent === 'granted' ? 'granted' : 'denied';
+            gtag('consent', 'default', {
+                ad_storage: estado,
+                ad_user_data: estado,
+                ad_personalization: estado,
+                analytics_storage: estado,
+                wait_for_update: 500
+            });
+        })();
+    </script>
     
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
     
     <link rel="stylesheet" href="styles/stylecarta.css">
+    <link rel="stylesheet" href="styles/style-mundo.css">
 </head>
 <body>
 
     <!-- Decoraciones SVG elegantes -->
     <div class="deco-float d1" aria-hidden="true">
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 10C60 20 65 35 60 50C55 65 40 75 30 70C20 65 25 50 35 45C30 60 40 70 50 65C60 60 55 45 50 35C45 25 40 15 50 10Z" fill="#e8993d" opacity="0.6"/>
-            <path d="M55 20C62 28 65 40 58 50C51 60 38 65 32 58C26 51 35 40 45 42C38 52 48 60 55 55C62 50 55 38 50 30C45 22 48 12 55 20Z" fill="#0ff1f3" opacity="0.4"/>
+            <path d="M50 10C60 20 65 35 60 50C55 65 40 75 30 70C20 65 25 50 35 45C30 60 40 70 50 65C60 60 55 45 50 35C45 25 40 15 50 10Z" fill="#EA983D" opacity="0.6"/>
+            <path d="M55 20C62 28 65 40 58 50C51 60 38 65 32 58C26 51 35 40 45 42C38 52 48 60 55 55C62 50 55 38 50 30C45 22 48 12 55 20Z" fill="#11F6F5" opacity="0.4"/>
         </svg>
     </div>
     <div class="deco-float d2" aria-hidden="true">
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 50C20 35 35 20 50 20C65 20 80 35 80 50C80 65 65 80 50 80C35 80 20 65 20 50Z" stroke="#0ff1f3" stroke-width="2" opacity="0.5"/>
-            <path d="M35 50C35 40 40 35 50 35C60 35 65 40 65 50C65 60 60 65 50 65C40 65 35 60 35 50Z" stroke="#0ff1f3" stroke-width="1.5" opacity="0.3"/>
+            <path d="M20 50C20 35 35 20 50 20C65 20 80 35 80 50C80 65 65 80 50 80C35 80 20 65 20 50Z" stroke="#CEAA63" stroke-width="2" opacity="0.5"/>
+            <path d="M35 50C35 40 40 35 50 35C60 35 65 40 65 50C65 60 60 65 50 65C40 65 35 60 35 50Z" stroke="#CEAA63" stroke-width="1.5" opacity="0.3"/>
         </svg>
     </div>
     <div class="deco-float d3" aria-hidden="true">
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M50 15L55 40L80 45L55 50L50 75L45 50L20 45L45 40L50 15Z" fill="#e8993d" opacity="0.5"/>
+            <path d="M50 15L55 40L80 45L55 50L50 75L45 50L20 45L45 40L50 15Z" fill="#EA983D" opacity="0.5"/>
         </svg>
     </div>
 
@@ -47,8 +78,11 @@
     </header>
 
     <nav class="sticky-nav" aria-label="Categorías del menú">
-        <div class="nav-scroll" id="nav-categorias" role="tablist">
-            <span style="padding:10px;">Cargando sabores...</span>
+        <div style="display:flex; align-items:center; padding:0 20px;">
+            <div class="nav-scroll" id="nav-categorias" role="tablist" style="flex:1;">
+                <span style="padding:10px;">Cargando sabores...</span>
+            </div>
+
         </div>
     </nav>
 
@@ -73,10 +107,15 @@
     <footer>
         <h3>Calletano Restaurant</h3>
         <p>Gracias por su preferencia</p>
-        <p class="copy">© 2025</p>
+        <p class="copy">© 2026</p>
+        <p class="footer-legal-links">
+            <a href="terminos-club.html">Términos del club</a>
+            <span class="footer-sep" aria-hidden="true">·</span>
+            <a href="privacidad.html">Política de privacidad</a>
+        </p>
     </footer>
 
-    <script type="module" src="js/app_carta.js"></script>
+    <script type="module" src="js/app_carta.js?v=4"></script>
 
 </body>
 </html>

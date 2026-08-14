@@ -4,17 +4,57 @@
     <link rel="preload" as="image" href="img/fondo-tablet.webp" type="image/webp" fetchpriority="high">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 🍪 Google Consent Mode v2 — fija el estado de consentimiento ANTES de cargar Firebase -->
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        (function () {
+            var consent = null;
+            try { consent = localStorage.getItem('calletano_cookie_consent'); } catch (e) {}
+            var estado = consent === 'granted' ? 'granted' : 'denied';
+            gtag('consent', 'default', {
+                ad_storage: estado,
+                ad_user_data: estado,
+                ad_personalization: estado,
+                analytics_storage: estado,
+                wait_for_update: 500
+            });
+        })();
+    </script>
     
     <title>Calletano Restaurant | Menú Criollo y Marino en Máncora</title>
+
+    <!-- 🎫 Club Calletano: redirige los QRs antiguos (?club=... en la landing)
+         a la página de consulta del club, que ahora es independiente. -->
+    <script>
+        (function () {
+            try {
+                var raw = new URLSearchParams(location.search).get('club');
+                if (raw && /^[0-9]{8,12}$/.test(String(raw).replace(/[\s.\-]/g, ''))) {
+                    location.replace('club-consultar.html?club=' + encodeURIComponent(raw));
+                }
+            } catch (e) { /* silencioso */ }
+        })();
+    </script>
     <meta name="description" content="Restaurante en Máncora especializado en pescados, mariscos y comida criolla. Menú del día económico, especiales de domingo y almuerzos familiares. Barrio Nicaragua.">
     <meta name="keywords" content="Restaurante Máncora, Menú del día, Comida Criolla, Ceviche, Almuerzo Máncora, Calletano">
+    <link rel="canonical" href="https://calletano-restaurant.web.app/">
+    <meta name="theme-color" content="#202D0F">
     
     <meta property="og:title" content="Calletano Restaurant - El Sabor de Máncora">
     <meta property="og:description" content="Pescados, mariscos y el mejor menú criollo del distrito.">
     <meta property="og:site_name" content="Calletano Restaurant">
     <meta property="og:image" content="https://calletano-restaurant.web.app/img/fondo.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Calletano Restaurant en Máncora — el mejor sabor del mar">
     <meta property="og:url" content="https://calletano-restaurant.web.app/">
-    <meta property="og:type" content="restaurant.restaurant">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Calletano Restaurant - El Sabor de Máncora">
+    <meta name="twitter:description" content="Pescados, mariscos y el mejor menú criollo del distrito. Menú del día en vivo.">
+    <meta name="twitter:image" content="https://calletano-restaurant.web.app/img/fondo.webp">
     
     <link rel="icon" href="img/fondo.webp" type="image/webp">
     
@@ -27,8 +67,14 @@
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
     
     <link rel="stylesheet" href="styles/style.css">
+    <!-- 🐟 Mundo visual "Mercado de Pescado" (rediseño Impeccable): carga después de style.css
+         y sobrescribe SOLO la landing. Las otras páginas siguen usando style.css intacto. -->
+    <link rel="stylesheet" href="styles/style-landing.css">
 
-    <script type="application/ld+json">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&display=swap" as="style">
+    <link rel="preload" href="https://fonts.gstatic.com" as="font" crossorigin>
+
+    <script type="application/ld+json" id="schema-restaurant">
     {
       "@context": "https://schema.org",
       "@type": "Restaurant",
@@ -46,8 +92,8 @@
       },
       "geo": {
         "@type": "GeoCoordinates",
-        "latitude": "-4.1078", 
-        "longitude": "-81.0475" 
+        "latitude": "-4.103033",
+        "longitude": "-81.043222"
       },
       "telephone": "+51952606435",
       "url": "https://calletano-restaurant.web.app/",
@@ -70,38 +116,56 @@
       "url": "https://calletano-restaurant.web.app/"
     }
     </script>
-    <script type="speculationrules">
-    {
-    "prerender": [{
-        "where": {
-        "and": [
-            { "href_matches": "/*" },
-            { "not": { "href_matches": "/*admin-secreto.html" } }
-        ]
-        },
-        "eagerness": "moderate"
-    }]
-    }
-    </script>
+
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg fixed-top navbar-calletano">
+    <!--
+    ════════════════════════════════════════════════════════════
+    CALLETANO — CONTRATO DE DIRECCIÓN (Impeccable · seed f7e4d25f)
+    ════════════════════════════════════════════════════════════
+    THESIS: la landing es el tablón del mercado de pescado de Máncora —
+    el menú de HOY es la pesca del día, viva y cambiante; rechaza la
+    tarjeta genérica de restaurante con foto de fondo y serif cálida.
+    OWN-WORLD: paleta del logo — oscuro #202D0F (fondos y texto), naranja
+    #EA983D y turquesa #11F6F5 en CTAs, crema #F9F5A8 y amarillo #FADA77
+    en etiquetas; dorado #CEAA63 solo sobre oscuro
+    con perforación, cajas con esquina doblada, Anton para letreros y
+    Karla para el cuerpo; profundidad por capas de color planas.
+    STORY: el visitante entiende al primer vistazo qué se come HOY, que
+    está abierto, y que hay una razón (el Club) para volver; decide y
+    actúa (carta / WhatsApp / club).
+    FIRST VIEWPORT: foto real del mar a sangre bajo tinte marino, badge
+    de estado como etiqueta de papel perforada, CALLEtano en Anton
+    gigante con la etiqueta "pesca del día", CTA carmesí "VER CARTA".
+    FORM: mundo "mercado de pescado" (candidato 3 de la lista
+    fundamentada), elevado por: tablón en vivo del menú (split-flap),
+    sellos del club como gráficos pintados (Dubois), una imagen
+    protagonista (poster), capas planas sin sombras (papercut) y
+    ticker de estado en vivo (mecha).
+    FINISH: unreviewed and undocumented is unfinished; this build ends
+    with the finish review, the verdict, and DESIGN.md.
+    ════════════════════════════════════════════════════════════
+    -->
+
+    <nav class="navbar navbar-expand-lg fixed-top navbar-calletano" id="navbar">
         <div class="container">
             <a class="navbar-brand" href="#">Calletano</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Abrir menú">
+            <button class="navbar-toggler" type="button" id="navToggle" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-label="Abrir menú">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="collapse navbar-collapse" id="navMenu">
                 <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item"><a class="nav-link" href="#menu-dia">Menú del Día</a></li>
                     <li class="nav-item"><a class="nav-link" href="#favoritos">Favoritos</a></li>
                     <li class="nav-item"><a class="nav-link" href="#domingo">Domingos</a></li>
                     <li class="nav-item"><a class="nav-link" href="#resenas">Reseñas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#club">Club</a></li>
                     <li class="nav-item"><a class="nav-link" href="#visitanos">Ubícanos</a></li>
                     <li class="nav-item ms-lg-2">
                         <a class="nav-link btn-nav-carta" href="carta.html">NUESTRA CARTA</a>
                     </li>
+
                 </ul>
             </div>
         </div>
@@ -120,19 +184,14 @@
         >
 
         <div class="container position-relative z-2 text-center">
-            <div id="status-restaurante" class="d-inline-block mb-3"></div>
+            <span class="hero-tag mb-4"><i class="fas fa-fish me-2" aria-hidden="true"></i> Pesca del día</span>
+            <div id="status-restaurante" class="d-inline-block mb-4"></div>
 
             <h1 class="fw-bold mb-2">Calletano Restaurant</h1>
             <p class="lead mb-4">EL MEJOR SABOR DE MÁNCORA</p>
             <a href="carta.html" class="btn btn-hero">
                 <i class="fas fa-utensils me-2"></i> VER CARTA Y PRECIOS
             </a>
-        </div>
-
-        <div class="wave-container">
-            <div class="wave wave1"></div>
-            <div class="wave wave2"></div>
-            <div class="wave wave3"></div>
         </div>
     </header>
 
@@ -181,9 +240,56 @@
             <p class="text-center text-muted mb-4">Lo más pedido por nuestros clientes en Máncora</p>
             
             <div id="favoritos-container" class="row g-4">
-                <div class="col-md-12 text-center text-muted fst-italic">
-                    Preparando la lista de nuestros mejores ceviches y sudados...
-                </div>
+                <!-- PLATOS FAVORITOS (hardcodeados desde Firebase) -->
+                <div class="col-md-6 col-lg-4">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/espagueti-alfredo.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Espagueti al alfredo" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Espagueti al alfredo</h5>
+                                    <p class="text-muted small">Espagueti en una cremosa salsa Alfredo, suave y llena de sabor.</p>
+                                </div>
+                            </div>
+                        </div><div class="col-md-6 col-lg-4">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/trio-criollo.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Trio criollo" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Trio criollo</h5>
+                                    <p class="text-muted small">Combinación tradicional que incluye seco de chavelo, majado de yuca con costillas de cerdo y carne seca, llena de sabor norteño.</p>
+                                </div>
+                            </div>
+                        </div><div class="col-md-6 col-lg-4">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/ronda-marina.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Ronda marina" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Ronda marina</h5>
+                                    <p class="text-muted small">Selección marina que incluye ceviche de mixto, arroz con mariscos, causa de pulpo al olivo, chicharrón de pescado, tequeños de langostino. Incluye Cerveza</p>
+                                </div>
+                            </div>
+                        </div><div class="col-md-6 col-lg-4">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/alitas-bbq.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Alitas BBQ" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Alitas BBQ</h5>
+                                    <p class="text-muted small">Alitas de pollo crocantes bañadas en salsa BBQ, jugosas y llenas de sabor, aacompañadas de papas fritas.</p>
+                                </div>
+                            </div>
+                        </div><div class="col-md-6 col-lg-4">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/patacones-rellenos.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Patacones rellenos" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Patacones rellenos</h5>
+                                    <p class="text-muted small">Patacones crujientes rellenos y bañados en una sabrosa salsa de mariscos con calamar, pulpo y langostino.</p>
+                                </div>
+                            </div>
+                        </div><div class="col-md-6 col-lg-4">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/causa-langostinos.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Causa de langostinos" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Causa de langostinos</h5>
+                                    <p class="text-muted small">Causa limeña rellena de langostinos, fresca, cremosa y llena de sabor marino.</p>
+                                </div>
+                            </div>
+                        </div>
             </div>
         </div>
     </section>
@@ -192,10 +298,91 @@
         <div class="container">
             <h2 class="text-center section-title">Especiales de Domingo</h2>
             <div id="domingo-container" class="row g-4">
-                 <div class="col-md-12 text-center text-muted fst-italic">
-                    Descubre nuestros platos especiales de fin de semana.
+                <!-- ESPECIALES DE DOMINGO (hardcodeados desde Firebase) -->
+                <div class="col-md-6">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/gallina-horno.webp" class="card-img-top img-blur" style="height:200px;object-fit:cover;" alt="Gallina al horno" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Gallina al horno</h5>
+                                    <p class="text-muted small">Gallina al horno jugosa y bien sazonada, acompañada de tallarines verdes cremosos con queso parmesano y papa a la huancaína.</p>
+                                </div>
+                            </div>
+                        </div><div class="col-md-6">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/copus-cabrito.webp" class="card-img-top img-blur" style="height:200px;object-fit:cover;" alt="Copus de cabrito" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Copus de cabrito</h5>
+                                    <p class="text-muted small">Cabrito cocido lentamente en aderezo tradicional, acompañado de arroz blanco, plátano y camote asados, humita y sarza criolla.</p>
+                                </div>
+                            </div>
+                        </div><div class="col-md-6">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/cabrito-nortena.webp" class="card-img-top img-blur" style="height:200px;object-fit:cover;" alt="Cabrito a la norteña" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Cabrito a la norteña</h5>
+                                    <p class="text-muted small">Cabrito tierno y bien sazonado, acompañado de arroz, frejol, humita y sarza criolla.</p>
+                                </div>
+                            </div>
+                        </div><div class="col-md-6">
+                            <div class="card dish-card h-100 border-0 shadow-sm">
+                                <img src="img/pato-horno.webp" class="card-img-top img-blur" style="height:200px;object-fit:cover;" alt="Pato al horno" loading="lazy" onerror="this.style.display='none'">
+                                <div class="card-body text-center">
+                                    <h5 class="fw-bold">Pato al horno</h5>
+                                    <p class="text-muted small">Pato al horno jugoso y bien sazonado, acompañado de arroz a la jardinera y papa a la huancaína.</p>
+                                </div>
+                            </div>
+                        </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 🎫 CLUB DE FIDELIZACIÓN — Presentación breve en la landing con acceso
+         directo al registro (club-crear.html) y a la consulta de progreso
+         (club-consultar.html). El nav apunta a #club (ancla a esta sección). -->
+    <section id="club" class="club-section" data-reveal>
+        <div class="container">
+            <div class="text-center">
+                <span class="club-badge"><i class="fas fa-id-card me-2" aria-hidden="true"></i>Club Calletano</span>
+                <h2 class="section-title" style="margin-bottom: 1rem;">Programa de Fidelización</h2>
+                <p class="club-lead mx-auto mb-5">
+                    Cada boleta que supere el consumo mínimo suma un sello a tu tarjeta digital.
+                    Al llegar a <strong>10 visitas</strong> ganas <strong>un plato de carta personal</strong>.
+                    Máximo 1 sello por día · <strong>Boletas desde S/ 80</strong> (menú, almuerzo de domingo o platos de carta) · Las bebidas no suman al mínimo.
+                </p>
+            </div>
+
+            <div class="row justify-content-center g-4">
+                <div class="col-md-5" data-reveal data-reveal-delay="100">
+                    <div class="club-card h-100 text-center">
+                        <div class="club-premio-celebra mx-auto mb-3">
+                            <i class="fas fa-user-plus" aria-hidden="true"></i>
+                        </div>
+                        <h3 class="club-card-title mb-2">¿Aún no eres socio?</h3>
+                        <p class="club-card-sub mb-4">Crea tu tarjeta digital gratis con tu DNI y empieza a sumar sellos desde tu primera visita.</p>
+                        <a href="club-crear.html" class="club-btn d-inline-block" style="width: auto; min-width: 200px; text-decoration: none;">
+                            <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Regístrate gratis
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-md-5" data-reveal data-reveal-delay="200">
+                    <div class="club-card h-100 text-center">
+                        <div class="club-premio-celebra mx-auto mb-3">
+                            <i class="fas fa-search" aria-hidden="true"></i>
+                        </div>
+                        <h3 class="club-card-title mb-2">¿Ya eres socio?</h3>
+                        <p class="club-card-sub mb-4">Consulta tus sellos, mira cuánto te falta para el premio y muestra tu tarjeta con QR.</p>
+                        <a href="club-consultar.html" class="club-btn club-btn-outline d-inline-block" style="width: auto; min-width: 200px; text-decoration: none;">
+                            <i class="fas fa-search me-2" aria-hidden="true"></i>Ver mi progreso
+                        </a>
+                    </div>
                 </div>
             </div>
+
+            <p class="text-center mt-5 mb-0">
+                <!-- color lo posee .club-section a[href="terminos-club.html"] en style-landing.css -->
+                <a href="terminos-club.html" style="font-weight: 700;"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+            </p>
         </div>
     </section>
 
@@ -211,7 +398,7 @@
             </div>
 
             <div class="text-center mt-5">
-                <a href="https://g.page/r/CWgDl1hLH4UtEBM/review" target="_blank" class="btn btn-outline-primary rounded-pill px-4 py-3 fw-bold">
+                <a href="https://g.page/r/CWgDl1hLH4UtEBM/review" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary rounded-pill px-4 py-3 fw-bold">
                     <i class="fab fa-google me-2"></i> Déjanos tu opinión
                 </a>
             </div>
@@ -240,13 +427,13 @@
             </div>
 
             <div class="d-flex justify-content-center gap-3 flex-wrap mb-4">
-                <a id="link-fb" href="#" target="_blank" class="btn btn-social btn-outline-fb">
+                <a id="link-fb" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-social btn-outline-fb">
                     <i class="fab fa-facebook me-2"></i> Facebook
                 </a>
-                <a id="link-ig" href="#" target="_blank" class="btn btn-social btn-outline-ig">
+                <a id="link-ig" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-social btn-outline-ig">
                     <i class="fab fa-instagram me-2"></i> Instagram
                 </a>
-                <a href="https://maps.app.goo.gl/9eViDnE7AuAue1f77" target="_blank" class="btn btn-social btn-mapa">
+                <a href="https://maps.app.goo.gl/9eViDnE7AuAue1f77" target="_blank" rel="noopener noreferrer" class="btn btn-social btn-mapa">
                     <i class="fas fa-map-marker-alt me-2"></i> Cómo llegar
                 </a>
             </div>
@@ -256,9 +443,10 @@
     <div class="modal fade" id="modalCerrado" tabindex="-1" aria-labelledby="modalCerradoLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content text-center border-0 shadow-lg" style="border-radius: 20px;">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 <div class="modal-body p-5">
                     <i class="fas fa-store-slash text-danger mb-3" style="font-size: 4rem; animation: float 3s infinite ease-in-out;"></i>
-                    <h3 class="fw-bold mb-3" style="font-family: 'Playfair Display', serif; color: var(--naranja-logo);">Hoy no atendemos</h3>
+                    <h3 class="fw-bold mb-3" id="modalCerradoLabel" style="color: var(--brand-deep);">Hoy no atendemos</h3>
                     <p class="text-muted mb-4 fs-5">
                         Estamos recargando energías para ofrecerte el mejor sabor. ¡Te esperamos mañana!
                     </p>
@@ -270,15 +458,28 @@
         </div>
     </div>
     
-    <footer>
-        <div class="container text-center">
-            <p class="mb-0 fw-bold">© 2025 Calletano Restaurant - Máncora</p>
-            <p class="small text-white-50">Desarrollado para el mejor sabor norteño.</p>
+    <footer class="footer-calletano">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-7">
+                    <h3 class="footer-brand">Calletano Restaurant</h3>
+                    <p class="footer-tagline">El mejor sabor de Máncora</p>
+                    <p class="footer-desc">
+                        Pescados, mariscos y el mejor menú criollo del distrito, hechos con el mejor sabor norteño.
+                    </p>
+                </div>
+            </div>
+            <div class="footer-legal text-center">
+                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+            </div>
+            <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
         </div>
     </footer>
 
     <div class="fixed-bottom p-3 d-flex justify-content-end">
-        <a id="btn-wsp" href="#" target="_blank" aria-label="Contactar por WhatsApp">
+        <a id="btn-wsp" href="https://wa.me/51952606435" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp">
             <i class="fab fa-whatsapp"></i>
         </a>
     </div>
@@ -304,6 +505,7 @@
         }
     </script> -->
     
-    <script type="module" src="js/app_index.js"></script>
+    <script type="module" src="js/app_index.js?v=4"></script>
+
 </body>
 </html>

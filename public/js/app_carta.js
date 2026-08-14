@@ -1,5 +1,5 @@
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { doc, getDoc, getDocFromServer } from './lib/firebase-bundle.js?v=4';
+import { db, track } from "./firebase-config.js?v=4";
 
 // ============================================
 // SCROLL REVEAL - Intersection Observer
@@ -44,7 +44,18 @@ function mostrarSkeletons() {
 
 mostrarSkeletons();
 
-getDoc(doc(db, "contenido", "cartaCompleta")).then((docSnap) => {
+// 🛡️ cartaCompleta se carga desde el servidor para evitar caché corrupta.
+// Resiliencia: ante fallas transitorias de red se reintenta UNA vez y, si sigue
+// fallando, getDoc() cae automáticamente a la caché local (última versión vista).
+const refCarta = doc(db, "contenido", "cartaCompleta");
+function cargarCartaDesdeServidor() {
+    return getDocFromServer(refCarta)
+        .catch(() => new Promise(r => setTimeout(r, 1500)).then(() => getDocFromServer(refCarta)))
+        .catch(() => getDoc(refCarta));
+}
+
+cargarCartaDesdeServidor()
+.then((docSnap) => {
     if (!docSnap.exists() || !docSnap.data().categorias) {
         if (mainContainer) mainContainer.innerHTML = "<p style='text-align:center; padding:20px;' class='text-muted'>Estamos armando nuestra carta virtual. ¡Vuelve pronto!</p>";
         return;
@@ -82,4 +93,25 @@ getDoc(doc(db, "contenido", "cartaCompleta")).then((docSnap) => {
             revealObserver.observe(card);
         });
     }
-}).catch(e => console.error("Error cargando carta:", e));
+}).catch(e => {
+    console.error("Error cargando carta:", e);
+    if (mainContainer) mainContainer.innerHTML = "<p style='text-align:center; padding:20px;' class='text-muted'>Error al cargar la carta. <br><small>Verifica tu conexión a internet.</small></p>";
+});
+
+// ============================================
+// EVENTOS DE CONVERSIÓN (Firebase Analytics)
+// ============================================
+function rastrearClicksCarta() {
+    // Pedir por WhatsApp (FAB)
+    const wsp = document.querySelector('.fab-wsp');
+    if (wsp) wsp.addEventListener('click', () => track('click_whatsapp', { origen: 'carta' }));
+
+    // Categorías del menú (delegación: los botones se generan por JS)
+    if (navContainer) {
+        navContainer.addEventListener('click', (e) => {
+            const btn = e.target.closest('.nav-btn');
+            if (btn) track('select_categoria', { categoria: btn.textContent.trim() });
+        });
+    }
+}
+rastrearClicksCarta();

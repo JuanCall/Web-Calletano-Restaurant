@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi tarjeta del Club - Calletano Restaurant</title>
+    <meta name="description" content="Consulta el progreso de tu tarjeta del Club Calletano: visitas acumuladas, cuánto te falta para tu premio y tu código QR.">
+    <link rel="icon" href="img/fondo.webp" type="image/webp">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+
+    <link rel="stylesheet" href="styles/style.css">
+
+    <style>
+        /* Barra superior simple para páginas del club */
+        .club-topbar {
+            /* Gradiente oscuro: texto blanco cumple WCAG AA (antes ~2.8:1) */
+            background: linear-gradient(135deg, #b95610 0%, #9c4707 100%);
+            padding: 18px 0;
+            border-bottom: 4px solid var(--amarillo-fuerte);
+        }
+        .club-topbar .brand {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            color: #fff;
+            font-size: 1.5rem;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+        .club-topbar .brand i { color: var(--amarillo-suave); margin-right: 8px; }
+        .club-topbar .link-back {
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .club-topbar .link-back:hover {
+            color: #fff;
+            text-decoration: underline; /* no depender solo del color: AA 1.4.1 */
+            text-underline-offset: 4px;
+        }
+
+        .club-page-main {
+            padding: 4.5rem 0 5.5rem;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(14, 241, 243, 0.10), transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(232, 153, 61, 0.14), transparent 45%),
+                linear-gradient(180deg, var(--surface-default) 0%, #fdf3e3 100%);
+            min-height: calc(100vh - 190px);
+        }
+
+        /* La tarjeta nace oculta y se revela con animación */
+        #club-vista-tarjeta { display: none; }
+        #club-vista-tarjeta.show { display: block; animation: club-tarjeta-entrada 0.6s cubic-bezier(.22,1,.36,1) both; }
+
+        @keyframes club-tarjeta-entrada {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .club-consulta-form {
+            max-width: 560px;
+            margin: 0 auto 2.5rem;
+        }
+
+        /* ==========================================================
+           REDISEÑO — Tarjeta digital "pase de playa"
+           Paleta: atardecer de Máncora (naranja/dorado del topbar)
+           + acento "mar" turquesa ya presente en el fondo de la página.
+           Firma visual: la tarjeta se lee como un boarding-pass de
+           playa — cuerpo cálido de atardecer + talón QR perforado.
+           ========================================================== */
+
+        :root {
+            --mar-turquesa: #12c9c4;
+            --mar-turquesa-oscuro: #0a8f8c;
+            --stub-bg: #fffaf0;
+            --stub-notch: #F9F5A8; /* crema del mundo: coincide con el fondo detrás de la tarjeta */
+        }
+
+        .club-tarjeta-wrap {
+            max-width: 640px;
+            perspective: 1400px;
+        }
+
+        .club-tarjeta {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 176px;
+            border-radius: 22px;
+            overflow: visible;
+            /* Gradiente oscurecido: el texto blanco cumple WCAG AA en TODA la
+               tarjeta (antes #f2a340 dejaba ~2:1 en el extremo claro). */
+            background:
+                radial-gradient(circle at 8% 120%, rgba(18, 201, 196, 0.35), transparent 55%),
+                linear-gradient(135deg, #c2650f 0%, #a34e08 100%);
+            box-shadow:
+                0 24px 48px -18px rgba(196, 101, 15, 0.55),
+                0 4px 14px rgba(0,0,0,0.12);
+            transition: transform .45s cubic-bezier(.22,1,.36,1), box-shadow .45s ease;
+        }
+
+        .club-tarjeta-wrap:hover .club-tarjeta {
+            transform: rotateX(2deg) rotateY(-2deg) translateY(-4px);
+            box-shadow:
+                0 32px 60px -18px rgba(196, 101, 15, 0.6),
+                0 6px 18px rgba(0,0,0,0.14);
+        }
+
+        /* Textura sutil tipo "horizonte de olas" en la base del cuerpo cálido */
+        .club-tarjeta::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 22px;
+            background-image:
+                repeating-radial-gradient(circle at 50% 190%, rgba(255,255,255,0.10) 0 2px, transparent 3px 46px);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .club-confetti {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: 22px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .club-tarjeta-top {
+            position: relative;
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 1.5rem 1.6rem 0.4rem;
+            z-index: 2;
+        }
+
+        .club-tarjeta-logo {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            font-size: 1.05rem;
+            letter-spacing: 1.5px;
+            color: #fff8ec;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+        }
+        .club-tarjeta-logo i { color: var(--amarillo-suave, #ffd166); }
+
+        .club-tarjeta-sede {
+            margin-top: 4px;
+            font-family: 'Space Mono', ui-monospace, monospace;
+            font-size: 0.72rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.95);
+        }
+        .club-tarjeta-sede::before {
+            content: "\f3c5";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            margin-right: 5px;
+            color: var(--mar-turquesa);
+        }
+
+        /* Sello de porcentaje: como un sello de pasaporte, ligeramente inclinado */
+        .club-tarjeta-pct,
+        .club-tarjeta-estado {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            transform: rotate(-8deg);
+            background: radial-gradient(circle at 35% 30%, #ffe8b8, var(--amarillo-suave, #ffd166) 55%, var(--amarillo-fuerte, #f2b204) 100%);
+            border: 2px dashed rgba(196, 101, 15, 0.55);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.18);
+            font-family: 'Space Mono', ui-monospace, monospace;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #7a3f0a;
+        }
+
+        .club-tarjeta-body {
+            position: relative;
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 176px;
+            z-index: 2;
+        }
+
+        .club-tarjeta-info {
+            padding: 0.6rem 1.6rem 1.6rem;
+            color: #fff8ec;
+        }
+
+        .club-tarjeta-nombre {
+            font-family: 'Playfair Display', serif;
+            font-weight: 800;
+            font-size: 1.4rem;
+            line-height: 1.15;
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+
+        .club-tarjeta-doc {
+            margin-top: 3px;
+            font-family: 'Space Mono', ui-monospace, monospace;
+            font-size: 0.8rem;
+            letter-spacing: 1.5px;
+            color: rgba(255,255,255,0.95);
+        }
+
+        .club-tarjeta-visitas {
+            margin-top: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+            font-size: 0.92rem;
+            color: #fff;
+        }
+        .club-tarjeta-visitas::before {
+            content: "\f2e7";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: var(--mar-turquesa);
+        }
+
+        /* Barra de progreso: del dorado del amanecer al turquesa del mar */
+        .club-progress { margin-top: 0.8rem; }
+
+        .club-progress-track {
+            position: relative;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.28);
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.18);
+        }
+
+        .club-progress-bar {
+            position: relative;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #ffe08a 0%, var(--mar-turquesa) 100%);
+            box-shadow: 0 0 10px rgba(18, 201, 196, 0.55);
+            transition: width .6s cubic-bezier(.22,1,.36,1);
+        }
+
+        .club-progress-bar::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(100deg, transparent 20%, rgba(255,255,255,0.55) 45%, transparent 70%);
+            background-size: 200% 100%;
+            animation: club-progress-shine 2.6s ease-in-out infinite;
+        }
+
+        @keyframes club-progress-shine {
+            0%   { background-position: 140% 0; }
+            60%, 100% { background-position: -60% 0; }
+        }
+
+        /* Sellos de visitas — círculos tipo "sol" que se van llenando */
+        .club-sellos {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 1rem;
+        }
+
+        .club-sellos > * {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            border: 1.5px dashed rgba(255,255,255,0.55);
+            color: rgba(255,255,255,0.55);
+            background: rgba(255,255,255,0.08);
+            transition: transform .3s ease, background .3s ease, border-color .3s ease;
+        }
+
+        /* Estado "cumplido" — cubre nombres de clase habituales; ajustar si tu JS usa otro */
+        .club-sellos > .activo,
+        .club-sellos > .active,
+        .club-sellos > .lleno,
+        .club-sellos > .filled,
+        .club-sellos > .completado,
+        .club-sellos > .done {
+            border-style: solid;
+            border-color: transparent;
+            color: #7a3f0a;
+            background: radial-gradient(circle at 35% 30%, #ffe8b8, var(--amarillo-suave, #ffd166) 60%, var(--amarillo-fuerte, #f2b204) 100%);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+            transform: scale(1.08);
+        }
+
+        .club-premio {
+            margin-top: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.65rem 0.9rem;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.22);
+            font-size: 0.82rem;
+            line-height: 1.35;
+            color: #fff8ec;
+        }
+        .club-premio::before {
+            content: "\f7a5";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: 1rem;
+            flex-shrink: 0;
+            color: var(--amarillo-suave, #ffd166);
+        }
+
+        /* Talón del QR — como el stub separable de un ticket de embarque */
+        .club-tarjeta-qr-box {
+            position: relative;
+            grid-row: 1 / -1;
+            grid-column: 2;
+            margin: 0.9rem 0.9rem 0.9rem 0;
+            padding: 1.3rem 0.9rem;
+            background: var(--stub-bg);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.7rem;
+            box-shadow: inset 0 0 0 1px rgba(196,101,15,0.08);
+        }
+
+        /* Línea perforada + muescas que simulan el desprendible del ticket */
+        .club-tarjeta-qr-box::before {
+            content: "";
+            position: absolute;
+            left: -1px;
+            top: 10px;
+            bottom: 10px;
+            border-left: 2px dashed rgba(196, 101, 15, 0.35);
+        }
+        .club-tarjeta-qr-box::after {
+            content: "";
+            position: absolute;
+            left: -11px;
+            top: -11px;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--stub-notch);
+            box-shadow: 0 168px 0 var(--stub-notch);
+        }
+
+        .club-tarjeta-qr-img {
+            width: 118px;
+            height: 118px;
+            padding: 8px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .club-tarjeta-url {
+            font-family: 'Space Mono', ui-monospace, monospace;
+            font-size: 0.62rem;
+            letter-spacing: 0.5px;
+            text-align: center;
+            color: #a8681f;
+            word-break: break-all;
+        }
+
+        /* Responsive — el talón pasa a la parte inferior, perforado horizontal */
+        @media (max-width: 620px) {
+            .club-tarjeta,
+            .club-tarjeta-body {
+                grid-template-columns: 1fr;
+            }
+            .club-tarjeta-qr-box {
+                grid-row: auto;
+                grid-column: 1;
+                margin: 0 0.9rem 0.9rem;
+                flex-direction: row;
+                justify-content: center;
+            }
+            .club-tarjeta-qr-box::before {
+                left: 10px;
+                right: 10px;
+                top: -1px;
+                bottom: auto;
+                border-left: none;
+                border-top: 2px dashed rgba(196, 101, 15, 0.35);
+            }
+            .club-tarjeta-qr-box::after {
+                left: -11px;
+                top: -11px;
+                box-shadow: 168px 0 0 var(--stub-notch);
+            }
+            .club-tarjeta-qr-img {
+                width: 96px;
+                height: 96px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .club-progress-bar::after { animation: none; }
+            #club-vista-tarjeta.show { animation: none; }
+            .club-tarjeta-wrap:hover .club-tarjeta { transform: none; }
+        }
+    </style>
+    <link rel="stylesheet" href="styles/style-mundo.css">
+</head>
+<body>
+
+    <div class="club-topbar">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="index.html" class="brand"><i class="fas fa-id-card" aria-hidden="true"></i>Club Calletano</a>
+            <a href="club-crear.html" class="link-back"><i class="fas fa-user-plus me-1" aria-hidden="true"></i>¿No tienes tarjeta? Crea la tuya</a>
+        </div>
+    </div>
+
+    <main class="club-page-main">
+        <div class="container">
+            <div class="text-center mb-4">
+                <span class="club-badge"><i class="fas fa-id-card me-2" aria-hidden="true"></i>Club Calletano</span>
+                <h2 class="section-title mb-2" style="margin-bottom: 12px;">Tu tarjeta digital, siempre contigo</h2>
+                <p class="club-lead mx-auto" id="club-meta-text-prox">Consulta tus visitas y mira cuánto te falta para tu premio.</p>
+            </div>
+
+            <!-- VISTA 1: CONSULTA -->
+            <div id="club-vista-consulta">
+                <div class="club-card club-consulta-form">
+                    <h3 class="club-card-title"><i class="fas fa-search me-2" style="color: var(--naranja-logo);" aria-hidden="true"></i>Consulta tu progreso</h3>
+                    <p class="club-card-sub">Ingresa tu DNI (8 dígitos) o tu Carné de Extranjería (9 a 12 dígitos), sin puntos ni guiones.</p>
+
+                    <div class="club-field">
+                        <span>Número de documento</span>
+                        <input type="text" id="club-consulta-doc" class="club-input" inputmode="numeric" placeholder="Ej: 12345678" autocomplete="off">
+                    </div>
+
+                    <div id="club-consulta-msg" class="club-msg" role="status"></div>
+
+                    <button type="button" id="club-consulta-btn" class="club-btn">Ver mi progreso</button>
+                </div>
+            </div>
+
+            <!-- VISTA 2: TARJETA DIGITAL -->
+            <div id="club-vista-tarjeta">
+                <div id="club-tarjeta-wrap" class="club-tarjeta-wrap mx-auto">
+                    <div class="club-tarjeta">
+                        <!-- 🎉 Confeti: se activa solo cuando el premio está listo -->
+                        <div class="club-confetti" id="club-confetti" aria-hidden="true"></div>
+                        <div class="club-tarjeta-top">
+                            <div>
+                                <div class="club-tarjeta-logo"><i class="fas fa-id-card me-2" aria-hidden="true"></i>CLUB CALLETANO</div>
+                                <div class="club-tarjeta-sede" id="club-tarjeta-sede">Máncora</div>
+                            </div>
+                            <div class="club-tarjeta-estado" id="club-tarjeta-pct">0%</div>
+                        </div>
+
+                        <div class="club-tarjeta-body">
+                            <div class="club-tarjeta-info">
+                                <div class="club-tarjeta-nombre" id="club-tarjeta-nombre">—</div>
+                                <div class="club-tarjeta-doc" id="club-tarjeta-doc">—</div>
+                                <div class="club-tarjeta-visitas" id="club-tarjeta-visitas">0 de 10 visitas</div>
+
+                                <div class="club-progress">
+                                    <div class="club-progress-track">
+                                        <div class="club-progress-bar" id="club-tarjeta-bar"></div>
+                                    </div>
+                                </div>
+
+                                <!-- 🎯 Sellos de visitas: un círculo por visita acumulada -->
+                                <div class="club-sellos" id="club-sellos" role="img" aria-label="Progreso de tus visitas"></div>
+
+                                <div id="club-tarjeta-premio" class="club-premio">Preséntala en caja al pagar: el personal la escanea y tu visita queda registrada.</div>
+                            </div>
+
+                            <div class="club-tarjeta-qr-box">
+                                <img id="club-tarjeta-qr" class="club-tarjeta-qr-img d-none" alt="Código QR de tu tarjeta">
+                                <div class="club-tarjeta-url" id="club-tarjeta-url"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-2">
+                            <a href="#" id="club-wsp-btn" class="club-btn club-btn-wsp d-none" target="_blank" rel="noopener">
+                                <i class="fab fa-whatsapp" aria-hidden="true"></i> Compartir por WhatsApp
+                            </a>
+                            <button type="button" id="club-volver-btn" class="club-btn club-btn-outline" style="width:auto; padding: 0.7rem 1.6rem;">← Consultar otra tarjeta</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-calletano">
+        <div class="container text-center">
+            <h3 class="footer-brand">Calletano Restaurant</h3>
+            <p class="footer-tagline">El mejor sabor de Máncora</p>
+            <div class="footer-legal">
+                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+            </div>
+            <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
+        </div>
+    </footer>
+
+    <!-- 🎫 Librería de QR (código abierto, local) -->
+    <script src="js/lib/qrcode.min.js?v=4"></script>
+    <script type="module" src="js/app_club_consultar.js?v=4"></script>
+</body>
+</html>

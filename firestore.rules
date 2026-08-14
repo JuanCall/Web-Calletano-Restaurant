@@ -1,0 +1,194 @@
+rules_version = '2';
+
+// ══════════════════════════════════════════════════════════════
+// 🎫 REGLAS FIREBASE — SISTEMA POS + CLUB CALLETANO (fusionadas)
+// ══════════════════════════════════════════════════════════════
+// Se conservan EXACTAMENTE las reglas que tenías en la consola
+// (roles isAdmin / isCaja / isSystem, contenido, resenas, mesas_pos,
+// ventas_historicas y gastos) y se AGREGAN las del Club:
+//   - club_miembros/{documento}  → tarjetas de socios
+//   - club_visitas/{visitaId}    → historial de visitas
+//
+// ⚠️ Al desplegar reemplaza las reglas actuales de la consola:
+//   firebase deploy --only firestore:rules
+//
+// Nota: las escrituras del backend local (POS) se hacen con la cuenta
+// de servicio (Firebase Admin) y SIEMPRE están permitidas, sin importar
+// estas reglas. Las reglas solo gobiernan a las apps (web, mozo, dueño).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================================================
+    // 1. ROLES DE USUARIO (Access Control)
+    // =========================================================
+    function isAdmin() {
+      // TU cuenta (Dueño)
+      return request.auth != null && request.auth.uid == "rCDRecax8PhKQYqyfQo7pZztakW2";
+    }
+
+    function isCaja() {
+      // Cuenta exclusiva de la Caja
+      return request.auth != null && request.auth.uid == "Ah0FADPQuQgSNuOzCnsI2jxTzaz2";
+    }
+
+    function isSystem() {
+      // Permite el paso si es la Caja O si es el Dueño
+      return isAdmin() || isCaja();
+    }
+
+    // =========================================================
+    // 2. POLÍTICA DE DENEGACIÓN POR DEFECTO (OWASP)
+    // =========================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================
+    // 3. CONTENIDO PÚBLICO (Solo lectura para clientes)
+    // =========================================================
+    match /contenido/{documento} {
+      allow read: if true;
+      allow write: if isAdmin();
+      // 📋 Nota: contenido/clubConfig fue ELIMINADO — la configuración del Club
+      // Calletano (meta, premio, consumo) ahora es fija en el código (8 visitas).
+    }
+
+    match /resenas/{resenaId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // =========================================================
+    // 4. SISTEMA OPERATIVO POS (Mozos y Caja)
+    // =========================================================
+    match /mesas_pos/{mesaId} {
+      // isSystem permite a la Caja operar, y al Admin monitorear mesas remotamente
+      allow read, write: if isSystem();
+    }
+
+    // =========================================================
+    // 5. PROTECCIÓN FINANCIERA ANTIFRAUDE (Ventas y Gastos)
+    // =========================================================
+    match /ventas_historicas/{ventaId} {
+      allow read: if isSystem();   // Ambos necesitan leer (Caja para arqueo, Admin para Dashboard)
+      allow create: if isSystem();   // Ambos registran ventas nuevas
+      allow update: if false;      // Inmutabilidad absoluta
+      allow delete: if isAdmin();  // Solo el Admin puede anular
+    }
+
+    match /gastos/{gastoId} {
+      allow read, create: if isSystem();
+      allow update: if isSystem();
+      allow delete: if isSystem(); // La caja borra si se equivoca, el admin borra remotamente
+    }
+
+    // =========================================================
+    // 6. 🎫 CLUB CALLETANO (Fidelización)
+    // =========================================================
+    // 🔒 PRIVACIDAD: los datos personales (correo, teléfono, preferencias
+    // de promociones) viven en club_contacto/{documento}, NO en
+    // club_miembros. Así la lectura pública de club_miembros solo expone
+    // lo de la tarjeta (nombre, documento, visitas), nunca PII.
+    //
+    // Un documento por socio: club_miembros/{documento} (DNI o CE)
+    match /club_miembros/{documento} {
+      // La web consulta su propia tarjeta con su DNI (get por id).
+      // La lista completa SOLO la ve el Dueño o la Caja (panel de socios).
+      allow get: if true;
+      allow list: if isSystem();
+
+      // Creación de tarjeta desde la web pública, con validación de campos.
+      // ⚠️ visitas DEBE ser 0 al crear: así nadie puede abrirse una tarjeta
+      // con visitas ya contadas.
+      // 🛡️ Solo se aceptan los campos de la tarjeta (sin correo/teléfono).
+      // 🔑 `token` (opcional) es el token opaco de la tarjeta: el QR/link lo usa
+      // en lugar del documento para no exponer el DNI. Se crea junto con su
+      // mapeo en club_tokens/{token}.
+      allow create: if request.resource.data.documento == documento
+        && request.resource.data.tipo_documento in ['DNI', 'CE']
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() >= 2
+        && request.resource.data.nombre.size() <= 80
+        && request.resource.data.acepta_datos == true
+        && request.resource.data.visitas is int
+        && request.resource.data.visitas == 0
+        && request.resource.data.creado_en is string
+        && !('correo' in request.resource.data)
+        && !('telefono' in request.resource.data)
+        && !('promociones' in request.resource.data)
+        && (!('token' in request.resource.data)
+          || (request.resource.data.token is string
+            && request.resource.data.token.size() >= 8
+            && request.resource.data.token.size() <= 40));
+
+      // 🛡️ ANTIFRAUDE: las visitas YA NO se suman desde la app con login
+      // anónimo. El registro es server-side (POST /api/club/.../visita, con
+      // token compartido y transacción anti-duplicado de 1 visita/día).
+      // Los updates de club_miembros quedan SOLO para Dueño/Caja (canje
+      // del premio, correcciones).
+      allow update: if isSystem();
+
+      // Eliminar una tarjeta de socio: solo el Dueño.
+      allow delete: if isAdmin();
+    }
+
+    // 🔒 DATOS PERSONALES DEL SOCIO (correo, teléfono, promociones).
+    // Lectura SOLO para Dueño/Caja (backend incluido, vía Admin SDK).
+    // El cliente solo puede CREAR su propio contacto al registrarse, y solo
+    // si su tarjeta YA existe en club_miembros (no se puede crear contacto
+    // de un DNI ajeno).
+    match /club_contacto/{documento} {
+      allow get, list: if isSystem();
+      allow create: if request.resource.data.documento == documento
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() >= 2
+        && request.resource.data.nombre.size() <= 80
+        && request.resource.data.correo is string
+        && request.resource.data.telefono is string
+        && request.resource.data.promociones is bool
+        && exists(/databases/$(database)/documents/club_miembros/$(documento));
+      // 📧 BAJA de promociones (opt-out): el socio puede poner promociones
+      // en false desde la página pública club-baja.html, SIN poder leer ni
+      // modificar el resto de sus datos (correo/teléfono intactos).
+      allow update: if isSystem()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['promociones'])
+            && request.resource.data.promociones == false);
+      allow delete: if isSystem();
+    }
+
+    // Historial de visitas: lo escribe SOLO el backend (Admin SDK), ya no
+    // la app del mozo con login anónimo.
+    match /club_visitas/{visitaId} {
+      allow read: if isSystem();          // Panel del Dueño/Caja
+      allow create: if false;             // Solo el backend (Admin SDK) lo escribe
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // 🎫 club_tokens/{token} — mapeo token opaco → documento (PRIVACIDAD).
+    // Los QRs/links NUEVOS de la tarjeta usan un token aleatorio en vez del
+    // documento, para que el DNI/CE no viaje por URLs ni QRs.
+    // Leerlo es público (quien tiene el token ve la tarjeta, igual que hoy);
+    // solo la web al crear una tarjeta y el backend (Admin SDK) lo escriben.
+    match /club_tokens/{token} {
+      allow get: if true;
+      allow list: if isSystem();
+      allow create: if request.resource.data.documento is string
+        && request.resource.data.documento.size() >= 8
+        && request.resource.data.documento.size() <= 12
+        && request.resource.data.creado_en is string;
+      // (Sin exists() de club_miembros: el token se escribe antes que la tarjeta
+      // para que el campo token de la tarjeta solo exista si su mapeo está listo.)
+      allow update, delete: if false;
+    }
+
+    // 📜 Historial de premios canjeados (lo escribe la Caja o el Dueño).
+    match /premios_canjeados/{premioId} {
+      allow read: if isSystem();
+      allow create: if isSystem();
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

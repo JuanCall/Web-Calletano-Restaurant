@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darme de baja de promociones - Club Calletano</title>
+    <meta name="description" content="Deja de recibir promociones del Club Calletano en tu correo, cuando tú lo decidas.">
+    <meta name="robots" content="noindex">
+    <link rel="icon" href="img/fondo.webp" type="image/webp">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+
+    <link rel="stylesheet" href="styles/style.css">
+
+    <style>
+        .club-topbar {
+            /* Gradiente oscuro: texto blanco cumple WCAG AA (antes ~2.8:1) */
+            background: linear-gradient(135deg, #b95610 0%, #9c4707 100%);
+            padding: 18px 0;
+            border-bottom: 4px solid var(--amarillo-fuerte);
+        }
+        .club-topbar .brand {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            color: #fff;
+            font-size: 1.5rem;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+        .club-topbar .brand i { color: var(--amarillo-suave); margin-right: 8px; }
+
+        .club-page-main {
+            padding: 4.5rem 0 5.5rem;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(14, 241, 243, 0.10), transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(232, 153, 61, 0.14), transparent 45%),
+                linear-gradient(180deg, var(--surface-default) 0%, #fdf3e3 100%);
+            min-height: calc(100vh - 190px);
+        }
+
+        .club-baja-card { max-width: 520px; margin: 0 auto; }
+        .baja-icon {
+            width: 84px; height: 84px; border-radius: 50%;
+            background: var(--naranja-logo);
+            color: #fff; font-size: 2.2rem;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 1.2rem;
+            box-shadow: 0 10px 24px rgba(201, 106, 20, 0.35);
+        }
+        .baja-sello {
+            display: inline-block; margin-top: 1.4rem; padding: 0.5rem 1.2rem;
+            border-radius: 50px; font-weight: 800; font-size: 0.85rem;
+            background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7;
+        }
+        .baja-sello--off { background: #fce4ec; color: #c62828; border-color: #f48fb1; }
+    </style>
+    <link rel="stylesheet" href="styles/style-mundo.css">
+</head>
+<body>
+
+    <div class="club-topbar">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="index.html" class="brand"><i class="fas fa-id-card" aria-hidden="true"></i>Club Calletano</a>
+            <a href="club-consultar.html" class="link-back" style="color:rgba(255,255,255,0.92); font-weight:700; font-size:0.9rem; text-decoration:none;">← Mi tarjeta</a>
+        </div>
+    </div>
+
+    <main class="club-page-main">
+        <div class="container">
+            <div class="text-center mb-4">
+                <span class="club-badge"><i class="fas fa-shield-alt me-2" aria-hidden="true"></i>Club Calletano</span>
+                <h2 class="section-title mb-2" style="margin-bottom: 12px;">Preferencias de promociones</h2>
+                <p class="club-lead mx-auto">Elige si quieres seguir recibiendo promociones y novedades en tu correo.</p>
+            </div>
+
+            <div class="club-card club-baja-card">
+                <div class="text-center">
+                    <div class="baja-icon"><i class="fas fa-envelope-open-text" aria-hidden="true"></i></div>
+
+                    <!-- ESTADO 1: confirmación -->
+                    <div id="baja-vista-confirmar">
+                        <h3 class="club-card-title" style="justify-content:center;">¿Quieres dejar de recibir promociones?</h3>
+                        <p class="club-card-sub">Podrás seguir usando tu tarjeta y acumulando visitas normalmente; solo dejarás de recibir correos promocionales.</p>
+
+                        <div id="baja-msg" class="club-msg" role="status"></div>
+
+                        <button type="button" id="baja-btn" class="club-btn" style="background:#c62828; color:#fff;">
+                            <i class="fas fa-times-circle me-2" aria-hidden="true"></i>Sí, darme de baja
+                        </button>
+                        <a href="club-consultar.html" class="club-btn club-btn-outline" style="width:100%; margin-top:0.6rem; text-align:center; text-decoration:none;">No, seguir recibiendo promociones</a>
+                    </div>
+
+                    <!-- ESTADO 2: éxito -->
+                    <div id="baja-vista-exito" style="display:none;">
+                        <div class="baja-sello"><i class="fas fa-check me-2" aria-hidden="true"></i>Promociones desactivadas</div>
+                        <h3 class="club-card-title" style="justify-content:center;">Listo, te diste de baja</h3>
+                        <p class="club-card-sub">Ya no recibirás correos promocionales del Club Calletano. Tu tarjeta y tus visitas siguen intactas.</p>
+                        <a href="club-consultar.html" class="club-btn" style="width:100%; text-align:center; text-decoration:none;">Ver mi tarjeta</a>
+                    </div>
+
+                    <!-- ESTADO 3: error -->
+                    <div id="baja-vista-error" style="display:none;">
+                        <div class="baja-sello baja-sello--off"><i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>No se pudo procesar</div>
+                        <h3 class="club-card-title" style="justify-content:center;">Algo salió mal</h3>
+                        <p class="club-card-sub" id="baja-error-text">Verifica que el enlace sea correcto o inténtalo de nuevo. Si el problema continúa, avísanos en caja.</p>
+                        <a href="club-consultar.html" class="club-btn" style="width:100%; text-align:center; text-decoration:none;">Volver al club</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-calletano">
+        <div class="container text-center">
+            <h3 class="footer-brand">Calletano Restaurant</h3>
+            <p class="footer-tagline">El mejor sabor de Máncora</p>
+            <div class="footer-legal">
+                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+            </div>
+            <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
+        </div>
+    </footer>
+
+    <script type="module" src="js/app_club_baja.js?v=4"></script>
+</body>
+</html>

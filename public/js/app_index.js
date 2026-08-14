@@ -1,9 +1,68 @@
-import { doc, getDoc, getDocs, collection, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db } from "./firebase-config.js";
-import { renderMenuDiario } from './menuRenderer.js';
+import { doc, getDoc, getDocs, collection, query, where, getDocFromServer } from './lib/firebase-bundle.js?v=4';
+import { db, track } from "./firebase-config.js?v=4";
+import { renderMenuDiario } from './menuRenderer.js?v=4';
 
 // ============================================
-// SCROLL REVEAL - Intersection Observer
+// NAVBAR — SCROLL STATE & TOGGLE (vanilla JS)
+// ============================================
+const navbar = document.getElementById('navbar');
+const navToggle = document.getElementById('navToggle');
+const navMenu = document.getElementById('navMenu');
+
+if (navbar) {
+    window.addEventListener('scroll', () => {
+        if (window.pageYOffset > 80) {
+            navbar.classList.add('navbar-scrolled');
+        } else {
+            navbar.classList.remove('navbar-scrolled');
+        }
+    }, { passive: true });
+}
+
+if (navToggle && navMenu) {
+    // El toggle del menú lo gestiona Bootstrap Collapse (data-bs-toggle en el HTML).
+    // Aquí solo sincronizamos el estado visual y el bloqueo de scroll con los eventos
+    // de Bootstrap, para no pelear con 'aria-expanded' que Bootstrap ya actualiza.
+    // (Si se lee 'aria-expanded' en un listener propio, la lógica queda invertida:
+    //  al abrir no bloquea el scroll y al cerrar lo deja bloqueado.)
+    navMenu.addEventListener('show.bs.collapse', () => {
+        navToggle.classList.add('active');
+        navMenu.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+
+    navMenu.addEventListener('hidden.bs.collapse', () => {
+        navToggle.classList.remove('active');
+        navMenu.classList.remove('active');
+        document.body.style.overflow = '';
+    });
+
+    // Al elegir un destino, cerrar el menú móvil y liberar el scroll
+    navMenu.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            const bsCollapse = window.bootstrap ? window.bootstrap.Collapse.getOrCreateInstance(navMenu) : null;
+            if (bsCollapse) {
+                bsCollapse.hide();
+            } else {
+                navToggle.classList.remove('active');
+                navMenu.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    });
+
+    // Al pasar a escritorio con el menú abierto, liberar el scroll
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 992 && navMenu.classList.contains('active')) {
+            navToggle.classList.remove('active');
+            navMenu.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    });
+}
+
+// ============================================
+// SCROLL REVEAL — Intersection Observer
 // ============================================
 const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -12,61 +71,186 @@ const revealObserver = new IntersectionObserver((entries) => {
             revealObserver.unobserve(entry.target);
         }
     });
-}, {
-    threshold: 0.1,
-    rootMargin: '0px 0px -40px 0px'
-});
+}, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
 
-// type="module" es defer, DOM ya está listo
 document.querySelectorAll('[data-reveal]').forEach(el => {
     revealObserver.observe(el);
 });
 
-async function cargarDocumento(id, cb) { 
-    try { const s = await getDoc(doc(db, "contenido", id)); cb(s.exists() ? s.data() : {}); } catch (e) { console.error(e); } 
+// ============================================
+// FIREBASE HELPERS
+// ============================================
+async function cargarDocumento(id, cb, desdeServidor = false) {
+    const ref = doc(db, "contenido", id);
+    try {
+        if (desdeServidor) {
+            // 🛡️ Resiliencia: ante fallas transitorias de red (típicas en móviles),
+            // reintentamos UNA vez el servidor antes de caer a la caché local.
+            let s;
+            try {
+                s = await getDocFromServer(ref);
+            } catch {
+                await new Promise(r => setTimeout(r, 1500));
+                s = await getDocFromServer(ref);
+            }
+            cb(s.exists() ? s.data() : {});
+        } else {
+            const s = await getDoc(ref);
+            cb(s.exists() ? s.data() : {});
+        }
+    } catch (e) {
+        console.error(`Error cargando "${id}":`, e);
+        if (desdeServidor) {
+            try {
+                const cacheSnap = await getDoc(ref, { source: 'cache' });
+                cb(cacheSnap.exists() ? cacheSnap.data() : {});
+            } catch (_) {}
+        }
+    }
 }
-function setHref(id, v) { const e = document.getElementById(id); if (e && v) e.href = v; }
-function crearTarjetaPlato(p, c) { return `<div class="${c === 4 ? 'col-md-4' : 'col-md-3'} mb-4"><div class="card h-100 shadow-sm border-0"><img src="${p.img}" class="card-img-top" style="height:${c === 4 ? '200px' : '150px'};object-fit:cover;" alt="${p.titulo}" loading="lazy"><div class="card-body text-center"><h5 class="fw-bold">${p.titulo}</h5><p class="text-muted small">${p.desc}</p></div></div></div>`; }
-function generarEstrellasHTML(pts) { let h = ""; for (let i = 1; i <= 5; i++) h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star text-warning" aria-hidden="true"></i>`; return h; }
+
+function setHref(id, v) {
+    const e = document.getElementById(id);
+    if (e && v) e.href = v;
+}
+
+function generarEstrellasHTML(pts) {
+    let h = "";
+    for (let i = 1; i <= 5; i++) h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star" aria-hidden="true"></i>`;
+    return h;
+}
+
+// Formatea una hora entera (ej. 11) como "11:00" para textos y schema.org
+function horaTexto(h) {
+    return String(h).padStart(2, '0') + ':00';
+}
+
+// Actualiza el JSON-LD del Restaurant (id="schema-restaurant") con datos reales
+// cargados desde Firestore, para que los horarios y la valoración que ve Google
+// coincidan con lo que ve el cliente en la página.
+function actualizarSchemaRestaurante(patch) {
+    const script = document.getElementById('schema-restaurant');
+    if (!script) return;
+    try {
+        const data = JSON.parse(script.textContent);
+        Object.assign(data, patch);
+        script.textContent = JSON.stringify(data);
+    } catch (e) {
+        console.warn('No se pudo actualizar el schema del restaurante:', e);
+    }
+}
 
 // ============================================
-// 🚫 [DESACTIVADO] BANNER DE NOTIFICACIONES PUSH
-// Por decisión del dueño, no se envían notificaciones push a clientes
-// por la página web. El código se mantiene comentado.
+// MODAL — soporta modales de Bootstrap (class="modal")
+// y el sistema propio en vanilla JS (class="modal-overlay")
 // ============================================
+function abrirModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
 
-// async function initBannerNotificaciones() {
-//     const banner = document.getElementById('notif-banner');
-//     ... código de notificaciones ...
-// }
-// initBannerNotificaciones();
-
-cargarDocumento("configuracion", (config) => {
-    const statusDiv = document.getElementById('status-restaurante');
-    if (!statusDiv) return;
-
-    const ahora = new Date(); const horaActual = ahora.getHours(); const fechaHoy = ahora.toISOString().split('T')[0];
-    const apertura = config.apertura || 12; const cierre = config.cierre || 22; const cierreForzado = config.cierreForzado || "";
-
-    let estaAbierto = false; let mensaje = "";
-
-    if (cierreForzado === fechaHoy) {
-        estaAbierto = false; mensaje = "HOY NO ATENDEMOS";
-        const modalEl = document.getElementById('modalCerrado');
-        if(modalEl) setTimeout(() => { new bootstrap.Modal(modalEl).show(); }, 500);
-    } else {
-        if (horaActual >= apertura && horaActual < cierre) { estaAbierto = true; mensaje = "ABIERTO AHORA"; } 
-        else { estaAbierto = false; mensaje = "CERRADO POR AHORA"; }
+    if (modal.classList.contains('modal') && window.bootstrap) {
+        window.bootstrap.Modal.getOrCreateInstance(modal).show();
+        return;
     }
 
-    if (estaAbierto) statusDiv.innerHTML = `<span class="badge rounded-pill bg-success px-3 py-2 shadow animate__animated animate__fadeIn"><i class="fas fa-door-open me-1" aria-hidden="true"></i> ${mensaje}</span>`;
-    else statusDiv.innerHTML = `<span class="badge rounded-pill bg-danger px-3 py-2 shadow animate__animated animate__fadeIn"><i class="fas fa-door-closed me-1" aria-hidden="true"></i> ${mensaje}</span>`;
+    modal.removeAttribute('hidden');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+        const closeBtn = modal.querySelector('.modal-close-btn, [data-modal-close]');
+        if (closeBtn) closeBtn.focus();
+    }, 100);
+}
+
+function cerrarModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+
+    if (modal.classList.contains('modal') && window.bootstrap) {
+        window.bootstrap.Modal.getOrCreateInstance(modal).hide();
+        return;
+    }
+
+    modal.setAttribute('hidden', '');
+    document.body.style.overflow = '';
+}
+
+document.querySelectorAll('.modal-overlay').forEach(modal => {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) cerrarModal(modal.id);
+    });
+    modal.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarModal(modal.id);
+    });
 });
 
+document.querySelectorAll('.modal-close-btn, [data-modal-close]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const modal = btn.closest('.modal-overlay');
+        if (modal) cerrarModal(modal.id);
+    });
+});
+
+// ============================================
+// STATUS RESTAURANTE — Abierto/Cerrado
+// ============================================
+cargarDocumento("configuracion", (config) => {
+    const heroStatus = document.getElementById('status-restaurante');
+    if (!heroStatus) return;
+
+    const ahora = new Date();
+    const horaActual = ahora.getHours();
+    const fechaHoy = ahora.toISOString().split('T')[0];
+    const apertura = config.apertura || 12;
+    const cierre = config.cierre || 22;
+    const cierreForzado = config.cierreForzado || "";
+
+    let mensaje = "";
+    let clase = "";
+
+    if (cierreForzado === fechaHoy) {
+        mensaje = "Hoy no atendemos";
+        clase = "badge-closed";
+        setTimeout(() => abrirModal('modalCerrado'), 600);
+    } else {
+        if (horaActual >= apertura && horaActual < cierre) {
+            mensaje = `Abierto ahora — ${horaTexto(apertura)} a ${horaTexto(cierre)}`;
+            clase = "badge-open";
+        } else {
+            mensaje = `Cerrado por ahora — Abrimos ${horaTexto(apertura)}`;
+            clase = "badge-closed";
+        }
+    }
+
+    heroStatus.innerHTML = `<span class="hero-status-badge ${clase}">
+        <span class="badge-dot"></span> ${mensaje}
+    </span>`;
+
+    // Mantiene el horario del schema.org sincronizado con el horario real
+    // configurado en Firestore (antes quedaba fijo en "11:00 a 18:00").
+    actualizarSchemaRestaurante({
+        openingHoursSpecification: [
+            {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                "opens": horaTexto(apertura),
+                "closes": horaTexto(cierre)
+            }
+        ]
+    });
+});
+
+// ============================================
+// CONTACTO — Redes Sociales
+// ============================================
 cargarDocumento("contacto", (data) => {
-    setHref('link-fb', data.facebook); setHref('link-ig', data.instagram); setHref('btn-wsp', `https://wa.me/${data.whatsapp}`);
+    setHref('link-fb', data.facebook);
+    setHref('link-ig', data.instagram);
+    setHref('btn-wsp', `https://wa.me/${data.whatsapp}`);
 });
 
+// ============================================
+// MENÚ DEL DÍA (desde servidor)
+// ============================================
 cargarDocumento("menuDiario", (d) => {
     renderMenuDiario(d, {
         titleEl: document.getElementById('main-menu-title'),
@@ -77,72 +261,160 @@ cargarDocumento("menuDiario", (d) => {
         listaSegundos: document.getElementById('menu-segundos-list'),
         refrescoEl: document.getElementById('menu-refresco'),
     });
-});
+}, true);
 
-const cargarLista = (docId, containerId, cols) => {
-    const el = document.getElementById(containerId);
-    if(el) {
-        let skeletonHTML = "";
-        for(let i=0; i<cols; i++) {
-            const delay = i * 0.12;
-            skeletonHTML += `<div class="${cols === 4 ? 'col-md-3' : 'col-md-4'} mb-4">
-                <div class="skeleton-card shadow-sm">
-                    <div class="skeleton skeleton-img" style="--sk-delay: ${delay}s"></div>
-                    <div class="skeleton-card-body">
-                        <div class="skeleton skeleton-text" style="width: 70%; --sk-delay: ${delay}s"></div>
-                        <div class="skeleton skeleton-text skeleton-text-short" style="--sk-delay: ${delay + 0.1}s"></div>
-                    </div>
-                </div>
-            </div>`;
-        }
-        el.innerHTML = skeletonHTML;
-    }
-    cargarDocumento(docId, (data) => {
-        if (el) {
-            if (data.lista && data.lista.length > 0) { el.innerHTML = ""; data.lista.forEach(p => el.innerHTML += crearTarjetaPlato(p, cols)); } 
-            else { el.innerHTML = `<div class="col-12 text-center mt-4"><p class="text-muted fst-italic"><i class="fas fa-utensils" aria-hidden="true"></i> Actualizando nuestra lista de platos...</p></div>`; }
+// ============================================
+// BLUR-UP LAZY LOADING
+// ============================================
+function initBlurUp() {
+    const imgs = document.querySelectorAll('.img-blur');
+    imgs.forEach(img => {
+        if (img.complete && img.naturalWidth > 0) {
+            img.classList.add('img-blur-loaded');
+        } else {
+            img.addEventListener('load', () => {
+                img.classList.add('img-blur-loaded');
+            }, { once: true });
+            img.addEventListener('error', () => {
+                img.classList.add('img-blur-loaded');
+            }, { once: true });
         }
     });
-};
-cargarLista("favoritos", "favoritos-container", 4);
-cargarLista("domingo", "domingo-container", 3);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initBlurUp);
+} else {
+    initBlurUp();
+}
 
 // ============================================
 // RESEÑAS
 // ============================================
-const group1 = document.getElementById('reviews-group-1'); const group2 = document.getElementById('reviews-group-2'); const genericReviewContainer = document.getElementById('reviews-container') || document.getElementById('resenas-container') || document.querySelector('.reviews-section');
-const renderContenedorResenas = (html) => {
-    if (group1 && group2) { group1.innerHTML = html; group2.innerHTML = html; } else if (group1) { group1.innerHTML = html; } else if (genericReviewContainer) { genericReviewContainer.innerHTML = html; }
-};
+const track1 = document.getElementById('reviews-group-1');
+const track2 = document.getElementById('reviews-group-2');
 
-// Mostrar skeletons mientras cargan las reseñas
 function mostrarSkeletonsResenas() {
+    if (!track1) return;
     let html = "";
     for (let i = 0; i < 4; i++) {
-        const delay = i * 0.15;
-        html += `<div class="skeleton-review" style="--sk-delay: ${delay}s">
-            <div class="d-flex gap-2">
-                <div class="skeleton skeleton-circle" style="--sk-delay: ${delay}s"></div>
-                <div class="flex-grow-1" style="padding-top: 4px;">
-                    <div class="skeleton skeleton-text" style="width: 50%; --sk-delay: ${delay}s"></div>
-                    <div class="skeleton skeleton-text-short" style="--sk-delay: ${delay + 0.08}s"></div>
-                </div>
+        html += `<div class="review-card">
+            <div class="d-flex justify-content-center" style="gap:4px;">
+                <div class="skeleton" style="width:18px;height:18px;border-radius:2px;"></div>
+                <div class="skeleton" style="width:18px;height:18px;border-radius:2px;"></div>
+                <div class="skeleton" style="width:18px;height:18px;border-radius:2px;"></div>
+                <div class="skeleton" style="width:18px;height:18px;border-radius:2px;"></div>
             </div>
-            <div class="skeleton skeleton-text" style="width: 90%; --sk-delay: ${delay + 0.05}s"></div>
-            <div class="skeleton skeleton-text" style="width: 75%; --sk-delay: ${delay + 0.1}s"></div>
+            <div class="skeleton skeleton-text" style="width:100%;"></div>
+            <div class="skeleton skeleton-text-short"></div>
         </div>`;
     }
-    renderContenedorResenas(html);
+    track1.innerHTML = html;
+    if (track2) track2.innerHTML = html;
 }
 
-if (group1 || genericReviewContainer) {
-    mostrarSkeletonsResenas();
-    getDocs(query(collection(db, "resenas"), where("aprobada", "==", true))).then((snapshot) => {
-        if (snapshot.empty) { renderContenedorResenas(`<div class="w-100 text-center p-4"><p class="text-muted fst-italic">Aún no hay reseñas publicadas. ¡Sé el primero en visitarnos!</p></div>`); } 
-        else {
-            let htmlResenas = "";
-            snapshot.forEach((doc) => { const d = doc.data(); htmlResenas += `<div class="review-card"><div class="mb-2 fs-5 text-center">${generarEstrellasHTML(d.estrellas || 5)}</div><p class="fst-italic text-muted text-center small">"${d.mensaje}"</p><div class="mt-auto pt-2 border-top text-center"><strong class="text-dark small">${d.autor}</strong></div></div>`; });
-            renderContenedorResenas(htmlResenas);
+mostrarSkeletonsResenas();
+
+// Cargar reseñas desde Firebase (colección raíz "resenas", 31 documentos)
+// 🛡️ Resiliencia: reintenta UNA vez ante fallas transitorias de red.
+async function cargarResenas() {
+    try {
+        const ref = collection(db, "resenas");
+        let snapshot;
+        try {
+            snapshot = await getDocs(ref);
+        } catch {
+            await new Promise(r => setTimeout(r, 1500));
+            snapshot = await getDocs(ref);
         }
-    }).catch(e => { console.error(e); renderContenedorResenas(`<div class="w-100 text-center"><p class="text-danger">Error al cargar opiniones.</p></div>`); });
+        const docs = [];
+        snapshot.forEach(doc => docs.push(doc.data()));
+        
+        // Filtrar solo aprobadas y ordenar por fecha (más recientes primero)
+        const items = docs
+            .filter(d => d.aprobada !== false)
+            .sort((a, b) => (b.fecha?.seconds || 0) - (a.fecha?.seconds || 0));
+
+        if (items.length === 0) {
+            if (track1) track1.innerHTML = '<p class="text-muted text-center">No hay reseñas aún.</p>';
+            if (track2) track2.innerHTML = '';
+            return;
+        }
+
+        // Agrega el rating promedio real al schema.org del restaurante, para
+        // que los resultados de búsqueda puedan mostrar estrellas.
+        const promedio = items.reduce((suma, d) => suma + (d.estrellas || 5), 0) / items.length;
+        actualizarSchemaRestaurante({
+            aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue: promedio.toFixed(1),
+                reviewCount: items.length
+            }
+        });
+
+        // Mezclar aleatoriamente para variedad en cada carga
+        const shuffled = [...items].sort(() => Math.random() - 0.5);
+        
+        function renderCards(lista) {
+            return lista.map(d => `
+                <div class="review-card">
+                    <div class="review-stars">${generarEstrellasHTML(d.estrellas || 5)}</div>
+                    <p class="review-text">"${d.mensaje || ''}"</p>
+                    <div class="review-author">${d.autor || 'Anónimo'}</div>
+                </div>
+            `).join('');
+        }
+
+        // ⚠️ Ambos tracks deben tener el MISMO contenido para el carrusel infinito
+        // Track2 es un clon visual de track1; cuando track1 se desplaza -100%
+        // track2 (contenido identico) aparece sin costura en su lugar.
+        const html = renderCards(shuffled);
+        if (track1) track1.innerHTML = html;
+        if (track2) track2.innerHTML = html;
+    } catch (e) {
+        console.error('Error cargando reseñas:', e);
+        if (track1) track1.innerHTML = '<p class="text-muted text-center">Error al cargar reseñas.</p>';
+    }
 }
+
+cargarResenas();
+
+// ============================================
+// EVENTOS DE CONVERSIÓN (Firebase Analytics)
+// ============================================
+function rastrearClicksLanding() {
+    // "VER CARTA Y PRECIOS" (hero y modal) y "NUESTRA CARTA" (nav)
+    document.querySelectorAll('a[href="carta.html"].btn-hero, a[href="carta.html"].btn-nav-carta').forEach(el => {
+        el.addEventListener('click', () => track('click_ver_carta', { origen: 'landing' }));
+    });
+
+    // WhatsApp flotante
+    const wsp = document.getElementById('btn-wsp');
+    if (wsp) wsp.addEventListener('click', () => track('click_whatsapp', { origen: 'landing' }));
+
+    // Cómo llegar
+    const mapa = document.querySelector('.btn-mapa');
+    if (mapa) mapa.addEventListener('click', () => track('click_como_llegar', { origen: 'landing' }));
+
+    // Déjanos tu opinión
+    const resena = document.querySelector('a[href^="https://g.page/"]');
+    if (resena) resena.addEventListener('click', () => track('click_resena', { origen: 'landing' }));
+
+    // Redes sociales
+    const fb = document.getElementById('link-fb');
+    if (fb) fb.addEventListener('click', () => track('click_social', { red: 'facebook' }));
+    const ig = document.getElementById('link-ig');
+    if (ig) ig.addEventListener('click', () => track('click_social', { red: 'instagram' }));
+
+    // Club — nav apunta a la sección #club de la landing
+    document.querySelectorAll('.nav-link[href="#club"]').forEach(el => {
+        el.addEventListener('click', () => track('click_club', { accion: 'seccion' }));
+    });
+
+    // Club — botones de la sección: registro y consulta de progreso
+    const btnClubCrear = document.querySelector('a[href="club-crear.html"]');
+    if (btnClubCrear) btnClubCrear.addEventListener('click', () => track('click_club', { accion: 'crear' }));
+    const btnClubConsultar = document.querySelector('a[href="club-consultar.html"]');
+    if (btnClubConsultar) btnClubConsultar.addEventListener('click', () => track('click_club', { accion: 'consultar' }));
+}
+rastrearClicksLanding();

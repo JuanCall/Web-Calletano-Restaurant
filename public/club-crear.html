@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Únete al Club - Calletano Restaurant</title>
+    <meta name="description" content="Crea tu tarjeta digital del Club Calletano gratis: acumula visitas y gana tu premio. Restaurante en Máncora.">
+    <link rel="icon" href="img/fondo.webp" type="image/webp">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+
+    <link rel="stylesheet" href="styles/style.css">
+
+    <style>
+        /* Barra superior simple para páginas del club */
+        .club-topbar {
+            /* Gradiente oscuro: texto blanco cumple WCAG AA (antes ~2.8:1) */
+            background: linear-gradient(135deg, #b95610 0%, #9c4707 100%);
+            padding: 18px 0;
+            border-bottom: 4px solid var(--amarillo-fuerte);
+        }
+        .club-topbar .brand {
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            color: #fff;
+            font-size: 1.5rem;
+            text-decoration: none;
+            letter-spacing: 1px;
+        }
+        .club-topbar .brand i { color: var(--amarillo-suave); margin-right: 8px; }
+        .club-topbar .link-back {
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .club-topbar .link-back:hover {
+            color: #fff;
+            text-decoration: underline; /* no depender solo del color: AA 1.4.1 */
+            text-underline-offset: 4px;
+        }
+
+        .club-page-main {
+            padding: 4.5rem 0 5.5rem;
+            background:
+                radial-gradient(circle at 15% 15%, rgba(14, 241, 243, 0.10), transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(232, 153, 61, 0.14), transparent 45%),
+                linear-gradient(180deg, var(--surface-default) 0%, #fdf3e3 100%);
+            min-height: calc(100vh - 190px);
+        }
+
+        .club-info-list { padding-left: 0; list-style: none; margin: 0; }
+        .club-info-list li {
+            display: flex; align-items: baseline; gap: 0.5rem;
+            padding: 0.55rem 0;
+            border-bottom: 1px dashed var(--border-subtle);
+            font-size: 0.95rem;
+            color: var(--content-secondary);
+        }
+        .club-info-list li:last-child { border-bottom: none; }
+        .club-info-list strong { color: var(--content-primary); }
+
+        .club-success-box {
+            display: none;
+            text-align: center;
+            background: #e8f7ee;
+            border: 1.5px solid #bfe8cd;
+            border-radius: 18px;
+            padding: 2rem 1.5rem;
+        }
+        .club-success-box.show { display: block; }
+        .club-success-icon {
+            width: 72px; height: 72px; margin: 0 auto 1rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981, #34d399);
+            color: #fff; font-size: 2rem;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 24px rgba(16, 185, 129, 0.35);
+        }
+
+    </style>
+    <link rel="stylesheet" href="styles/style-mundo.css">
+</head>
+<body>
+
+    <div class="club-topbar">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a href="index.html" class="brand"><i class="fas fa-id-card" aria-hidden="true"></i>Club Calletano</a>
+            <a href="club-consultar.html" class="link-back"><i class="fas fa-search me-1" aria-hidden="true"></i>¿Ya eres socio? Ver mi progreso</a>
+        </div>
+    </div>
+
+    <main class="club-page-main">
+        <div class="container">
+            <div class="row justify-content-center g-4">
+
+                <div class="col-lg-6">
+                    <div class="club-card h-100">
+                        <span class="club-badge" style="margin: 0 0 1rem;"><i class="fas fa-user-plus me-2" aria-hidden="true"></i>Únete al Club</span>
+                        <h3 class="club-card-title mb-2">Tu tarjeta digital, siempre contigo</h3>
+                        <p class="club-card-sub">Solo necesitas tu DNI y tu nombre. Tu tarjeta digital se abre al instante, con tu QR y el conteo de tus visitas.</p>
+
+                        <form id="club-form" novalidate>
+                            <div class="club-field">
+                                <label for="club-num-doc">Número de documento</label>
+                                <div class="club-doc-tipo" id="club-doc-tipo" role="group" aria-label="Tipo de documento">
+                                    <button type="button" class="club-doc-btn active" data-tipo="DNI">DNI</button>
+                                    <button type="button" class="club-doc-btn" data-tipo="CE">CE</button>
+                                </div>
+                                <input type="text" id="club-num-doc" class="club-input" inputmode="numeric" autocomplete="off" placeholder="Ej: 12345678" maxlength="8">
+                            </div>
+
+                            <div class="club-field">
+                                <label for="club-nombre">Nombre</label>
+                                <input type="text" id="club-nombre" class="club-input" placeholder="Tu nombre completo" autocomplete="name">
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="club-field">
+                                        <label for="club-telefono">Teléfono (opcional)</label>
+                                        <input type="tel" id="club-telefono" class="club-input" inputmode="numeric" placeholder="987654321">
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="club-field">
+                                        <label for="club-correo">Correo (opcional)</label>
+                                        <input type="email" id="club-correo" class="club-input" placeholder="tucorreo@ejemplo.com">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <label class="club-check">
+                                <input type="checkbox" id="club-acepta">
+                                <span>Acepto el uso de mis datos para el programa de fidelización.</span>
+                            </label>
+                            <p class="club-nota">Usamos tu DNI y tu nombre solo para identificar tu tarjeta y contar tus visitas. No compartimos tus datos con terceros.</p>
+
+                            <label class="club-check">
+                                <input type="checkbox" id="club-promos">
+                                <span>Quiero recibir promociones y novedades.</span>
+                            </label>
+
+                            <div id="club-form-msg" class="club-msg" role="status"></div>
+
+                            <button type="submit" id="club-crear-btn" class="club-btn">Crear mi tarjeta</button>
+                        </form>
+
+                        <!-- ✅ Éxito: tarjeta creada -->
+                        <div class="club-success-box mt-4" id="club-exito">
+                            <div class="club-success-icon"><i class="fas fa-check" aria-hidden="true"></i></div>
+                            <h4 class="club-card-title mb-2">🎉 ¡Tu tarjeta digital está lista!</h4>
+                            <p class="club-card-sub">Ya puedes sumar visitas en Calletano. Muestra tu tarjeta (o tu DNI) al pagar y el personal la escaneará.</p>
+
+                            <a href="club-consultar.html" id="club-exito-link" class="club-btn club-btn-outline mt-3" style="display:inline-block; text-decoration:none;">Ver mi tarjeta y progreso</a>
+
+                            <a href="#" id="club-exito-wsp" class="club-btn club-btn-wsp d-none mt-2" target="_blank" rel="noopener">
+                                <i class="fab fa-whatsapp me-2" aria-hidden="true"></i>Compartir mi tarjeta por WhatsApp
+                            </a>
+                            <p class="club-card-sub mt-2 mb-0" style="font-size:0.72rem; color:#8a7060;">
+                                <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
+                                No compartas tu tarjeta en redes públicas: el enlace de tu tarjeta contiene tu documento.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="club-card h-100">
+                        <h3 class="club-card-title"><i class="fas fa-gift me-2" style="color: var(--naranja-logo);" aria-hidden="true"></i>Así funciona</h3>
+                        <p class="club-card-sub">Las condiciones son fijas y siempre vigentes:</p>
+                        <ul class="club-info-list mt-3">
+                            <li><i class="fas fa-star me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Meta: <strong id="club-meta-text">10 visitas</strong> para tu premio</span></li>
+                            <li><i class="fas fa-trophy me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Premio: <strong id="club-premio-text">1 plato de carta personal</strong></span></li>
+                            <li><i class="fas fa-utensils me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Consumo mínimo: <strong id="club-consumo-min">S/ 80</strong> por boleta (menú, domingo o carta)</span></li>
+                            <li><i class="fas fa-users me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Cuando tu mesa llega al mínimo, <strong>una persona</strong> registra su visita</span></li>
+                            <li><i class="fas fa-info-circle me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Máximo <strong>1 visita por día</strong> por socio</span></li>
+                        </ul>
+                        <ol class="club-como-list mt-3">
+                            <li>Cuando tu boleta suma <strong>S/ 80 o más</strong> (menú, almuerzo de domingo o platos de carta; bebidas y envases no suman), puedes registrar tu visita.</li>
+                            <li>Al llegar a 10 visitas acumulas tu premio.</li>
+                            <li>Pide tu premio en caja presentando tu <strong>DNI físico</strong> (mayores de 18).</li>
+                        </ol>
+                        <hr class="club-divider">
+                        <p class="club-nota mb-0">
+                            <a href="terminos-club.html" style="color: var(--brand-deep); font-weight: 700;">Términos del club</a>
+                            <span aria-hidden="true"> · </span>
+                            <a href="privacidad.html" style="color: var(--brand-deep); font-weight: 700;">Política de privacidad</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-calletano">
+        <div class="container text-center">
+            <h3 class="footer-brand">Calletano Restaurant</h3>
+            <p class="footer-tagline">El mejor sabor de Máncora</p>
+            <div class="footer-legal">
+                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+            </div>
+            <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
+        </div>
+    </footer>
+
+    <script type="module" src="js/app_club_crear.js?v=4"></script>
+</body>
+</html>

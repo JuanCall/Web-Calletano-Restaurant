@@ -6,44 +6,52 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&display=swap');
 
 :root {
-    /* Paleta Logo Calletano */
     --cyan-logo: #0ff1f3;
     --naranja-logo: #e8993d;
     --amarillo-suave: #fffba4;
     --amarillo-fuerte: #f6d35f;
     --blanco: #ffffff;
-    
-    /* Mapeo funcional */
-    --color-titulo: var(--naranja-logo);
-    --color-texto: #444;
-    --color-precio: var(--naranja-logo);
-    --bg-header-start: var(--cyan-logo);
-    --bg-header-end: var(--naranja-logo);
-    --color-fondo: #fffef8;
-    
-    /* Tipografía */
+
+    /* ═══ Fondo del header (azul playa) ═══ */
+    --bg-header-start: #2ec4c8;
+    --bg-header-end: #11668f;
+
+    /* ═══ Sombra de tarjetas ═══ */
+    --sombra-card: 0 8px 24px rgba(45, 45, 45, 0.09);
+
+    /* ═══ Tokens Semánticos ═══ */
+    --surface-default: #fdfaf5;
+    --surface-raised: #ffffff;
+    --surface-sunken: #fef5e7;
+    --content-primary: #2d2d2d;
+    --content-secondary: #595959;
+    --content-tertiary: #8c8c8c;
+    --content-brand: var(--naranja-logo);
+    /* Texto sobre superficies naranja de marca: marrón oscuro (WCAG AA) */
+    --content-on-brand: #4a2c05;
+    /* Naranja oscuro para texto sobre blanco (AA: >4.5:1) */
+    --naranja-oscuro: #b95610;
+    --border-subtle: #e8e0d8;
+    --border-strong: #d4c8b8;
+
     --font-display: 'Playfair Display', serif;
     --font-body: 'Montserrat', sans-serif;
-    
-    /* Sombras */
-    --sombra-card: 0 8px 20px rgba(232, 153, 61, 0.15);
-    --sombra-card-hover: 0 12px 32px rgba(232, 153, 61, 0.22);
-    
-    /* Transiciones */
     --transition-fast: 0.2s ease;
     --transition-base: 0.3s ease;
 }
 
+
 /* --- CONFIGURACIÓN BASICA --- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; scroll-padding-top: 90px; }
 
 body {
-    background: linear-gradient(180deg, var(--amarillo-suave) 0%, #fffef8 100%);
+    background: linear-gradient(180deg, var(--amarillo-suave) 0%, var(--surface-default) 100%);
     background-attachment: fixed;
-    font-family: 'Montserrat', sans-serif;
-    color: var(--color-texto);
+    font-family: var(--font-body);
+    color: var(--content-primary);
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* --- ACCESIBILIDAD --- */
@@ -57,6 +65,7 @@ body {
 .hero-header {
     position: relative;
     height: 340px;
+    background-color: var(--bg-header-start);
     background: linear-gradient(180deg, var(--bg-header-start) 0%, #4dd 50%, var(--bg-header-end) 100%);
     display: flex;
     align-items: center;
@@ -102,12 +111,12 @@ body {
 
 .hero-subtitle {
     font-size: 1.1rem;
-    color: #fff;
-    font-weight: 700;
+    color: var(--content-on-brand); /* marrón oscuro sobre el pill naranja: AA */
+    font-weight: 800;
     letter-spacing: 3px;
     text-transform: uppercase;
     margin-bottom: 15px;
-    background: rgba(232, 153, 61, 0.85);
+    background: rgba(232, 153, 61, 0.92);
     padding: 6px 18px;
     border-radius: 50px;
     display: inline-block;
@@ -159,7 +168,7 @@ body {
 }
 
 .skeleton-card {
-    background: white;
+    background: var(--surface-raised);
     border-radius: 20px;
     overflow: hidden;
     box-shadow: var(--sombra-card);
@@ -168,10 +177,9 @@ body {
 }
 
 .skeleton {
-    background: linear-gradient(90deg, #e8e8e8 0%, #e8e8e8 25%, #f5f5f5 37%, #fefefe 45%, #f5f5f5 53%, #e8e8e8 65%, #e8e8e8 100%);
+    background: linear-gradient(90deg, var(--skeleton-base,#e8e8e8) 0%, var(--skeleton-base,#e8e8e8) 25%, var(--skeleton-shine,#fefefe) 37%, var(--skeleton-shine,#fefefe) 45%, var(--skeleton-shine,#fefefe) 53%, var(--skeleton-base,#e8e8e8) 65%, var(--skeleton-base,#e8e8e8) 100%);
     background-size: 200% 100%;
     animation: waveShimmer 1.8s ease-in-out infinite;
-    animation-delay: var(--sk-delay, 0s);
     border-radius: 8px;
 }
 
@@ -212,7 +220,7 @@ body {
 /* --- BARRA DE NAVEGACIÓN --- */
 .sticky-nav {
     position: sticky; top: 0; z-index: 1000;
-    background: rgba(255,255,255,0.95);
+    background: color-mix(in srgb, var(--surface-raised) 95%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-bottom: 3px solid var(--amarillo-fuerte);
@@ -230,8 +238,8 @@ body {
     white-space: nowrap; padding: 10px 22px;
     border-radius: 50px; 
     border: 2px solid var(--cyan-logo);
-    color: var(--naranja-logo); font-weight: 700; font-size: 0.9rem;
-    text-decoration: none; background: white; 
+    color: var(--naranja-oscuro); font-weight: 700; font-size: 0.9rem;
+    text-decoration: none; background: var(--surface-raised); 
     transition: all var(--transition-fast);
     flex-shrink: 0;
 }
@@ -252,7 +260,7 @@ body {
 
 /* --- TARJETAS --- */
 .menu-card {
-    background: white; border-radius: 20px; padding: 25px; margin-bottom: 30px;
+    background: var(--surface-raised); border-radius: 20px; padding: 25px; margin-bottom: 30px;
     box-shadow: var(--sombra-card); border: 2px solid var(--amarillo-suave);
     position: relative; overflow: hidden;
 }
@@ -265,7 +273,7 @@ body {
 
 .cat-title {
     font-family: 'Playfair Display', serif; font-size: 1.8rem; 
-    color: var(--naranja-logo); border-bottom: 2px solid var(--amarillo-fuerte);
+    color: var(--naranja-oscuro); border-bottom: 2px solid var(--amarillo-fuerte);
     margin-bottom: 20px; padding-bottom: 10px;
     display: flex; justify-content: space-between; align-items: center;
 }
@@ -278,7 +286,7 @@ body {
 }
 .ph-col {
     min-width: 70px; width: 85px; text-align: right;
-    font-weight: 700; font-size: 0.85rem; color: #666; text-transform: uppercase;
+    font-weight: 700; font-size: 0.85rem; color: var(--content-secondary); text-transform: uppercase;
 }
 @media (max-width: 480px) {
     .ph-col { min-width: 60px; width: 70px; font-size: 0.75rem; }
@@ -291,20 +299,20 @@ body {
 
 .item-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px !important; }
 .item-info { flex: 1; display: flex; align-items: baseline; padding-right: 15px; }
-.item-name { font-weight: 700; color: #333; font-size: 1.05rem; }
+.item-name { font-weight: 700;    color: var(--content-primary); font-size: 1.05rem; }
 .dots { flex: 1; border-bottom: 2px dotted var(--amarillo-fuerte); margin: 0 10px; position: relative; top: -5px; }
 
 .price-wrapper { display: flex; gap: 5px; }
 .price-val {
     min-width: 70px; width: 85px; text-align: right;
-    font-weight: 800; color: var(--naranja-logo); font-size: 1.15rem;
+    font-weight: 800; color: var(--naranja-oscuro); font-size: 1.15rem;
 }
 @media (max-width: 480px) {
     .price-val { min-width: 60px; width: 70px; font-size: 1rem; }
     .price-wrapper { gap: 3px; }
 }
 
-.item-desc { font-size: 0.85rem; color: #777; font-style: italic; line-height: 1.3; padding-right: 20px; }
+.item-desc { font-size: 0.85rem; color: var(--content-secondary); font-style: italic; line-height: 1.3; padding-right: 20px; }
 
 /* --- BOTONES FLOTANTES (FAB) --- */
 .fab-container {
@@ -361,7 +369,9 @@ body {
 /* --- FOOTER --- */
 footer {
     text-align: center; padding: 40px 24px;
-    background: var(--naranja-logo); color: white; margin-top: 40px;
+    /* Gradiente oscuro: texto blanco cumple WCAG AA */
+    background: linear-gradient(135deg, var(--naranja-oscuro) 0%, #9c4707 100%);
+    color: white; margin-top: 40px;
     border-top: 5px solid var(--cyan-logo);
 }
 footer h3 {
@@ -369,4 +379,32 @@ footer h3 {
     margin-bottom: 10px;
 }
 
+/* Enlaces legales del footer (estilo Maki Panda) */
+.footer-legal-links {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+.footer-legal-links a {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 50px;
+    display: inline-block;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+.footer-legal-links a:hover {
+    background: #fff;
+    color: var(--naranja-oscuro); /* naranja oscuro: AA sobre blanco */
+    transform: translateY(-2px);
+}
+.footer-legal-links .footer-sep {
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0 4px;
+    font-weight: 700;
+}
+
 @keyframes fadeInUp { from{opacity:0;transform:translateY(24px);} to{opacity:1;transform:translateY(0);} }
+

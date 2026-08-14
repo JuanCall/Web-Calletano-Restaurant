@@ -1,0 +1,729 @@
+/* ═══════════════════════════════════════════════════════════════
+   CALLETANO — MUNDO VISUAL PALETA DEL LOGO
+   Rediseño dirigido por Impeccable + UI/UX Pro Max + Web Design
+   Guidelines + Astryx. Re-tinteado con los colores del logo:
+   turquesa / naranja / crema / amarillo / oscuro / dorado.
+
+   Materiales: sol de Máncora sobre el mar turquesa, etiquetas
+   crema, sellos amarillos y naranja de la marca.
+
+   Paleta (contraste AA medido):
+     --naranja  #EA983D · oscuro 6.27:1 (texto sobre botón)
+     --turquesa #11F6F5 · oscuro 10.75:1
+     --crema     #F9F5A8 · oscuro 12.92:1
+     --amarillo  #FADA77 · oscuro 10.64:1
+     --oscuro    #202D0F · blanco 14.55:1 (fondos oscuros)
+     --dorado    #CEAA63 · oscuro  6.62:1 (solo sobre oscuro)
+
+   REGLA DE ORO: los colores vivos son FONDOS con texto oscuro
+   #202D0F encima (nunca blanco). El dorado solo sobre fondos
+   oscuros. Texto de cuerpo siempre en oscuro.
+
+   Tipografía: Anton (letrero) + Karla (cuerpo).
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&display=swap');
+
+/* ── Overrides de tokens del sitio (style.css queda intacto para otras páginas) ── */
+:root {
+    --cyan-logo: #11F6F5;          /* turquesa del logo */
+    --naranja-logo: #EA983D;       /* naranja del logo */
+    --amarillo-suave: #FADA77;
+    --amarillo-fuerte: #FADA77;
+    --blanco: #ffffff;
+
+    /* Paleta del logo */
+    --mar: #202D0F;               /* oscuro: fondo de marca + texto */
+    --mar-osc: #1A260C;
+    --mar-mas-osc: #16220A;
+    --hielo: #F9F5A8;             /* crema: fondo claro */
+    --crema-papel: #FFFDF4;       /* tarjetas: blanco cálido */
+    --carmesi: #EA983D;           /* naranja: botones primarios */
+    --carmesi-osc: #9C5608;       /* naranja oscuro: texto sobre claro (AA) */
+    --turquesa: #11F6F5;          /* turquesa: hover de botones + acentos */
+    --turquesa-claro: #60F4F1;    /* turquesa claro: acentos sobre oscuro */
+    --dorado: #CEAA63;            /* dorado: solo sobre fondos oscuros */
+    --amarillo: #FADA77;          /* amarillo: badges y sellos */
+    --tinta: #202D0F;             /* oscuro: texto principal */
+
+    --surface-default: var(--hielo);
+    --surface-raised: var(--crema-papel);
+    --surface-sunken: #EFEAD0;
+    --content-primary: var(--tinta);
+    --content-secondary: #545E36;
+    --content-tertiary: #626B48;
+    --content-brand: var(--carmesi-osc);
+    --content-on-brand: #202D0F;  /* texto oscuro sobre botones vivos (AA) */
+    --content-on-dark: #ffffff;
+    --border-subtle: #DDD7AC;
+    --border-strong: #BFB887;
+    --brand-deep: var(--carmesi-osc);      /* texto sobre claro (AA) */
+    --brand-dark: #8F4F07;                 /* hover naranja profundo */
+    --focus-ring: 0 0 0 4px rgba(17, 246, 245, 0.5);
+    --skeleton-base: #E5DFC0;
+    --skeleton-shine: #FDFBE9;
+}
+
+/* Mapeo de tokens (nombres históricos → rol actual con la paleta del logo):
+   --mar / --mar-osc / --mar-mas-osc = fondos oscuros #202D0F / #1A260C / #16220A
+   --hielo = fondo crema #F9F5A8 · --crema-papel = tarjetas #FFFDF4
+   --carmesi = naranja #EA983D (botones) · --carmesi-osc = naranja oscuro #9C5608
+   --dorado = #CEAA63 (solo sobre oscuro) · --amarillo = #FADA77
+   --tinta = #202D0F (texto) · --turquesa / --turquesa-claro = #11F6F5 / #60F4F1 */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Superficies de navegador teñidas con el mundo (craft-floor) */
+::selection { background: var(--dorado); color: var(--mar-mas-osc); }
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+
+body {
+    font-family: 'Karla', sans-serif;
+    color: var(--content-primary);
+    background: var(--hielo);
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4 { font-family: 'Anton', sans-serif; font-weight: 400; letter-spacing: 0.01em; }
+
+/* Foco visible: anillo oscuro + halo turquesa (WCAG 2.4.7) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible {
+    outline: 3px solid var(--tinta);
+    outline-offset: 3px;
+    border-radius: 6px;
+    box-shadow: var(--focus-ring);
+}
+
+/* ═══════════ NAVBAR — tablón del mercado ═══════════ */
+.navbar-calletano {
+    background: linear-gradient(180deg, rgba(22, 34, 10, 0.92) 0%, rgba(26, 38, 12, 0.82) 100%);
+    backdrop-filter: blur(8px);
+    border-bottom: 2px solid rgba(250, 218, 119, 0.35);
+    padding: 12px 0;
+    transition: all 0.3s ease;
+}
+
+.navbar-calletano.navbar-scrolled {
+    background: var(--mar-mas-osc);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+    border-bottom-color: var(--dorado);
+}
+
+.navbar-brand {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 1.7rem;
+    letter-spacing: 2px;
+    color: var(--dorado) !important;   /* dorado sobre mar 5.3:1 */
+    text-transform: uppercase;
+}
+
+.nav-link {
+    font-family: 'Karla', sans-serif;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92) !important; /* 11.8:1+ */
+    font-size: 0.92rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 0 8px;
+    position: relative;
+    transition: color 0.3s;
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--amarillo) !important;  /* 8.1:1 sobre mar */
+}
+
+.nav-link::after {
+    content: ''; display: block; height: 2px;
+    background: var(--carmesi); transition: transform 0.3s;
+    margin: 4px auto 0; border-radius: 2px;
+    transform: scaleX(0); transform-origin: center;
+}
+.nav-link:hover::after { transform: scaleX(1); }
+
+/* CTA de carta: etiqueta carmesí de pesca */
+.btn-nav-carta {
+    background: var(--carmesi);
+    color: var(--content-on-brand) !important;  /* oscuro sobre naranja 6.27:1 */
+    border: 2px solid var(--amarillo);
+    border-radius: 6px;
+    padding: 9px 22px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    transition: all 0.25s;
+    box-shadow: 0 4px 12px rgba(26, 38, 12, 0.35);
+}
+.btn-nav-carta:hover {
+    background: var(--turquesa);
+    color: var(--content-on-brand) !important;  /* 10.75:1 */
+    transform: translateY(-2px);
+}
+.btn-nav-carta::after { display: none; }
+
+.navbar-toggler { border: none; box-shadow: none !important; }
+.navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23FADA77' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important; }
+
+/* ═══════════ HERO — la pesca del día ═══════════ */
+header {
+    position: relative;
+    min-height: 92vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    background: var(--mar-mas-osc);
+}
+
+.hero-bg-img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 0;
+    filter: brightness(0.45) saturate(1.15);
+}
+
+/* Tinte marino + textura de hielo sutil */
+header::after {
+    content: '';
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(32, 45, 15, 0.15), transparent 60%),
+        linear-gradient(180deg, rgba(22, 34, 10, 0.72) 0%, rgba(22, 34, 10, 0.28) 45%, rgba(22, 34, 10, 0.88) 100%);
+}
+
+header .container { z-index: 2; }
+
+/* Badge de estado: etiqueta de papel con perforación de mercado */
+.hero-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px 9px 14px;
+    border-radius: 4px;
+    background: var(--crema-papel);
+    border: 1.5px solid rgba(32, 45, 15, 0.35);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--tinta);
+    position: relative;
+}
+/* perforación de la etiqueta */
+.hero-status-badge::before {
+    content: '';
+    position: absolute; left: 50%; top: -5px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--mar-mas-osc);
+    transform: translateX(-50%);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.badge-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block; flex-shrink: 0;
+    animation: badgePulse 2s infinite;
+}
+.badge-open .badge-dot { background: #0E7A40; box-shadow: 0 0 8px rgba(14, 122, 64, 0.7); }
+.badge-closed .badge-dot { background: var(--carmesi-osc); box-shadow: 0 0 8px rgba(156, 86, 8, 0.7); }
+
+@keyframes badgePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.45); } }
+
+header h1 {
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(3.2rem, 9vw, 7rem);
+    line-height: 0.95;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    text-shadow: 0 4px 0 rgba(22, 34, 10, 0.55), 0 14px 40px rgba(0, 0, 0, 0.4);
+}
+
+header .lead {
+    font-family: 'Karla', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1rem, 2.2vw, 1.3rem);
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--amarillo);            /* 8.1:1 sobre mar */
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* CTA hero: caja de pescado carmesí con sello */
+.btn-hero {
+    background: var(--carmesi);
+    color: var(--content-on-brand) !important;  /* oscuro sobre naranja 6.27:1 */
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    border: 2px solid var(--amarillo);
+    border-radius: 6px;
+    padding: 16px 40px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+    transition: all 0.25s;
+    text-decoration: none; display: inline-block;
+}
+.btn-hero:hover {
+    background: var(--turquesa);
+    color: var(--content-on-brand) !important;  /* 10.75:1 */
+    transform: translateY(-3px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Etiqueta decorativa flotante: "pesca del día" */
+.hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--amarillo);
+    color: var(--mar-mas-osc);
+    font-family: 'Anton', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transform: rotate(-2deg);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* ═══════════ SECCIONES ═══════════ */
+section { padding: 100px 0; position: relative; }
+
+section::after { display: none; } /* sin gradientes fantasmas: fondos del mundo */
+
+[data-reveal] {
+    will-change: transform, opacity;
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-reveal].revealed { opacity: 1; transform: translateY(0); }
+[data-reveal-delay="100"] { transition-delay: 0.1s; }
+[data-reveal-delay="200"] { transition-delay: 0.2s; }
+[data-reveal-delay="300"] { transition-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+    [data-reveal] { opacity: 1; transform: none; transition: none; }
+    .badge-dot { animation: none; }
+}
+
+.section-title {
+    color: var(--mar);                  /* azul mar sobre hielo 11.8:1 */
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 40px;
+}
+.section-title::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--carmesi) 0%, var(--dorado) 100%);
+    margin: 14px auto 0;
+    border-radius: 2px;
+}
+
+/* ═══════════ MENÚ DEL DÍA — pizarra del mercado ═══════════ */
+#menu-dia .row { display: flex; align-items: stretch; }
+#col-entradas, #col-segundos { display: flex; flex-direction: column; }
+
+.menu-dia-card {
+    background: var(--crema-papel);
+    border-radius: 10px;
+    border: 2px solid var(--mar);
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(26, 38, 12, 0.14);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+/* esquina de caja de pescado */
+.menu-dia-card::after {
+    content: '';
+    position: absolute; top: -1px; right: -1px;
+    width: 34px; height: 34px;
+    background: linear-gradient(225deg, var(--hielo) 0%, var(--hielo) 48%, var(--dorado) 50%, var(--dorado) 100%);
+    border-bottom-left-radius: 8px;
+}
+
+.card-header-custom {
+    padding: 16px;
+    text-align: center;
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    letter-spacing: 3px;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+.header-entradas { background: var(--mar); color: #fff; }       /* blanco sobre oscuro 14.55:1 */
+.header-segundos { background: var(--carmesi); color: var(--content-on-brand); }  /* oscuro sobre naranja 6.27:1 */
+
+.card-body-custom {
+    padding: 28px;
+    background: var(--crema-papel);
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; flex-grow: 1;
+}
+.menu-dia-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 40px rgba(26, 38, 12, 0.2); /* sombra mar, no naranja del style.css */
+}
+
+/* Listas generadas por menuRenderer.js — re-tintadas al mundo */
+#menu-entradas-list li,
+#menu-segundos-list li {
+    font-family: 'Karla', sans-serif;
+    color: var(--tinta) !important;        /* 13.5:1 sobre papel */
+    border-color: rgba(32, 45, 15, 0.25) !important;
+}
+#menu-entradas-list .fa-check,
+#menu-segundos-list .fa-check { color: var(--carmesi-osc) !important; }
+#menu-entradas-list .fa-circle-xmark,
+#menu-segundos-list .fa-circle-xmark { color: var(--carmesi-osc) !important; opacity: 0.6; }
+#menu-segundos-list .border-danger-subtle { border-color: rgba(234, 152, 61, 0.3) !important; }
+#menu-segundos-list .bg-danger { background-color: rgba(234, 152, 61, 0.1) !important; }
+#menu-segundos-list .text-danger { color: var(--carmesi-osc) !important; }
+
+#menu-refresco {
+    color: var(--carmesi-osc);            /* 5.9:1 sobre hielo */
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 400;                     /* Anton solo tiene peso 400 (display-6 de Bootstrap pone 300) */
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* text-muted de Bootstrap (#6c757d ~4.0:1 sobre hielo) subido a AA */
+#menu-dia .text-muted,
+#favoritos .text-muted,
+#domingo .text-muted,
+#resenas .text-muted,
+.modal-body .text-muted {
+    color: var(--content-secondary) !important; /* #595959 6.2:1 */
+}
+
+/* ═══════════ FAVORITOS & DOMINGO — cajas del mercado ═══════════ */
+.ls-2 { letter-spacing: 2px; } /* label "Bebida incluida" */
+
+.bg-playa { background: linear-gradient(180deg, var(--hielo) 0%, #EFEAD0 100%); }
+
+.dish-card {
+    border-radius: 10px !important;
+    overflow: hidden;
+    background: var(--crema-papel);
+    border: 1.5px solid rgba(32, 45, 15, 0.22) !important;
+    box-shadow: 0 10px 26px rgba(26, 38, 12, 0.1) !important;
+    transition: transform 0.35s cubic-bezier(.22,1,.36,1), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.dish-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(26, 38, 12, 0.18) !important;
+    border-color: var(--carmesi) !important;
+}
+.dish-card .card-img-top { transition: transform 0.5s cubic-bezier(.22,1,.36,1); }
+.dish-card:hover .card-img-top { transform: scale(1.06); }
+.dish-card .card-body { position: relative; padding-top: 1.4rem; }
+.dish-card .card-body::before {
+    content: '';
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 40px; height: 3px; border-radius: 3px;
+    background: linear-gradient(90deg, var(--carmesi), var(--dorado));
+}
+.dish-card .card-body h5 {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    color: var(--mar);
+}
+.dish-card .card-body .text-muted { color: var(--content-secondary) !important; }
+
+/* Botón "Déjanos tu opinión": carmesí del mundo (reemplaza outline-primary de Bootstrap) */
+#resenas .btn-outline-primary {
+    color: var(--carmesi-osc) !important;
+    border-color: var(--carmesi) !important;
+    background: transparent;
+    font-weight: 800;
+    border-width: 2px;
+    border-radius: 6px;
+    transition: all 0.25s;
+}
+#resenas .btn-outline-primary:hover {
+    background: var(--carmesi) !important;
+    border-color: var(--carmesi) !important;
+    color: var(--content-on-brand) !important;
+    transform: translateY(-2px);
+}
+
+/* ═══════════ RESEÑAS — papeles del mercado ═══════════ */
+#resenas.bg-light { background: var(--hielo); } /* reemplaza el gris de Bootstrap */
+.infinite-carousel {
+    display: flex; overflow: hidden; width: 100%; padding: 20px 0; position: relative;
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+.review-group { display: flex; gap: 20px; padding-right: 20px; animation: scrolling 50s linear infinite; }
+.infinite-carousel:hover .review-group { animation-play-state: paused; }
+@keyframes scrolling { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
+
+.review-card {
+    position: relative;
+    background: var(--crema-papel);
+    border-radius: 8px;
+    padding: 26px 24px 22px;
+    min-width: 320px; max-width: 320px;
+    border: 1.5px solid rgba(32, 45, 15, 0.2);
+    box-shadow: 0 8px 22px rgba(26, 38, 12, 0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+.review-card::before {
+    content: '\201C';
+    font-family: 'Anton', sans-serif;
+    font-size: 3.2rem; line-height: 1;
+    color: var(--carmesi);
+    position: absolute; top: 8px; right: 20px;
+    opacity: 0.18; pointer-events: none;
+}
+.review-card:hover { transform: translateY(-5px); box-shadow: 0 14px 30px rgba(26, 38, 12, 0.14); }
+.review-stars { color: var(--carmesi-osc); font-size: 1.05rem; margin-bottom: 10px; letter-spacing: 2px; }
+.review-text { font-style: italic; color: var(--content-secondary); margin-bottom: 14px; line-height: 1.6; font-size: 0.95rem; }
+.review-author { font-weight: 800; color: var(--carmesi-osc); font-size: 0.9rem; letter-spacing: 0.5px; text-transform: uppercase; }
+.review-author::before { content: '— '; opacity: 0.6; }
+
+/* ═══════════ CLUB — tarjeta de papel con sellos dorados ═══════════ */
+.club-section {
+    padding: 5rem 0;
+    scroll-margin-top: 76px;
+    background: linear-gradient(180deg, var(--mar-mas-osc) 0%, var(--mar) 100%);
+}
+
+.club-badge {
+    display: block;
+    width: fit-content;
+    margin: 0 auto 1.25rem;
+    padding: 0.7rem 1.9rem;
+    border-radius: 4px;
+    background: var(--amarillo);           /* 8.1:1 con mar-mas-osc */
+    color: var(--mar-mas-osc);
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    letter-spacing: 2px;
+    font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+    text-transform: uppercase;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+}
+
+.club-section .section-title { color: var(--dorado); }   /* 5.3:1 sobre mar */
+.club-section .section-title::after { background: var(--amarillo); }
+
+.club-lead {
+    max-width: 640px;
+    color: rgba(255, 255, 255, 0.92);     /* >11:1 */
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+.club-lead strong { color: var(--amarillo); }
+
+.club-card {
+    background: var(--crema-papel);
+    border-radius: 10px;
+    padding: 1.8rem;
+    border: 2px solid var(--dorado);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.25);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.club-card:hover { transform: translateY(-5px); box-shadow: 0 20px 44px rgba(0, 0, 0, 0.3); }
+.club-card-title { font-family: 'Anton', sans-serif; font-weight: 400; letter-spacing: 0.5px; text-transform: uppercase; color: var(--mar); font-size: 1.35rem; }
+.club-card-sub { color: var(--content-secondary); font-size: 0.95rem; }
+
+.club-premio-celebra {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--carmesi);
+    color: var(--content-on-brand);
+    font-size: 1.3rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.club-btn {
+    width: 100%;
+    border: none;
+    border-radius: 6px;
+    padding: 0.9rem 1.2rem;
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    color: var(--content-on-brand) !important;  /* oscuro sobre naranja 6.27:1 */
+    background: var(--carmesi);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28), inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s;
+    text-align: center;
+}
+.club-btn:hover:not(:disabled) {
+    background: var(--turquesa);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+}
+.club-btn-outline {
+    background: var(--crema-papel);
+    color: var(--mar) !important;           /* 11.8:1 */
+    border: 2px solid var(--mar);
+    box-shadow: none;
+}
+.club-btn-outline:hover:not(:disabled) {
+    background: rgba(32, 45, 15, 0.08);
+    color: var(--carmesi-osc) !important;
+    box-shadow: none;
+}
+
+.club-section p a[href="terminos-club.html"] { color: var(--amarillo) !important; }
+
+/* ═══════════ VISÍTANOS — muelle de madera ═══════════ */
+.bg-visitanos { background: linear-gradient(180deg, var(--mar) 0%, var(--mar-mas-osc) 100%); }
+.bg-visitanos .section-title { color: var(--amarillo); }
+.bg-visitanos .section-title::after { background: var(--carmesi); }
+.bg-visitanos p.fs-5 { color: rgba(255, 255, 255, 0.95); }
+.bg-visitanos strong { color: var(--amarillo); }
+.bg-visitanos .text-danger { color: var(--amarillo) !important; } /* 8.1:1 sobre mar */
+.bg-visitanos .text-success { color: #34D399 !important; } /* verde claro AA sobre mar */
+
+.mapa-marco {
+    border: 3px solid var(--dorado);
+    border-radius: 10px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+}
+
+.btn-social {
+    border-width: 2px; font-weight: 800; border-radius: 6px;
+    padding: 12px 28px; transition: all 0.25s; text-decoration: none; display: inline-block;
+    color: #fff !important; background: transparent;
+}
+.btn-outline-fb { border-color: var(--dorado); }
+.btn-outline-fb:hover { background: var(--dorado); color: var(--mar-mas-osc) !important; transform: translateY(-2px); }
+.btn-outline-ig { border-color: var(--amarillo); }
+.btn-outline-ig:hover { background: var(--amarillo); color: var(--mar-mas-osc) !important; transform: translateY(-2px); }
+.btn-mapa { background: var(--carmesi); border: 2px solid var(--amarillo); color: var(--content-on-brand) !important; }
+.btn-mapa:hover { background: var(--turquesa); transform: translateY(-2px); }
+
+/* ═══════════ FOOTER — tablón del puerto ═══════════ */
+.footer-calletano {
+    padding: 50px 0 30px;
+    background:
+        radial-gradient(120% 100% at 80% 0%, rgba(234, 152, 61, 0.12), transparent 50%),
+        var(--mar-mas-osc);
+    border-top: 4px solid var(--dorado);
+    color: #fff;
+}
+
+.footer-brand {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--amarillo);
+    margin-bottom: 6px;
+}
+
+.footer-tagline {
+    font-family: 'Karla', sans-serif;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #fff;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+}
+
+.footer-desc { color: rgba(255, 255, 255, 0.92); max-width: 520px; margin: 0 auto; font-size: 0.95rem; line-height: 1.6; }
+
+.footer-legal { margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2); }
+.footer-legal a {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+.footer-legal a:hover { background: var(--dorado); color: var(--mar-mas-osc); transform: translateY(-2px); }
+.footer-sep { color: rgba(255, 255, 255, 0.5); margin: 0 4px; font-weight: 700; }
+.footer-copy { margin-top: 16px; font-size: 0.82rem; color: rgba(255, 255, 255, 0.75); }
+
+/* ═══════════ WHATSAPP — boya flotante ═══════════ */
+#btn-wsp {
+    background: #0E6E3B;
+    color: #fff;
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+    border: 3px solid var(--dorado);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+    animation: pulse 2.4s infinite;
+    text-decoration: none;
+    transition: transform 0.3s;
+}
+#btn-wsp:hover { transform: scale(1.1); }
+@keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+/* ═══════════ SKELETON & BLUR-UP (mantener del mundo) ═══════════ */
+@keyframes waveShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+.skeleton {
+    background: linear-gradient(90deg, var(--skeleton-base) 0%, var(--skeleton-base) 25%, var(--skeleton-shine) 37%, var(--skeleton-shine) 53%, var(--skeleton-base) 65%, var(--skeleton-base) 100%);
+    background-size: 200% 100%;
+    animation: waveShimmer 1.8s ease-in-out infinite;
+    border-radius: 8px;
+}
+.skeleton-text { height: 18px; margin-bottom: 10px; border-radius: 4px; }
+.skeleton-text-short { height: 18px; width: 60%; margin-bottom: 10px; border-radius: 4px; }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; background: var(--skeleton-base); } }
+
+.img-blur { filter: blur(12px); transform: scale(1.05); transition: filter 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); will-change: filter, transform; }
+.img-blur-loaded { filter: blur(0); transform: scale(1); }
+@media (prefers-reduced-motion: reduce) { .img-blur { filter: blur(0); transform: none; transition: none; } }
+
+/* ═══════════ MODAL CERRADO ═══════════ */
+.modal-content { border-radius: 12px !important; border: 2px solid var(--mar) !important; }
+.modal-body i.text-danger { color: var(--carmesi-osc) !important; }
+.modal-body h3 { color: var(--mar) !important; }
+
+/* ═══════════ RESPONSIVE ═══════════ */
+@media (max-width: 991px) {
+    .navbar-collapse {
+        background: var(--mar-mas-osc);
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid rgba(250, 218, 119, 0.3);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+        margin-top: 10px;
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+    }
+    .nav-link { padding: 12px 16px; margin: 2px 0; font-size: 1rem; color: #fff !important; }
+    .btn-nav-carta { text-align: center; display: block; width: 100%; margin-top: 10px; padding: 14px 20px; }
+}
+@media (max-width: 768px) {
+    header { min-height: 78vh; }
+    section { padding: 64px 0; }
+}

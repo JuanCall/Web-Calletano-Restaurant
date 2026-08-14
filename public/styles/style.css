@@ -6,19 +6,49 @@
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&display=swap');
 
 :root {
-    /* Tu Paleta Exacta */
+    /* Brand Colors (siempre fijos) */
     --cyan-logo: #0ff1f3;
     --naranja-logo: #e8993d;
     --amarillo-suave: #fffba4;
     --amarillo-fuerte: #f6d35f;
     --blanco: #ffffff;
-    
-    /* Colores Funcionales */
-    --color-texto: #444;
-    --color-oscuro: #2c3e50;
+
+    /* ═══ Tokens Semánticos (Astryx Skill #5) ═══ */
+    /* Light mode (default) */
+    --surface-default: #fffef8;
+    --surface-raised: #ffffff;
+    --surface-sunken: #f8f7f0;
+    --surface-overlay: rgba(0,0,0,0.5);
+    --content-primary: #2d2d2d;
+    --content-secondary: #595959;
+    --content-tertiary: #8c8c8c;
+    --content-brand: var(--naranja-logo);
+    /* Texto sobre superficies naranja de marca: marrón oscuro para cumplir WCAG AA
+       (blanco sobre #e8993d daba ~2.9:1; #4a2c05 da >5:1) */
+    --content-on-brand: #4a2c05;
+    --content-on-dark: #ffffff;
+    --border-subtle: #e8e0d8;
+    --border-strong: #d4c8b8;
+    --brand-deep: #b95610; /* naranja oscuro: texto sobre blanco / hover (AA) */
+    --brand-dark: #9c4707; /* naranja casi marrón: gradientes de footer (AA) */
+    --focus-ring: 0 0 0 4px rgba(15, 241, 243, 0.4);
+    --shadow-intensity: 1;
+    --skeleton-base: #e8e8e8;
+    --skeleton-shine: #fefefe;
 }
 
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* Accesibilidad: foco visible (WCAG 2.4.7) en todos los interactivos */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible {
+    outline: 3px solid var(--cyan-logo);
+    outline-offset: 3px;
+    border-radius: 6px;
+}
 
 /* CORRECCIÓN SCROLL: Evita que la barra tape los títulos al bajar */
 html { 
@@ -28,9 +58,10 @@ html {
 
 body {
     font-family: 'Montserrat', sans-serif;
-    color: var(--color-texto);
-    background-color: #fffef8;
+    color: var(--content-primary);
+    background-color: var(--surface-default);
     overflow-x: hidden;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
@@ -39,11 +70,16 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
    NUEVA BARRA DE NAVEGACIÓN (NAVBAR)
    ============================================ */
 .navbar-calletano {
-    background-color: rgba(255, 255, 255, 0.95); /* Blanco semitransparente */
+    background-color: color-mix(in srgb, var(--surface-raised) 95%, transparent);
     backdrop-filter: blur(10px); /* Efecto vidrio */
     box-shadow: 0 4px 15px rgba(232, 153, 61, 0.1);
     padding: 10px 0;
     transition: all 0.3s ease;
+}
+
+.navbar-calletano.navbar-scrolled {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    background-color: color-mix(in srgb, var(--surface-raised) 98%, transparent);
 }
 
 .navbar-brand {
@@ -57,7 +93,7 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
 .nav-link {
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
-    color: #555 !important;
+    color: var(--content-secondary) !important;
     font-size: 0.95rem;
     margin: 0 10px;
     position: relative;
@@ -65,7 +101,7 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
 }
 
 .nav-link:hover, .nav-link.active {
-    color: var(--naranja-logo) !important;
+    color: var(--brand-deep) !important; /* naranja oscuro: AA sobre blanco */
 }
 
 /* Efecto de subrayado animado al pasar el mouse */
@@ -78,23 +114,23 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
 
 /* Botón especial "Ver Carta" en el menú */
 .btn-nav-carta {
-    background: var(--naranja-logo);
-    color: white !important;
+    background: linear-gradient(135deg, var(--naranja-logo), #efb45a);
+    color: var(--content-on-brand) !important;
     border-radius: 50px;
     padding: 8px 20px;
-    font-weight: 700;
+    font-weight: 800;
     transition: 0.3s;
 }
 .btn-nav-carta:hover {
-    background: var(--amarillo-fuerte);
-    color: var(--naranja-logo) !important;
+    background: var(--brand-deep);
+    color: #fff !important;
     transform: translateY(-2px);
 }
 .btn-nav-carta::after { display: none; } /* Sin subrayado */
 
 /* Hamburguesa móvil */
 .navbar-toggler { border: none; box-shadow: none !important; }
-.navbar-toggler:focus { outline: none; }
+.navbar-toggler:focus-visible { outline: 3px solid var(--cyan-logo); outline-offset: 3px; }
 
 /* ============================================
    HEADER / HERO
@@ -113,6 +149,56 @@ header {
     object-fit: cover; z-index: 0; filter: brightness(0.6); 
 }
 
+/* Badge de estado (abierto/cerrado) */
+.hero-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 18px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    backdrop-filter: blur(4px);
+    border: 2px solid rgba(255,255,255,0.3);
+    transition: all 0.3s ease;
+}
+
+.badge-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: badgePulse 2s infinite;
+    flex-shrink: 0;
+}
+
+.badge-open {
+    background: rgba(39, 174, 96, 0.9);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(39, 174, 96, 0.35);
+}
+.badge-open .badge-dot {
+    background: #fff;
+    box-shadow: 0 0 6px rgba(255,255,255,0.6);
+}
+
+.badge-closed {
+    background: rgba(192, 57, 43, 0.9);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(192, 57, 43, 0.3);
+}
+.badge-closed .badge-dot {
+    background: #fff;
+    box-shadow: 0 0 6px rgba(255,255,255,0.5);
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.4); }
+}
+
 header .container { z-index: 2; }
 
 header h1 {
@@ -127,13 +213,13 @@ header .lead {
 }
 
 .btn-hero {
-    background: var(--amarillo-fuerte); color: var(--naranja-logo);
+    background: var(--amarillo-fuerte); color: var(--content-on-brand);
     font-weight: 800; border: 3px solid white; border-radius: 50px;
     padding: 14px 35px; transition: all 0.3s ease;
     box-shadow: 0 5px 15px rgba(0,0,0,0.2); text-decoration: none; display: inline-block;
 }
 .btn-hero:hover {
-    background: white; color: var(--naranja-logo);
+    background: var(--surface-raised); color: var(--content-on-brand);
     transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 
@@ -176,7 +262,7 @@ section::after {
 
 /* Gradiente difuminado entre fondos */
 #menu-dia::after {
-    background: linear-gradient(to bottom, transparent 0%, rgba(255,254,248,1) 100%);
+    background: linear-gradient(to bottom, transparent 0%, var(--surface-default) 100%);
 }
 
 /* De fondo claro a fondo playa */
@@ -186,7 +272,7 @@ section::after {
 
 /* De fondo playa a bg-light (siguiente sección) */
 #domingo::after {
-    background: linear-gradient(to bottom, transparent 0%, #f8f9fa 100%);
+    background: linear-gradient(to bottom, transparent 0%, var(--surface-sunken) 100%);
 }
 
 /* resenas usa overflow-hidden, no necesita ::after (el gradiente se pierde) */
@@ -196,7 +282,7 @@ section::after {
 
 /* De gris a fondo final */
 #visitanos::after {
-    background: linear-gradient(to bottom, transparent 0%, #fffef8 100%);
+    background: linear-gradient(to bottom, transparent 0%, var(--surface-default) 100%);
 }
 
 /* Scroll reveal: fade + slide suave */
@@ -228,7 +314,7 @@ section::after {
 }
 
 .section-title {
-    color: var(--naranja-logo);
+    color: var(--brand-deep); /* naranja oscuro: AA sobre crema (antes ~2.8:1) */
     position: relative;
     display: inline-block;
     margin-bottom: 50px;
@@ -258,7 +344,7 @@ section::after {
 }
 
 .menu-dia-card {
-    background: white; 
+    background: var(--surface-raised); 
     border-radius: 20px; 
     border: 2px solid var(--amarillo-suave);
     overflow: hidden; 
@@ -276,10 +362,10 @@ section::after {
 
 .card-header-custom {
     padding: 15px; text-align: center; font-family: 'Playfair Display'; font-weight: 700;
-    letter-spacing: 1px; font-size: 1.2rem; color: white; flex-shrink: 0;
+    letter-spacing: 1px; font-size: 1.2rem; color: var(--content-on-brand); flex-shrink: 0;
 }
 .header-entradas { background: var(--amarillo-fuerte); }
-.header-segundos { background: var(--naranja-logo); }
+.header-segundos { background: linear-gradient(135deg, var(--naranja-logo), #efb45a); }
 
 .card-body-custom {
     padding: 30px; background: var(--amarillo-suave);
@@ -287,21 +373,69 @@ section::after {
     text-align: center; flex-grow: 1;
 }
 .plato-dia-texto {
-    font-size: 1.1rem; font-weight: 600; color: #555; line-height: 1.6; margin: 0;
+    font-size: 1.1rem; font-weight: 600; color: var(--content-secondary); line-height: 1.6; margin: 0;
 }
 #menu-refresco { color: var(--naranja-logo); font-family: 'Playfair Display'; font-style: italic; font-weight: 900; }
 
 /* ============================================
    FAVORITOS & DOMINGO
    ============================================ */
-.bg-playa { background: linear-gradient(180deg, #fffef8 0%, var(--amarillo-suave) 100%); }
-.plato-card {
-    border: none; border-radius: 15px; overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: transform 0.3s, box-shadow 0.3s;
-    background: white;
+.bg-playa {    background: linear-gradient(180deg, var(--surface-default) 0%, var(--amarillo-suave) 100%); }
+
+/* Tarjetas de plato — Favoritos y Especiales de Domingo comparten .dish-card.
+   Antes corrían solo con .card de Bootstrap; ahora tienen identidad propia:
+   imagen con zoom suave al hover, borde acento en el color de marca y
+   tipografía Playfair Display en el nombre del plato. */
+.dish-card {
+    border-radius: 18px !important;
+    overflow: hidden;
+    background: var(--surface-raised);
+    box-shadow: 0 8px 24px rgba(232, 153, 61, 0.12) !important;
+    border: 1px solid var(--border-subtle) !important;
+    transition: transform 0.35s cubic-bezier(.22,1,.36,1),
+                box-shadow 0.35s ease,
+                border-color 0.35s ease;
 }
-.plato-card:hover { transform: scale(1.05); box-shadow: 0 10px 25px rgba(15, 241, 243, 0.3); }
-.plato-img { height: 200px; object-fit: cover; border-bottom: 4px solid var(--cyan-logo); }
+
+.dish-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 18px 36px rgba(232, 153, 61, 0.22) !important;
+    border-color: var(--amarillo-fuerte) !important;
+}
+
+.dish-card .card-img-top {
+    transition: transform 0.5s cubic-bezier(.22,1,.36,1);
+}
+
+.dish-card:hover .card-img-top {
+    transform: scale(1.06);
+}
+
+.dish-card .card-body {
+    position: relative;
+    padding-top: 1.4rem;
+}
+
+/* Pequeño acento decorativo sobre el nombre del plato, en el color del mar */
+.dish-card .card-body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 3px;
+    border-radius: 3px;
+    background: var(--cyan-logo);
+}
+
+.dish-card .card-body h5 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 800;
+    color: var(--content-primary);
+    letter-spacing: 0.2px;
+}
+
 
 /* ============================================
    RESEÑAS
@@ -315,18 +449,54 @@ section::after {
 .infinite-carousel:hover .review-group { animation-play-state: paused; }
 
 .review-card {
-    background: white; border-radius: 15px; padding: 25px;
+    position: relative;
+    background: var(--surface-raised); border-radius: 15px; padding: 25px;
     min-width: 320px; max-width: 320px;
-    border: 1px solid #eee; border-left: 5px solid var(--naranja-logo);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.03); transition: transform 0.3s;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 8px 24px rgba(45, 45, 45, 0.06); transition: transform 0.3s, box-shadow 0.3s;
 }
-.review-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+/* Marca tipográfica en vez del cliché de borde-acento (Impeccable) */
+.review-card::before {
+    content: '\201C';
+    font-family: 'Playfair Display', serif;
+    font-size: 3.4rem; line-height: 1;
+    color: var(--naranja-logo);
+    position: absolute; top: 10px; right: 22px; opacity: 0.22;
+    pointer-events: none;
+}
+.review-card:hover { transform: translateY(-5px); box-shadow: 0 12px 28px rgba(0,0,0,0.1); }
+
+/* Estilos internos de cada tarjeta de reseña */
+.review-stars {
+    color: var(--amarillo-fuerte);
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+}
+.review-text {
+    font-style: italic;
+    color: var(--content-secondary);
+    margin-bottom: 14px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+.review-author {
+    font-weight: 700;
+    color: var(--brand-deep); /* naranja oscuro: AA sobre blanco */
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+.review-author::before {
+    content: '— ';
+    opacity: 0.6;
+}
+
 @keyframes scrolling { 0% { transform: translateX(0); } 100% { transform: translateX(-100%); } }
 
 /* ============================================
    VISÍTANOS
    ============================================ */
-.bg-visitanos { background: linear-gradient(180deg, #f8f9fa 0%, #fffef8 100%); }
+.bg-visitanos {    background: linear-gradient(180deg, var(--surface-sunken) 0%, var(--surface-default) 100%); }
 .mapa-marco { border: 5px solid white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); overflow: hidden; }
 
 .btn-social {
@@ -335,15 +505,87 @@ section::after {
 }
 .btn-outline-fb { color: #1877f2; border-color: #1877f2; }
 .btn-outline-fb:hover { background: #1877f2; color: white; transform: translateY(-2px); }
-.btn-outline-ig { color: #e4405f; border-color: #e4405f; }
-.btn-outline-ig:hover { background: #e4405f; color: white; transform: translateY(-2px); }
+.btn-outline-ig { color: #d11f52; border-color: #d11f52; } /* IG oscurecido: AA */
+.btn-outline-ig:hover { background: #d11f52; color: white; transform: translateY(-2px); }
 .btn-mapa { background: var(--cyan-logo); color: #333; border: none; }
-.btn-mapa:hover { background: #0dd; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(15, 241, 243, 0.4); }
+.btn-mapa:hover {    background: color-mix(in srgb, var(--cyan-logo) 80%, black); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(15, 241, 243, 0.4); }
 
 /* ============================================
    FOOTER & WHATSAPP
    ============================================ */
 footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-top: 5px solid var(--amarillo-fuerte); }
+
+/* Footer estilo Maki Panda: marca + enlaces legales */
+.footer-calletano {
+    padding: 45px 0 28px;
+    /* Gradiente más oscuro para que el texto blanco cumpla WCAG AA */
+    background:
+        radial-gradient(circle at 12% 120%, rgba(15, 241, 243, 0.16), transparent 40%),
+        radial-gradient(circle at 88% -20%, rgba(255, 251, 164, 0.18), transparent 45%),
+        linear-gradient(135deg, var(--brand-deep) 0%, var(--brand-dark) 100%);
+    border-top: 5px solid var(--amarillo-fuerte);
+}
+
+.footer-brand {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    font-size: 1.9rem;
+    color: #fff;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 6px rgba(120, 60, 10, 0.25);
+}
+
+.footer-tagline {
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #fff; /* blanco: amarillo suave sobre naranja daba ~4.4:1 */
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+}
+
+.footer-desc {
+    color: rgba(255, 255, 255, 0.92);
+    max-width: 520px;
+    margin: 0 auto;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.footer-legal {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.footer-legal a {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 50px;
+    display: inline-block;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+
+.footer-legal a:hover {
+    background: #fff;
+    color: var(--brand-deep); /* naranja oscuro: AA sobre blanco */
+    transform: translateY(-2px);
+}
+
+.footer-sep {
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0 4px;
+    font-weight: 700;
+}
+
+.footer-copy {
+    margin-top: 16px;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.85);
+}
 
 #btn-wsp {
     background: #25d366; color: white; width: 60px; height: 60px;
@@ -359,8 +601,11 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
    ============================================ */
 @media (max-width: 991px) {
     .navbar-collapse {
-        background: white; padding: 20px; border-radius: 15px;
+        background: var(--surface-raised); padding: 20px; border-radius: 15px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-top: 10px;
+        /* Fix móvil: el menú abierto no puede desplazarse si es más alto que la pantalla */
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
     }
     .nav-link {
         padding: 12px 16px;
@@ -383,6 +628,172 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
 }
 
 /* ============================================
+   PÁGINAS LEGALES (Términos del club / Privacidad)
+   ============================================ */
+.legal-hero {
+    /* Reestablece la regla global de `header` (min-height 550px / flex)
+       que es exclusiva del hero de la portada. */
+    min-height: 0;
+    display: block;
+    padding: 130px 0 55px;
+    text-align: center;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(14, 241, 243, 0.12), transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(232, 153, 61, 0.16), transparent 45%),
+        linear-gradient(180deg, var(--surface-default) 0%, #fdf3e3 100%);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.legal-badge {
+    display: inline-block;
+    padding: 0.55rem 1.6rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--naranja-logo), #f6c15f);
+    color: var(--content-on-brand);
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    box-shadow: 0 8px 20px rgba(232, 153, 61, 0.35);
+    text-shadow: none;
+}
+
+.legal-hero-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 900;
+    color: var(--brand-deep);
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    margin: 1rem 0 0.3rem;
+}
+
+.legal-hero-sub {
+    color: var(--content-secondary);
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.legal-main {
+    padding: 60px 0 90px;
+    background:
+        linear-gradient(180deg, #fdf3e3 0%, var(--surface-default) 100%);
+}
+
+.legal-card {
+    max-width: 860px;
+    margin: 0 auto;
+    background: var(--surface-raised);
+    border-radius: 24px;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 16px 45px rgba(45, 45, 45, 0.08);
+    overflow: hidden;
+}
+
+.legal-sec {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 20px;
+    padding: 30px 34px;
+    border-bottom: 1px dashed var(--border-subtle);
+}
+
+.legal-sec:last-child {
+    border-bottom: none;
+}
+
+.legal-num {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--naranja-logo), #f6c15f);
+    color: var(--content-on-brand);
+    font-weight: 900;
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 18px rgba(232, 153, 61, 0.3);
+}
+
+.legal-body h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--content-primary);
+    font-size: 1.35rem;
+    margin-bottom: 0.7rem;
+}
+
+.legal-body p,
+.legal-body li {
+    color: var(--content-secondary);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.legal-body ul {
+    padding-left: 1.2rem;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.legal-body li::marker {
+    color: var(--brand-deep);
+    font-weight: 800;
+}
+
+.legal-table-wrap {
+    overflow-x: auto;
+    margin-top: 0.8rem;
+}
+
+.legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    background: var(--surface-raised);
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+.legal-table th {
+    background: linear-gradient(135deg, var(--naranja-logo), #efb45a);
+    color: var(--content-on-brand);
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+}
+
+.legal-table td {
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid var(--border-subtle);
+    color: var(--content-secondary);
+}
+
+.legal-update {
+    font-style: italic;
+    color: var(--content-secondary); /* subido de #8c8c8c: AA */
+    margin-top: 0.8rem;
+}
+
+@media (max-width: 575.98px) {
+    .legal-hero {
+        padding: 115px 0 40px;
+    }
+    .legal-sec {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        padding: 24px 20px;
+    }
+    .legal-num {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        font-size: 1rem;
+    }
+}
+
+/* ============================================
    SKELETON LOADING — Efecto Onda (Wave Shimmer)
    Gradiente animado que simula una ola de luz
    inspirada en las olas del mar de Máncora.
@@ -400,13 +811,13 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
 .skeleton {
     background: linear-gradient(
         90deg,
-        #e8e8e8 0%,
-        #e8e8e8 25%,
-        #f5f5f5 37%,
-        #fefefe 45%,
-        #f5f5f5 53%,
-        #e8e8e8 65%,
-        #e8e8e8 100%
+        var(--skeleton-base) 0%,
+        var(--skeleton-base) 25%,
+        var(--skeleton-shine) 37%,
+        var(--skeleton-shine) 45%,
+        var(--skeleton-shine) 53%,
+        var(--skeleton-base) 65%,
+        var(--skeleton-base) 100%
     );
     background-size: 200% 100%;
     animation: waveShimmer 1.8s ease-in-out infinite;
@@ -414,31 +825,11 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
     border-radius: 8px;
 }
 
-/* Variante más oscura para cuando el fondo no es blanco */
-.skeleton-dark {
-    background: linear-gradient(
-        90deg,
-        #d0d0d0 0%,
-        #d0d0d0 25%,
-        #e0e0e0 37%,
-        #ececec 45%,
-        #e0e0e0 53%,
-        #d0d0d0 65%,
-        #d0d0d0 100%
-    );
-    background-size: 200% 100%;
-    animation: waveShimmer 1.8s ease-in-out infinite;
-    border-radius: 8px;
-}
+
 
 /* === Variantes de skeleton === */
 
-/* Imagen del plato */
-.skeleton-img {
-    height: 200px;
-    width: 100%;
-    border-radius: 16px 16px 0 0;
-}
+
 
 /* Texto de una línea */
 .skeleton-text {
@@ -455,60 +846,46 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
     border-radius: 4px;
 }
 
-/* Círculo (avatar, icono) */
-.skeleton-circle {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
+
+
+
+
+
+
+
+
+
+
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+        background: var(--skeleton-base);
+    }
 }
 
-/* Badge / etiqueta pequeña */
-.skeleton-badge {
-    height: 12px;
-    width: 40%;
-    border-radius: 20px;
+/* ============================================
+   BLUR-UP LAZY LOADING — Imágenes que se revelan
+   ============================================ */
+
+.img-blur {
+    filter: blur(12px);
+    transform: scale(1.05);
+    transition: filter 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+                transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: filter, transform;
 }
 
-/* Targeta completa de reseña */
-.skeleton-review {
-    min-width: 320px;
-    max-width: 320px;
-    padding: 25px;
-    border-radius: 16px;
-    background: white;
-    border: 1px solid #eee;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* === Delays escalonados para múltiples skeletons === */
-/* Aplicado inline desde JS con style=\"--sk-delay: 0.1s\" */
-.skeleton-delayed {
-    animation-delay: var(--sk-delay, 0s);
-}
-
-/* Targeta de plato completa (skeleton) */
-.skeleton-card {
-    border: none;
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    background: white;
-}
-.skeleton-card-body {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+.img-blur-loaded {
+    filter: blur(0);
+    transform: scale(1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .skeleton,
-    .skeleton-dark,
-    .skeleton-delayed {
-        animation: none;
-        background: #e8e8e8;
+    .img-blur {
+        filter: blur(0);
+        transform: none;
+        transition: none;
     }
 }
 
@@ -522,7 +899,7 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
     left: 0;
     right: 0;
     z-index: 9999;
-    background: white;
+    background: var(--surface-raised);
     box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
     border-top: 4px solid var(--naranja-logo);
     transform: translateY(100%);
@@ -564,12 +941,12 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
 .notif-banner-text strong {
     display: block;
     font-size: 0.95rem;
-    color: #333;
+    color: var(--content-primary);
     margin-bottom: 2px;
 }
 .notif-banner-text p {
     font-size: 0.85rem;
-    color: #777;
+    color: var(--content-tertiary);
     margin: 0;
     line-height: 1.3;
 }
@@ -600,8 +977,8 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
 
 .btn-notif-cerrar {
     background: transparent;
-    color: #999;
-    border: 1px solid #ddd;
+    color: var(--content-tertiary);
+    border: 1px solid var(--border-subtle);
     border-radius: 50px;
     padding: 8px 16px;
     font-weight: 600;
@@ -610,8 +987,8 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
     white-space: nowrap;
 }
 .btn-notif-cerrar:hover {
-    background: #f5f5f5;
-    color: #666;
+    background: var(--surface-sunken);
+    color: var(--content-secondary);
 }
 
 .notif-success {
@@ -626,17 +1003,15 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
 
 /* ============================================
    NOTIFICACIONES TOAST EN PRIMER PLANO
-   ============================================ */
-
-.notification-toast {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    border-left: 5px solid var(--naranja-logo);
+   ============================================ */    .notification-toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        background: var(--surface-raised);
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        border-top: 4px solid var(--naranja-logo);
     max-width: 380px;
     width: calc(100% - 40px);
     animation: toastSlideIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
@@ -661,12 +1036,12 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
 .notification-toast-text strong {
     display: block;
     font-size: 0.9rem;
-    color: #333;
+    color: var(--content-primary);
     margin-bottom: 2px;
 }
 .notification-toast-text p {
     font-size: 0.8rem;
-    color: #777;
+    color: var(--content-tertiary);
     margin: 0;
     line-height: 1.3;
 }
@@ -711,5 +1086,763 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
         right: 10px;
         max-width: none;
         width: calc(100% - 20px);
+    }
+}
+
+/* ═══════════════════════════════════════════════
+   🎫 CLUB CALLETANO — Tarjeta digital de fidelización
+   ═══════════════════════════════════════════════ */
+.club-section {
+    padding: 5rem 0;
+    scroll-margin-top: 76px;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(14, 241, 243, 0.10), transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(232, 153, 61, 0.14), transparent 45%),
+        linear-gradient(180deg, var(--surface-default) 0%, #fdf3e3 100%);
+}
+
+.club-badge {
+    /* Bloque centrado: ocupa su propia línea, SIEMPRE arriba del lema */
+    display: block;
+    width: fit-content;
+    margin: 0 auto 1.25rem;
+    padding: 0.7rem 2rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--naranja-logo), #f6c15f);
+    color: var(--content-on-brand); /* texto marrón oscuro: AA sobre el gradiente */
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    font-size: clamp(1.05rem, 2.4vw, 1.5rem);
+    text-transform: uppercase;
+    box-shadow: 0 10px 24px rgba(232, 153, 61, 0.35);
+    text-shadow: none;
+}
+
+.club-lead {
+    max-width: 620px;
+    color: var(--content-secondary);
+    font-size: 1.1rem;
+}
+
+.club-card {
+    background: #fff;
+    border-radius: 22px;
+    padding: 1.75rem;
+    box-shadow: 0 10px 30px rgba(45, 45, 45, 0.08);
+    border: 1px solid var(--border-subtle);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.club-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(45, 45, 45, 0.12);
+}
+
+.club-card-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: var(--content-primary);
+    font-size: 1.4rem;
+}
+
+.club-card-sub {
+    color: var(--content-secondary);
+    font-size: 0.95rem;
+}
+
+/* 🚧 Club próximamente (aviso mientras el club está en pausa) */
+.club-proximamente {
+    padding: 3rem 2rem;
+    background:
+        radial-gradient(circle at 85% 10%, rgba(15, 241, 243, 0.08), transparent 40%),
+        #fff;
+    border: 2px solid var(--amarillo-fuerte);
+}
+
+.club-proximamente-icono {
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 1.2rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--naranja-logo), #f6c15f);
+    color: #fff;
+    font-size: 2.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 24px rgba(232, 153, 61, 0.35);
+}
+
+.club-field {
+    margin-bottom: 1.1rem;
+}
+
+.club-field label,
+.club-field > span {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--content-secondary);
+    margin-bottom: 0.4rem;
+}
+
+.club-input {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface-sunken);
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+
+.club-input:focus {
+    outline: none;
+    border-color: var(--naranja-logo);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(232, 153, 61, 0.15);
+}
+
+.club-doc-tipo {
+    display: inline-flex;
+    gap: 6px;
+    background: var(--surface-sunken);
+    border: 1.5px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 0.6rem;
+}
+
+.club-doc-btn {
+    border: none;
+    background: transparent;
+    padding: 0.45rem 1.3rem;
+    border-radius: 9px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--content-secondary);
+    transition: all 0.2s ease;
+}
+
+.club-doc-btn.active {
+    background: var(--naranja-logo);
+    color: var(--content-on-brand);
+    box-shadow: 0 3px 10px rgba(232, 153, 61, 0.35);
+}
+
+.club-check {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    font-size: 0.92rem;
+    color: var(--content-secondary);
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+}
+
+.club-check input {
+    margin-top: 0.25rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--naranja-logo);
+    flex-shrink: 0;
+}
+
+.club-nota {
+    font-size: 0.8rem;
+    color: var(--content-secondary); /* subido de #8c8c8c: AA */
+}
+
+.club-btn {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 0.85rem 1.2rem;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--content-on-brand); /* marrón oscuro: AA sobre el gradiente naranja */
+    background: linear-gradient(135deg, var(--naranja-logo), #efb45a);
+    box-shadow: 0 8px 20px rgba(232, 153, 61, 0.35);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s;
+}
+
+.club-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(232, 153, 61, 0.45);
+}
+
+.club-btn:active:not(:disabled) {
+    transform: translateY(0) scale(0.98);
+}
+
+.club-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.club-btn-outline {
+    background: #fff;
+    color: var(--brand-deep); /* naranja oscuro: AA sobre blanco */
+    border: 2px solid var(--brand-deep);
+    box-shadow: none;
+}
+
+.club-btn-outline:hover:not(:disabled) {
+    background: rgba(232, 153, 61, 0.08);
+    box-shadow: none;
+}
+
+.club-msg {
+    display: none;
+    padding: 0.7rem 0.9rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    margin: 0.8rem 0;
+    font-weight: 600;
+}
+
+.club-msg-error {
+    display: block;
+    background: #fdecea;
+    color: #b3261e;
+    border: 1px solid #f5c6c2;
+}
+
+.club-msg-success {
+    display: block;
+    background: #e8f7ee;
+    color: #1e7e34;
+    border: 1px solid #bfe8cd;
+}
+
+.club-msg-info {
+    display: block;
+    background: #eaf6fb;
+    color: #0b7285;
+    border: 1px solid #bfe3f0;
+}
+
+.club-divider {
+    margin: 1.4rem 0;
+    border-color: var(--border-subtle);
+}
+
+.club-como h4 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: var(--content-primary);
+    margin-bottom: 0.9rem;
+}
+
+.club-como-list {
+    padding-left: 1.2rem;
+    color: var(--content-secondary);
+    display: grid;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.club-como-list li::marker {
+    color: var(--brand-deep);
+    font-weight: 800;
+}
+
+/* ── Tarjeta digital ─────────────────────────── */
+.club-tarjeta-wrap {
+    max-width: 580px;
+}
+
+/* 🎨 Tarjeta con la paleta del sitio: naranja de marca en gradiente,
+   alto contraste sobre el fondo crema de la sección */
+.club-tarjeta {
+    position: relative;
+    border-radius: 26px;
+    padding: 1.9rem;
+    color: #fff;
+    background:
+        radial-gradient(circle at 90% 8%, rgba(15, 241, 243, 0.4), transparent 42%),
+        radial-gradient(circle at 8% 92%, rgba(255, 251, 164, 0.28), transparent 45%),
+        linear-gradient(135deg, #df8430 0%, #d97c24 55%, #b95610 100%);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+        0 24px 55px rgba(232, 153, 61, 0.45),
+        0 8px 20px rgba(120, 60, 10, 0.18);
+    overflow: hidden;
+}
+
+.club-tarjeta::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: linear-gradient(90deg, var(--amarillo-fuerte), var(--cyan-logo), var(--amarillo-fuerte));
+}
+
+.club-tarjeta::after {
+    content: "";
+    position: absolute;
+    right: -70px;
+    top: -70px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    border: 26px solid rgba(255, 255, 255, 0.14);
+    pointer-events: none;
+}
+
+.club-tarjeta-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.6rem;
+    position: relative;
+    z-index: 1;
+}
+
+.club-tarjeta-logo {
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    font-size: 1.05rem;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(120, 60, 10, 0.35);
+}
+
+.club-tarjeta-sede {
+    font-size: 0.8rem;
+    color: #fff;
+    margin-top: 0.2rem;
+    text-shadow: 0 1px 3px rgba(120, 60, 10, 0.4);
+}
+
+.club-tarjeta-estado {
+    font-size: 1.5rem;
+    font-weight: 900;
+    color: #7a4a0e;
+    background: linear-gradient(135deg, #fff3d6 0%, #ffe4a8 100%);
+    border: 1.5px solid var(--amarillo-fuerte);
+    border-radius: 14px;
+    padding: 0.2rem 0.8rem;
+    box-shadow: 0 4px 12px rgba(120, 60, 10, 0.25);
+}
+
+.club-tarjeta-body {
+    display: flex;
+    gap: 1.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.club-tarjeta-info {
+    flex: 1;
+    min-width: 230px;
+}
+
+.club-tarjeta-nombre {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(120, 60, 10, 0.35);
+}
+
+.club-tarjeta-doc {
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.96);
+    margin: 0.35rem 0 0.9rem;
+    letter-spacing: 0.06em;
+    text-shadow: 0 1px 3px rgba(120, 60, 10, 0.4);
+}
+
+.club-tarjeta-visitas {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 1px 3px rgba(120, 60, 10, 0.4);
+}
+
+.club-progress-track {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 1px 3px rgba(120, 60, 10, 0.2);
+    overflow: hidden;
+}
+
+.club-progress-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--naranja-logo), var(--amarillo-fuerte), var(--cyan-logo));
+    transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.club-premio {
+    margin-top: 0.8rem;
+    font-size: 0.9rem;
+    background: #fff;
+    border: 1px solid var(--border-subtle);
+    color: var(--content-secondary);
+    border-radius: 12px;
+    padding: 0.6rem 0.8rem;
+    line-height: 1.4;
+}
+
+.club-premio-completado {
+    background: linear-gradient(135deg, #fff3d6 0%, #ffe4a8 100%);
+    border: 1.5px solid var(--amarillo-fuerte);
+    color: #7a4a0e;
+    font-weight: 600;
+}
+
+/* 🎉 Celebración: tarjeta con visitas completas */
+.club-tarjeta-completada .club-tarjeta {
+    animation: clubPremioGlow 2.4s ease-in-out infinite;
+}
+
+.club-tarjeta-completada .club-premio-completado {
+    animation: clubPremioPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes clubPremioGlow {
+    0%, 100% {
+        box-shadow:
+            0 24px 55px rgba(232, 153, 61, 0.45),
+            0 8px 20px rgba(120, 60, 10, 0.18),
+            0 0 0 0 rgba(246, 211, 95, 0.55);
+    }
+    50% {
+        box-shadow:
+            0 24px 55px rgba(232, 153, 61, 0.45),
+            0 8px 20px rgba(120, 60, 10, 0.18),
+            0 0 0 18px rgba(246, 211, 95, 0);
+    }
+}
+
+@keyframes clubPremioPop {
+    0% {
+        transform: scale(0.6) translateY(14px);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.06) translateY(-3px);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .club-tarjeta-completada .club-tarjeta,
+    .club-tarjeta-completada .club-premio-completado {
+        animation: none;
+    }
+}
+
+.club-tarjeta-qr-box {
+    background: linear-gradient(135deg, #fff3d6 0%, #ffe4a8 100%);
+    border-radius: 18px;
+    padding: 0.8rem;
+    box-shadow: 0 8px 22px rgba(232, 153, 61, 0.35);
+    border: 1.5px solid var(--amarillo-fuerte);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.club-tarjeta-qr-img {
+    width: 160px;
+    height: 160px;
+    display: block;
+}
+
+.club-tarjeta-url {
+    font-size: 0.62rem;
+    color: #7a5c1e;
+    margin-top: 0.4rem;
+    max-width: 160px;
+    word-break: break-all;
+    line-height: 1.3;
+}
+
+/* Nota bajo la barra de progreso: cómo registrar la visita */
+.club-tarjeta-ayuda {
+    margin-top: 0.9rem;
+    font-size: 0.78rem;
+    color: var(--content-secondary); /* subido de #8c8c8c: AA */
+    line-height: 1.45;
+    font-style: italic;
+}
+
+/* ── Vista previa de la config del club (aviso "Próximamente", club en pausa) ── */
+.club-config-preview {
+    margin-top: 1.6rem;
+    padding: 1.3rem 1.5rem;
+    border-radius: 18px;
+    background: linear-gradient(180deg, #fdf6ea 0%, #fff 100%);
+    border: 1.5px dashed var(--border-strong);
+    text-align: left;
+}
+
+.club-config-preview-title {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--brand-deep);
+    margin-bottom: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.club-config-preview-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+}
+
+.club-config-preview-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.4rem 1rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.club-config-preview-list li:first-child {
+    padding-top: 0;
+}
+
+.club-config-preview-list li:last-child {
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+/* La fila de condiciones nace oculta y solo se muestra si el admin escribió texto */
+.club-config-preview-list li[hidden] {
+    display: none;
+}
+
+.ccp-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--content-tertiary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.ccp-label i {
+    color: var(--naranja-logo);
+}
+
+.ccp-value {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: var(--content-primary);
+    text-align: right;
+}
+
+@media (max-width: 575.98px) {
+    .club-config-preview {
+        padding: 1rem 1.1rem;
+    }
+    .club-config-preview-list li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+    }
+    .ccp-value {
+        text-align: left;
+    }
+}
+
+/* ── Móvil: formulario y tarjeta digital a una columna ───────── */
+/* Breakpoint sm de Bootstrap: cubre toda la zona móvil (antes solo 480px,
+   en 481–575px el QR se desbordaba a una 2ª línea sin centrar) */
+@media (max-width: 575.98px) {
+    .club-section {
+        padding: 3.5rem 0;
+    }
+    .club-card {
+        padding: 1.3rem;
+    }
+    .club-check {
+        padding: 0.35rem 0; /* área táctil más cómoda en móvil */
+    }
+    .club-tarjeta {
+        padding: 1.4rem;
+    }
+    .club-tarjeta-top {
+        flex-wrap: wrap; /* logo + % no se comprimen en pantallas angostas */
+        gap: 0.8rem;
+    }
+    .club-tarjeta-body {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .club-tarjeta-info {
+        min-width: 0; /* el nombre largo puede fluir sin forzar desbordes */
+    }
+    .club-tarjeta-qr-box {
+        align-self: center; /* QR centrado bajo la info */
+        max-width: 100%;   /* la caja completa nunca desborda la tarjeta */
+    }
+    .club-tarjeta-qr-img {
+        max-width: 100%; /* nunca desborda en pantallas muy angostas */
+        height: auto;
+    }
+    .club-sello {
+        width: 28px;
+        height: 28px;
+        font-size: 0.65rem;
+    }
+}
+
+/* ── Sellos de visitas (un círculo por visita acumulada) ────────── */
+.club-sellos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin-bottom: 0.7rem;
+}
+
+.club-sello {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1.5px dashed rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 1px 3px rgba(120, 60, 10, 0.15);
+}
+
+.club-sello.lleno {
+    background: linear-gradient(135deg, #fff3d6 0%, #ffe4a8 100%);
+    border: 1.5px solid var(--amarillo-fuerte);
+    color: #b95610;
+    box-shadow: 0 3px 10px rgba(120, 60, 10, 0.28);
+    animation: clubSelloPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes clubSelloPop {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.18);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ── Confeti de celebración (premio listo) ──────────────────────── */
+.club-confetti {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.club-confetti-pieza {
+    position: absolute;
+    top: -24px;
+    opacity: 0;
+    will-change: transform;
+}
+
+.club-confetti.activo .club-confetti-pieza {
+    animation: clubConfetiCaer 3s ease-in forwards;
+    opacity: 1;
+}
+
+@keyframes clubConfetiCaer {
+    0% {
+        transform: translate3d(0, 0, 0) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translate3d(var(--sway, 40px), 560px, 0) rotate(720deg);
+        opacity: 0.85;
+    }
+}
+
+/* ── Trofeo en el mensaje de "premio listo" ─────────────────────── */
+.club-premio-celebra {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--naranja-logo), #f6c15f);
+    color: #fff;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 16px rgba(232, 153, 61, 0.4);
+    animation: clubTrofeo 1.2s ease-in-out infinite;
+}
+
+@keyframes clubTrofeo {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-4px) scale(1.08);
+    }
+}
+
+.club-premio-completado {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    text-align: left;
+}
+
+/* ── Botón de WhatsApp (compartir tarjeta) ───────────────────────── */
+.club-btn-wsp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: auto;
+    background: linear-gradient(135deg, #25d366, #1ebe5d);
+    box-shadow: 0 8px 20px rgba(37, 211, 102, 0.35);
+    text-decoration: none;
+}
+
+.club-btn-wsp:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2ee06f, #25d366);
+    box-shadow: 0 12px 26px rgba(37, 211, 102, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .club-sello.lleno {
+        animation: none;
+    }
+    .club-confetti-pieza {
+        display: none;
+    }
+    .club-premio-celebra {
+        animation: none;
     }
 }

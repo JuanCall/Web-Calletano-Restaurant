@@ -1,0 +1,1047 @@
+/* ═══════════════════════════════════════════════════════════════
+   CALLETANO — MUNDO VISUAL PALETA DEL LOGO (páginas secundarias)
+   Rediseño dirigido por Impeccable + UI/UX Pro Max + Web Design
+   Guidelines + Astryx. Re-tinteado con los colores del logo:
+   turquesa / naranja / crema / amarillo / oscuro / dorado.
+
+   Este archivo lleva el mismo mundo de la landing (style-landing.css)
+   a: carta, club-crear, club-consultar, club-baja, privacidad,
+   terminos-club y 404. Cargar SIEMPRE al final del <head>, después
+   de style.css / stylecarta.css y de cualquier <style> inline.
+
+   Paleta (contraste AA medido):
+     --naranja  #EA983D · oscuro 6.27:1 (texto sobre botón)
+     --turquesa #11F6F5 · oscuro 10.75:1
+     --crema     #F9F5A8 · oscuro 12.92:1
+     --amarillo  #FADA77 · oscuro 10.64:1
+     --oscuro    #202D0F · blanco 14.55:1 (fondos oscuros)
+     --dorado    #CEAA63 · oscuro  6.62:1 (solo sobre oscuro)
+
+   REGLA DE ORO: los colores vivos son FONDOS con texto oscuro
+   #202D0F encima (nunca blanco). El dorado solo sobre fondos
+   oscuros. Texto de cuerpo siempre en oscuro.
+
+   Tipografía: Anton (letrero) + Karla (cuerpo).
+   ═══════════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&display=swap');
+
+/* ── Tokens del mundo (idénticos a la landing) ── */
+:root {
+    --cyan-logo: #11F6F5;          /* turquesa del logo */
+    --naranja-logo: #EA983D;       /* naranja del logo */
+    --amarillo-suave: #FADA77;
+    --amarillo-fuerte: #FADA77;
+    --blanco: #ffffff;
+
+    --mar: #202D0F;               /* oscuro: fondo de marca + texto */
+    --mar-osc: #1A260C;
+    --mar-mas-osc: #16220A;
+    --hielo: #F9F5A8;             /* crema: fondo claro */
+    --crema-papel: #FFFDF4;       /* tarjetas: blanco cálido */
+    --carmesi: #EA983D;           /* naranja: botones primarios */
+    --carmesi-osc: #9C5608;       /* naranja oscuro: texto sobre claro (AA) */
+    --turquesa: #11F6F5;          /* turquesa: hover de botones + acentos */
+    --turquesa-claro: #60F4F1;    /* turquesa claro: acentos sobre oscuro */
+    --dorado: #CEAA63;            /* dorado: solo sobre fondos oscuros */
+    --amarillo: #FADA77;          /* amarillo: badges y sellos */
+    --tinta: #202D0F;             /* oscuro: texto principal */
+
+    --surface-default: var(--hielo);
+    --surface-raised: var(--crema-papel);
+    --surface-sunken: #EFEAD0;
+    --content-primary: var(--tinta);
+    --content-secondary: #545E36;
+    --content-tertiary: #626B48;
+    --content-brand: var(--carmesi-osc);
+    --content-on-brand: #202D0F;  /* texto oscuro sobre botones vivos (AA) */
+    --content-on-dark: #ffffff;
+    --border-subtle: #DDD7AC;
+    --border-strong: #BFB887;
+    --brand-deep: var(--carmesi-osc);
+    --brand-dark: #8F4F07;
+    --focus-ring: 0 0 0 4px rgba(17, 246, 245, 0.5);
+    --skeleton-base: #E5DFC0;
+    --skeleton-shine: #FDFBE9;
+}
+
+/* Mapeo de tokens (nombres históricos → rol actual con la paleta del logo):
+   --mar / --mar-osc / --mar-mas-osc = fondos oscuros #202D0F / #1A260C / #16220A
+   --hielo = fondo crema #F9F5A8 · --crema-papel = tarjetas #FFFDF4
+   --carmesi = naranja #EA983D (botones) · --carmesi-osc = naranja oscuro #9C5608
+   --dorado = #CEAA63 (solo sobre oscuro) · --amarillo = #FADA77
+   --tinta = #202D0F (texto) · --turquesa / --turquesa-claro = #11F6F5 / #60F4F1 */
+
+::selection { background: var(--dorado); color: var(--mar-mas-osc); }
+
+body {
+    font-family: 'Karla', sans-serif;
+    color: var(--content-primary);
+    background: var(--hielo);
+    overflow-x: hidden;
+}
+
+h1, h2, h3, h4 { font-family: 'Anton', sans-serif; font-weight: 400; letter-spacing: 0.01em; }
+
+/* Foco visible: anillo oscuro + halo turquesa (WCAG 2.4.7) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[role="button"]:focus-visible {
+    outline: 3px solid var(--tinta);
+    outline-offset: 3px;
+    border-radius: 6px;
+    box-shadow: 0 0 0 6px rgba(17, 246, 245, 0.55);
+}
+
+/* Sin gradientes fantasma de secciones de style.css */
+section::after { display: none; }
+
+/* ═══════════ NAVBAR — tablón del mercado ═══════════ */
+.navbar-calletano {
+    background: linear-gradient(180deg, rgba(22, 34, 10, 0.92) 0%, rgba(26, 38, 12, 0.82) 100%);
+    backdrop-filter: blur(8px);
+    border-bottom: 2px solid rgba(250, 218, 119, 0.35);
+    padding: 12px 0;
+    transition: all 0.3s ease;
+}
+
+.navbar-calletano.navbar-scrolled {
+    background: var(--mar-mas-osc);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+    border-bottom-color: var(--dorado);
+}
+
+.navbar-brand {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 1.7rem;
+    letter-spacing: 2px;
+    color: var(--dorado) !important;   /* dorado sobre mar 5.3:1 */
+    text-transform: uppercase;
+}
+
+.btn-nav-carta {
+    background: var(--carmesi);
+    color: var(--content-on-brand) !important;  /* oscuro sobre naranja 6.27:1 */
+    border: 2px solid var(--amarillo);
+    border-radius: 6px;
+    padding: 9px 22px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    transition: all 0.25s;
+    box-shadow: 0 4px 12px rgba(26, 38, 12, 0.35);
+}
+.btn-nav-carta:hover {
+    background: var(--turquesa);
+    color: var(--content-on-brand) !important;  /* 10.75:1 */
+    transform: translateY(-2px);
+}
+.btn-nav-carta::after { display: none; }
+
+.navbar-toggler { border: none; box-shadow: none !important; }
+.navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='%23FADA77' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important; }
+
+/* ═══════════ CLUB TOPBAR — tapa de caja de pescado ═══════════ */
+.club-topbar {
+    background: linear-gradient(180deg, var(--mar-mas-osc) 0%, var(--mar-osc) 100%);
+    padding: 18px 0;
+    border-bottom: 4px solid var(--dorado);
+}
+.club-topbar .brand {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    color: var(--dorado);              /* 5.3:1+ sobre mar */
+    font-size: 1.35rem;
+    text-decoration: none;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+.club-topbar .brand i { color: var(--amarillo); margin-right: 8px; }
+.club-topbar .link-back {
+    color: rgba(255, 255, 255, 0.92);  /* 11.8:1+ */
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.club-topbar .link-back:hover {
+    color: var(--amarillo);            /* 8.1:1 sobre mar */
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+/* ═══════════ PÁGINAS LEGALES ═══════════ */
+
+/* Hero: el muelle nocturno con etiqueta de papel */
+.legal-hero {
+    min-height: 0;
+    display: block;
+    padding: 130px 0 55px;
+    text-align: center;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(32, 45, 15, 0.35), transparent 60%),
+        linear-gradient(180deg, var(--mar-mas-osc) 0%, var(--mar-osc) 100%);
+    border-bottom: 3px solid var(--dorado);
+}
+.legal-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(60% 100% at 15% 0%, rgba(234, 152, 61, 0.14), transparent 55%),
+        radial-gradient(60% 100% at 85% 0%, rgba(250, 218, 119, 0.1), transparent 55%);
+}
+
+/* Etiqueta de papel con perforación (como el badge del hero de la landing) */
+.legal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px 9px 14px;
+    border-radius: 4px;
+    background: var(--amarillo);
+    color: var(--mar-mas-osc);         /* 8.1:1 */
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    letter-spacing: 1px;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    position: relative;
+}
+.legal-badge::before {
+    content: '';
+    position: absolute; left: 50%; top: -5px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--mar-mas-osc);
+    transform: translateX(-50%);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.legal-hero-title {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    color: #fff;                       /* 11.8:1+ */
+    font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 1rem 0 0.3rem;
+    text-shadow: 0 4px 0 rgba(22, 34, 10, 0.55), 0 14px 40px rgba(0, 0, 0, 0.4);
+}
+
+.legal-hero-sub {
+    color: var(--amarillo);            /* 8.1:1 sobre mar */
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-size: 0.92rem;
+}
+
+.legal-main {
+    padding: 60px 0 90px;
+    background: linear-gradient(180deg, var(--surface-default) 0%, #EFEAD0 100%);
+}
+
+/* Tarjeta: papel de mercado con esquina de caja de pescado */
+.legal-card {
+    max-width: 860px;
+    margin: 0 auto;
+    background: var(--crema-papel);
+    border-radius: 10px;
+    border: 2px solid var(--mar);
+    box-shadow: 0 16px 40px rgba(26, 38, 12, 0.16);
+    overflow: hidden;
+    position: relative;
+}
+.legal-card::after {
+    content: '';
+    position: absolute; top: -1px; right: -1px;
+    width: 34px; height: 34px;
+    background: linear-gradient(225deg, var(--crema-papel) 0%, var(--crema-papel) 48%, var(--dorado) 50%, var(--dorado) 100%);
+    border-bottom-left-radius: 8px;
+}
+
+.legal-sec {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    gap: 20px;
+    padding: 30px 34px;
+    border-bottom: 1px dashed rgba(32, 45, 15, 0.28);
+}
+
+.legal-sec:last-child { border-bottom: none; }
+
+.legal-num {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: var(--carmesi);        /* oscuro sobre naranja 6.27:1 */
+    color: var(--content-on-brand);
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 18px rgba(234, 152, 61, 0.3), inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+}
+
+.legal-body h2 {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    color: var(--mar);                 /* 11.8:1 */
+    font-size: 1.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.7rem;
+}
+
+.legal-body p,
+.legal-body li {
+    color: var(--content-secondary);   /* 6.2:1 */
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.legal-body ul {
+    padding-left: 1.2rem;
+    display: grid;
+    gap: 0.5rem;
+}
+
+.legal-body li::marker {
+    color: var(--carmesi-osc);
+    font-weight: 800;
+}
+
+.legal-body strong { color: var(--tinta); }
+
+.legal-table-wrap { overflow-x: auto; margin-top: 0.8rem; }
+
+.legal-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    background: var(--crema-papel);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1.5px solid var(--mar);
+}
+.legal-table th {
+    background: var(--carmesi);        /* oscuro sobre naranja 6.27:1 */
+    color: var(--content-on-brand);
+    text-align: left;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+}
+.legal-table td {
+    padding: 0.7rem 0.9rem;
+    border-top: 1px solid rgba(32, 45, 15, 0.2);
+    color: var(--content-secondary);
+}
+
+.legal-update {
+    font-style: italic;
+    color: var(--content-secondary);
+    margin-top: 0.8rem;
+}
+
+/* ═══════════ CLUB — páginas del programa ═══════════ */
+.club-page-main {
+    padding: 4.5rem 0 5.5rem;
+    background: linear-gradient(180deg, var(--surface-default) 0%, #EFEAD0 100%);
+    min-height: calc(100vh - 190px);
+}
+
+.club-badge {
+    display: block;
+    width: fit-content;
+    margin: 0 auto 1.25rem;
+    padding: 0.7rem 1.9rem;
+    border-radius: 4px;
+    background: var(--amarillo);       /* 8.1:1 con mar-mas-osc */
+    color: var(--mar-mas-osc);
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    letter-spacing: 2px;
+    font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+    text-transform: uppercase;
+    box-shadow: 0 8px 22px rgba(26, 38, 12, 0.25);
+}
+
+.club-page-main .section-title {
+    color: var(--mar);
+    font-family: 'Anton', sans-serif;
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 24px;
+}
+.club-page-main .section-title::after {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--carmesi) 0%, var(--dorado) 100%);
+    margin: 12px auto 0;
+    border-radius: 2px;
+}
+
+.club-lead {
+    max-width: 620px;
+    color: var(--content-secondary);
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+.club-lead strong { color: var(--carmesi-osc); }
+
+.club-card {
+    background: var(--crema-papel);
+    border-radius: 10px;
+    padding: 1.8rem;
+    border: 2px solid var(--mar);
+    box-shadow: 0 14px 34px rgba(26, 38, 12, 0.16);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.club-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 44px rgba(26, 38, 12, 0.22);
+}
+.club-card-title {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    color: var(--mar);
+    font-size: 1.3rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.club-card-title i { color: var(--carmesi) !important; }
+.club-card-sub {
+    color: var(--content-secondary);
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.club-field label,
+.club-field > span {
+    display: block;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--content-primary);
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.club-input {
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-strong);
+    background: var(--surface-sunken);
+    font-size: 1rem;
+    color: var(--tinta);
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.club-input::placeholder { color: var(--content-tertiary); } /* 4.6:1 sobre sunken */
+.club-input:focus {
+    outline: none;
+    border-color: var(--mar);
+    background: #fff;
+    box-shadow: var(--focus-ring);
+}
+
+.club-doc-tipo {
+    display: inline-flex;
+    gap: 6px;
+    background: var(--surface-sunken);
+    border: 1.5px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 0.6rem;
+}
+.club-doc-btn {
+    border: none;
+    background: transparent;
+    padding: 0.45rem 1.3rem;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--content-secondary);
+    transition: all 0.2s ease;
+}
+.club-doc-btn.active {
+    background: var(--carmesi);        /* oscuro sobre naranja 6.27:1 */
+    color: var(--content-on-brand);
+    box-shadow: 0 3px 10px rgba(234, 152, 61, 0.35);
+}
+
+.club-check {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    font-size: 0.92rem;
+    color: var(--content-secondary);
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+}
+.club-check input {
+    margin-top: 0.25rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    accent-color: var(--carmesi);
+    flex-shrink: 0;
+}
+
+.club-nota {
+    font-size: 0.82rem;
+    color: var(--content-secondary);
+}
+.club-nota a { color: var(--carmesi-osc); font-weight: 700; text-decoration-thickness: 2px; }
+
+/* Botón principal: caja de pescado carmesí con sello */
+.club-btn {
+    width: 100%;
+    border: none;
+    border-radius: 6px;
+    padding: 0.9rem 1.2rem;
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    color: var(--content-on-brand) !important;  /* oscuro sobre naranja 6.27:1 */
+    background: var(--carmesi);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28), inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s;
+    text-align: center;
+}
+.club-btn:hover:not(:disabled) {
+    background: var(--turquesa);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35);
+}
+.club-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
+.club-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.club-btn-outline {
+    background: var(--crema-papel);
+    color: var(--mar) !important;      /* 11.8:1 */
+    border: 2px solid var(--mar);
+    box-shadow: none;
+}
+.club-btn-outline:hover:not(:disabled) {
+    background: rgba(32, 45, 15, 0.08);
+    color: var(--carmesi-osc) !important;
+    box-shadow: none;
+}
+
+.club-btn-wsp {
+    background: #0E6E3B;               /* blanco 6.35:1 */
+    border: 2px solid #FADA77;
+    box-shadow: 0 8px 20px rgba(14, 110, 59, 0.35);
+    display: inline-block;
+    width: auto;
+    padding: 0.8rem 1.4rem;
+    text-decoration: none;
+}
+.club-btn-wsp:hover:not(:disabled) { background: #0B5C31; color: #fff !important; }
+
+.club-msg {
+    display: none;
+    padding: 0.7rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin: 0.8rem 0;
+    font-weight: 600;
+}
+.club-msg-error { display: block; background: #FDEAEA; color: #A9321F; border: 1px solid #F2C1BC; }
+.club-msg-success { display: block; background: #E4F5EC; color: #0F6E3C; border: 1px solid #BCE5CF; }
+.club-msg-info { display: block; background: #E8F3F6; color: #0B5266; border: 1px solid #BEDCE6; }
+
+.club-divider { margin: 1.4rem 0; border-color: var(--border-subtle); }
+
+.club-info-list { padding-left: 0; list-style: none; margin: 0; }
+.club-info-list li {
+    display: flex; align-items: baseline; gap: 0.5rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px dashed var(--border-subtle);
+    font-size: 0.95rem;
+    color: var(--content-secondary);
+}
+.club-info-list li:last-child { border-bottom: none; }
+.club-info-list strong { color: var(--content-primary); }
+.club-info-list i { color: var(--carmesi) !important; }
+
+.club-como-list { color: var(--content-secondary); font-size: 0.95rem; line-height: 1.7; padding-left: 1.2rem; display: grid; gap: 0.6rem; }
+.club-como-list strong { color: var(--content-primary); }
+.club-como-list li::marker { color: var(--carmesi); font-weight: 800; }
+
+.club-proximamente {
+    padding: 3rem 2rem;
+    background: var(--crema-papel);
+    border: 2px solid var(--dorado);
+    border-radius: 10px;
+}
+.club-proximamente-icono {
+    width: 84px; height: 84px; margin: 0 auto 1.2rem;
+    border-radius: 50%;
+    background: var(--carmesi);
+    color: var(--content-on-brand);
+    font-size: 2.1rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 24px rgba(234, 152, 61, 0.35);
+}
+
+/* Éxito (club-crear) */
+.club-success-box {
+    display: none;
+    text-align: center;
+    background: #E4F5EC;
+    border: 1.5px solid #BCE5CF;
+    border-radius: 10px;
+    padding: 2rem 1.5rem;
+}
+.club-success-box.show { display: block; }
+.club-success-icon {
+    width: 72px; height: 72px; margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: var(--carmesi);
+    color: var(--content-on-brand);
+    font-size: 2rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 10px 24px rgba(234, 152, 61, 0.35);
+}
+
+/* Baja */
+.baja-icon {
+    width: 84px; height: 84px; border-radius: 50%;
+    background: var(--carmesi);
+    color: var(--content-on-brand);
+    font-size: 2.2rem;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.2rem;
+    box-shadow: 0 10px 24px rgba(234, 152, 61, 0.35);
+}
+.baja-sello {
+    display: inline-block; margin-top: 1.4rem; padding: 0.5rem 1.2rem;
+    border-radius: 4px; font-weight: 800; font-size: 0.85rem;
+    background: #E4F5EC; color: #0F6E3C; border: 1px solid #BCE5CF;
+}
+.baja-sello--off { background: #FDEAEA; color: #A9321F; border-color: #F2C1BC; }
+
+/* ── Tarjeta digital del club (re-tinte al mundo; carga después del <style> inline) ── */
+.club-tarjeta {
+    background:
+        radial-gradient(circle at 8% 120%, rgba(250, 218, 119, 0.25), transparent 55%),
+        linear-gradient(135deg, var(--mar-mas-osc) 0%, var(--mar) 55%, var(--mar-osc) 100%);
+    box-shadow:
+        0 24px 48px -18px rgba(26, 38, 12, 0.6),
+        0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.club-tarjeta-wrap:hover .club-tarjeta {
+    box-shadow:
+        0 32px 60px -18px rgba(26, 38, 12, 0.65),
+        0 6px 18px rgba(0, 0, 0, 0.2);
+}
+.club-tarjeta-logo { color: var(--amarillo); }        /* 8.1:1 sobre mar */
+.club-tarjeta-sede { color: rgba(255, 255, 255, 0.95); }
+.club-tarjeta-sede::before { color: var(--dorado); }
+.club-tarjeta-nombre { color: #fff; }
+.club-tarjeta-doc { color: rgba(255, 255, 255, 0.95); }
+.club-tarjeta-visitas { color: #fff; }
+.club-tarjeta-visitas::before { color: var(--dorado); }
+
+.club-tarjeta-pct,
+.club-tarjeta-estado {
+    background: radial-gradient(circle at 35% 30%, #FFEFC9, var(--dorado) 55%, #B98A2B 100%);
+    border: 2px dashed rgba(26, 38, 12, 0.5);
+    color: var(--mar-mas-osc);         /* 8.1:1 sobre dorado */
+}
+
+.club-progress-track {
+    background: rgba(255, 255, 255, 0.28);
+}
+.club-progress-bar {
+    background: linear-gradient(90deg, var(--dorado) 0%, var(--amarillo) 100%);
+    box-shadow: 0 0 10px rgba(250, 218, 119, 0.55);
+}
+
+.club-sellos > * {
+    border-color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.08);
+}
+.club-sellos > .activo,
+.club-sellos > .active,
+.club-sellos > .lleno,
+.club-sellos > .filled,
+.club-sellos > .completado,
+.club-sellos > .done {
+    color: var(--mar-mas-osc);
+    background: radial-gradient(circle at 35% 30%, #FFEFC9, var(--dorado) 60%, #B98A2B 100%);
+}
+
+.club-premio {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+.club-premio::before { color: var(--amarillo); }
+
+.club-tarjeta-qr-box {
+    background: var(--crema-papel);
+    box-shadow: inset 0 0 0 1px rgba(32, 45, 15, 0.12);
+}
+.club-tarjeta-qr-box::before { border-left-color: rgba(32, 45, 15, 0.3); }
+.club-tarjeta-qr-box::after {
+    background: var(--stub-notch, var(--hielo));
+    box-shadow: 0 168px 0 var(--stub-notch, var(--hielo));
+}
+@media (max-width: 620px) {
+    .club-tarjeta-qr-box::after { box-shadow: 168px 0 0 var(--stub-notch, var(--hielo)); }
+}
+
+.club-tarjeta-url {
+    color: var(--mar);                 /* 11.8:1 sobre papel */
+}
+
+/* ═══════════ CARTA — la pizarra del mercado ═══════════ */
+
+/* Hero: tablón nocturno con logo en sello dorado */
+.hero-header {
+    height: 340px;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(32, 45, 15, 0.4), transparent 60%),
+        linear-gradient(180deg, var(--mar-mas-osc) 0%, var(--mar-osc) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #fff;
+    overflow: hidden;
+    border-bottom: 3px solid var(--dorado);
+}
+.hero-header .hero-content { z-index: 2; }
+.hero-header .wave-container { z-index: 1; }
+
+.hero-logo {
+    border: 4px solid var(--dorado);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.hero-title {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 4px 0 rgba(22, 34, 10, 0.55), 0 14px 40px rgba(0, 0, 0, 0.4);
+    margin-bottom: 0;
+}
+
+.hero-subtitle {
+    font-size: 1rem;
+    color: var(--mar-mas-osc);         /* 8.1:1 sobre amarillo */
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 15px;
+    background: var(--amarillo);
+    padding: 6px 18px;
+    border-radius: 4px;
+    display: inline-block;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Nav de categorías: tablón oscuro con chips de mercado */
+.sticky-nav {
+    position: sticky; top: 0; z-index: 1000;
+    background: rgba(22, 34, 10, 0.94);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 3px solid var(--dorado);
+    padding: 12px 0;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    color: #fff;                       /* texto de carga legible sobre el tablón */
+}
+
+.nav-btn {
+    white-space: nowrap; padding: 10px 22px;
+    border-radius: 4px;
+    border: 2px solid var(--dorado);
+    color: var(--dorado);              /* 5.3:1 sobre mar oscuro */
+    font-weight: 700; font-size: 0.9rem;
+    text-decoration: none; background: transparent;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.nav-btn:hover {
+    background: var(--carmesi);
+    color: var(--content-on-brand) !important;  /* 6.27:1 */
+    border-color: var(--carmesi);
+    transform: translateY(-2px);
+}
+.nav-btn:active { transform: translateY(0); }
+
+/* Menú: papel de carta con barra de pescado */
+.menu-card {
+    background: var(--crema-papel);
+    border-radius: 10px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 12px 32px rgba(26, 38, 12, 0.12);
+    border: 2px solid var(--mar);
+    position: relative; overflow: hidden;
+}
+.menu-card::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+    background: linear-gradient(90deg, var(--mar) 0%, var(--carmesi) 100%);
+}
+
+.cat-title {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 1.5rem;
+    color: var(--mar);                 /* 11.8:1 */
+    border-bottom: 2px solid var(--dorado);
+    margin-bottom: 20px; padding-bottom: 10px;
+    display: flex; justify-content: space-between; align-items: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.price-header {
+    display: flex; justify-content: flex-end;
+    background: var(--surface-sunken);
+    padding: 8px 10px; border-radius: 6px;
+    margin-bottom: 15px; gap: 5px;
+}
+.ph-col {
+    min-width: 70px; width: 85px; text-align: right;
+    font-weight: 700; font-size: 0.82rem; color: var(--content-tertiary); text-transform: uppercase;
+}
+
+.item-wrapper { margin-bottom: 18px; border-bottom: 1px dashed rgba(32, 45, 15, 0.25); padding-bottom: 10px; }
+.item-wrapper:last-child { border-bottom: none; margin-bottom: 0; }
+
+.item-name {
+    font-weight: 700;
+    color: var(--tinta);               /* 13.5:1 */
+    font-size: 1.05rem;
+}
+.dots {
+    flex: 1; border-bottom: 2px dotted var(--dorado);
+    margin: 0 10px; position: relative; top: -5px;
+}
+.price-val {
+    min-width: 70px; width: 85px; text-align: right;
+    font-weight: 800; color: var(--carmesi-osc); font-size: 1.15rem;
+}
+.item-desc {
+    font-size: 0.85rem; color: var(--content-secondary);
+    font-style: italic; line-height: 1.3; padding-right: 20px;
+}
+.menu-card .text-muted { color: var(--content-secondary) !important; }
+
+/* Skeleton de carta al mundo */
+.skeleton {
+    background: linear-gradient(90deg, var(--skeleton-base) 0%, var(--skeleton-base) 25%, var(--skeleton-shine) 37%, var(--skeleton-shine) 53%, var(--skeleton-base) 65%, var(--skeleton-base) 100%);
+    background-size: 200% 100%;
+    animation: waveShimmer 1.8s ease-in-out infinite;
+    border-radius: 8px;
+}
+.skeleton-card { border: 2px solid var(--border-subtle); }
+
+/* FAB: boyas del puerto */
+.fab-back { background: var(--carmesi); color: var(--content-on-brand); border: 2px solid var(--amarillo); }
+.fab-back:hover { background: var(--turquesa); }
+.fab-top { background: var(--mar); color: #fff; border: 2px solid var(--dorado); }
+.fab-top:hover { background: var(--mar-osc); }
+.fab-wsp { background: #0E6E3B; border: 2px solid var(--amarillo); color: #fff; }
+.fab-wsp:hover { background: #0B5C31; }
+
+/* Footer de carta: tablón del puerto (solo el footer sin clase de la carta) */
+footer:not(.footer-calletano) {
+    text-align: center; padding: 40px 24px;
+    background:
+        radial-gradient(120% 100% at 80% 0%, rgba(234, 152, 61, 0.12), transparent 50%),
+        var(--mar-mas-osc);
+    color: #fff; margin-top: 40px;
+    border-top: 4px solid var(--dorado);
+}
+footer:not(.footer-calletano) h3 {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--amarillo);
+    margin-bottom: 10px;
+}
+footer:not(.footer-calletano) p { color: rgba(255, 255, 255, 0.92); }
+footer:not(.footer-calletano) .footer-legal-links {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+footer:not(.footer-calletano) .footer-legal-links a {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-decoration: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+footer:not(.footer-calletano) .footer-legal-links a:hover {
+    background: var(--dorado);
+    color: var(--mar-mas-osc);
+    transform: translateY(-2px);
+}
+footer:not(.footer-calletano) .footer-legal-links .footer-sep { color: rgba(255, 255, 255, 0.5); margin: 0 4px; font-weight: 700; }
+
+/* Decoraciones SVG flotantes de la carta re-tintadas al mundo */
+.deco-float svg path { fill: var(--mar); }
+.deco-float svg path[stroke] { stroke: var(--dorado); }
+
+/* CTA hero: caja de pescado carmesí con sello (404) */
+.btn-hero {
+    background: var(--carmesi);
+    color: var(--content-on-brand) !important;  /* oscuro sobre naranja 6.27:1 */
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    border: 2px solid var(--amarillo);
+    border-radius: 6px;
+    padding: 14px 34px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+    transition: all 0.25s;
+    text-decoration: none; display: inline-block;
+}
+.btn-hero:hover {
+    background: var(--turquesa);
+    color: var(--content-on-brand) !important;  /* 10.75:1 */
+    transform: translateY(-3px);
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ═══════════ 404 — la marea se llevó la página ═══════════ */
+.error-hero {
+    background: var(--mar-mas-osc);
+}
+.error-hero .hero-bg-img {
+    filter: brightness(0.4) saturate(1.15);
+}
+.error-hero::after {
+    content: '';
+    position: absolute; inset: 0; z-index: 1; pointer-events: none;
+    background:
+        radial-gradient(120% 90% at 50% 0%, rgba(32, 45, 15, 0.15), transparent 60%),
+        linear-gradient(180deg, rgba(22, 34, 10, 0.72) 0%, rgba(22, 34, 10, 0.3) 45%, rgba(22, 34, 10, 0.9) 100%);
+}
+.error-hero .error-container { z-index: 3; position: relative; }
+.error-hero .wave-container { z-index: 2; }   /* olas nítidas sobre el tinte */
+
+.error-code {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 8rem;
+    color: var(--amarillo);            /* 8.1:1 sobre mar */
+    text-shadow: 4px 4px 0 rgba(22, 34, 10, 0.6), 0 18px 50px rgba(0, 0, 0, 0.5);
+    line-height: 1;
+}
+.error-icon {
+    font-size: 5rem;
+    color: var(--dorado);              /* 5.3:1 sobre mar */
+    margin-bottom: 20px;
+    animation: float 3s infinite ease-in-out;
+}
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+
+/* ═══════════ FOOTER — tablón del puerto (páginas que usan footer-calletano) ═══════════ */
+.footer-calletano {
+    padding: 50px 0 30px;
+    background:
+        radial-gradient(120% 100% at 80% 0%, rgba(234, 152, 61, 0.12), transparent 50%),
+        var(--mar-mas-osc);
+    border-top: 4px solid var(--dorado);
+    color: #fff;
+}
+.footer-brand {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--amarillo);            /* 8.1:1 */
+    margin-bottom: 6px;
+}
+.footer-tagline {
+    font-family: 'Karla', sans-serif;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #fff;
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+}
+.footer-desc { color: rgba(255, 255, 255, 0.92); max-width: 520px; margin: 0 auto; font-size: 0.95rem; line-height: 1.6; }
+.footer-legal { margin-top: 28px; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2); }
+.footer-legal a {
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    display: inline-block;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.25s ease;
+}
+.footer-legal a:hover {
+    background: var(--dorado);
+    color: var(--mar-mas-osc);
+    transform: translateY(-2px);
+}
+.footer-sep { color: rgba(255, 255, 255, 0.5); margin: 0 4px; font-weight: 700; }
+.footer-copy { margin-top: 16px; font-size: 0.82rem; color: rgba(255, 255, 255, 0.75); }
+
+/* ═══════════ RESPONSIVE ═══════════ */
+@media (max-width: 991px) {
+    .navbar-collapse {
+        background: var(--mar-mas-osc);
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid rgba(250, 218, 119, 0.3);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.4);
+        margin-top: 10px;
+    }
+    .btn-nav-carta { text-align: center; display: block; width: 100%; margin-top: 10px; padding: 14px 20px; }
+}
+
+@media (max-width: 768px) {
+    .legal-hero { padding: 110px 0 40px; }
+    .legal-sec { grid-template-columns: 1fr; gap: 12px; padding: 24px 20px; }
+    .legal-num { width: 44px; height: 44px; border-radius: 10px; font-size: 1rem; }
+    .club-topbar .link-back { font-size: 0.8rem; }
+    .hero-header { height: 300px; }
+    .error-code { font-size: 5.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .error-icon { animation: none; }
+    .skeleton { animation: none; background: var(--skeleton-base); }
+    .club-tarjeta-wrap:hover .club-tarjeta { transform: none; }
+}
