@@ -15,6 +15,14 @@ rules_version = '2';
 // Nota: las escrituras del backend local (POS) se hacen con la cuenta
 // de servicio (Firebase Admin) y SIEMPRE están permitidas, sin importar
 // estas reglas. Las reglas solo gobiernan a las apps (web, mozo, dueño).
+//
+// 🛡️ ENDURECIMIENTO (auditoría de seguridad):
+//   - club_miembros: DNI = exactamente 8 dígitos, CE = 9-12 dígitos;
+//     creado_en debe ser fecha ISO real y de hace menos de 24 h (anti-fecha falsa).
+//   - club_contacto: correo con formato real (o vacío), teléfono 9-12
+//     dígitos (o vacío), documento con formato DNI/CE.
+//   - club_tokens: el ID del token debe tener el formato del generador
+//     (A-Z0-9, 8-40 chars) y el documento formato DNI/CE.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -35,6 +43,46 @@ service cloud.firestore {
     function isSystem() {
       // Permite el paso si es la Caja O si es el Dueño
       return isAdmin() || isCaja();
+    }
+
+    // =========================================================
+    // 1b. VALIDACIONES DE FORMATO (helpers del Club)
+    // =========================================================
+    function esDNI(doc) {
+      // DNI peruano: exactamente 8 dígitos
+      return doc is string && doc.matches(/^\d{8}$/);
+    }
+
+    function esCE(doc) {
+      // Carnet de Extranjería: entre 9 y 12 dígitos
+      return doc is string && doc.matches(/^\d{9,12}$/);
+    }
+
+    function esDocValido(doc, tipo) {
+      // Documento válido según su tipo declarado
+      return (tipo == 'DNI' && esDNI(doc)) || (tipo == 'CE' && esCE(doc));
+    }
+
+    function esDocFormato(doc) {
+      // Documento con formato DNI o CE (sin depender del campo tipo)
+      return esDNI(doc) || esCE(doc);
+    }
+
+    function esIsoFecha(str) {
+      // Fecha ISO 8601 con zona UTC (ej: 2026-08-14T12:00:00.000Z)
+      return str is string && str.matches(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/);
+    }
+
+    function esCorreo(c) {
+      // Correo con formato real, máximo 120 chars (o vacío: la web lo envía como '')
+      return c is string && c.size() <= 120
+        && (c == '' || c.matches(/^\S+@\S+\.\S+$/));
+    }
+
+    function esTelefono(t) {
+      // Teléfono de 9 a 12 dígitos, máximo 15 chars (o vacío: es opcional)
+      return t is string && t.size() <= 15
+        && (t == '' || t.matches(/^\d{9,12}$/));
     }
 
     // =========================================================
@@ -105,15 +153,18 @@ service cloud.firestore {
       // 🔑 `token` (opcional) es el token opaco de la tarjeta: el QR/link lo usa
       // en lugar del documento para no exponer el DNI. Se crea junto con su
       // mapeo en club_tokens/{token}.
+      // 🛡️ ENDURECIDO: DNI = 8 dígitos exactos, CE = 9-12 dígitos (esDocValido);
+      // creado_en debe ser fecha ISO real de hace menos de 24 h (anti-fecha falsa).
       allow create: if request.resource.data.documento == documento
-        && request.resource.data.tipo_documento in ['DNI', 'CE']
+        && esDocValido(documento, request.resource.data.tipo_documento)
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() >= 2
         && request.resource.data.nombre.size() <= 80
         && request.resource.data.acepta_datos == true
         && request.resource.data.visitas is int
         && request.resource.data.visitas == 0
-        && request.resource.data.creado_en is string
+        && esIsoFecha(request.resource.data.creado_en)
+        && request.time.date() - timestamp.date(request.resource.data.creado_en) < duration.value(24, 'h')
         && !('correo' in request.resource.data)
         && !('telefono' in request.resource.data)
         && !('promociones' in request.resource.data)
@@ -138,14 +189,17 @@ service cloud.firestore {
     // El cliente solo puede CREAR su propio contacto al registrarse, y solo
     // si su tarjeta YA existe en club_miembros (no se puede crear contacto
     // de un DNI ajeno).
+    // 🛡️ ENDURECIDO: correo/teléfono con formato real (o vacíos, como los
+    // envía la web) y documento con formato DNI/CE.
     match /club_contacto/{documento} {
       allow get, list: if isSystem();
       allow create: if request.resource.data.documento == documento
+        && esDocFormato(documento)
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() >= 2
         && request.resource.data.nombre.size() <= 80
-        && request.resource.data.correo is string
-        && request.resource.data.telefono is string
+        && esCorreo(request.resource.data.correo)
+        && esTelefono(request.resource.data.telefono)
         && request.resource.data.promociones is bool
         && exists(/databases/$(database)/documents/club_miembros/$(documento));
       // 📧 BAJA de promociones (opt-out): el socio puede poner promociones
@@ -171,13 +225,14 @@ service cloud.firestore {
     // documento, para que el DNI/CE no viaje por URLs ni QRs.
     // Leerlo es público (quien tiene el token ve la tarjeta, igual que hoy);
     // solo la web al crear una tarjeta y el backend (Admin SDK) lo escriben.
+    // 🛡️ ENDURECIDO: el token debe tener el formato del generador (A-Z0-9,
+    // 8-40 chars), el documento formato DNI/CE y creado_en fecha ISO real.
     match /club_tokens/{token} {
       allow get: if true;
       allow list: if isSystem();
-      allow create: if request.resource.data.documento is string
-        && request.resource.data.documento.size() >= 8
-        && request.resource.data.documento.size() <= 12
-        && request.resource.data.creado_en is string;
+      allow create: if token.matches(/^[A-Z0-9]{8,40}$/)
+        && esDocFormato(request.resource.data.documento)
+        && esIsoFecha(request.resource.data.creado_en);
       // (Sin exists() de club_miembros: el token se escribe antes que la tarjeta
       // para que el campo token de la tarjeta solo exista si su mapeo está listo.)
       allow update, delete: if false;
