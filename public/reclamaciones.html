@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libro de Reclamaciones | Calletano Restaurant</title>
+    <meta name="description" content="Libro de Reclamaciones virtual de Calletano Restaurant (Máncora, Perú), conforme a la Ley N° 29571 y el Decreto Supremo N° 011-2011-PCM.">
+    <link rel="icon" href="img/fondo.webp" type="image/webp">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+
+    <link rel="stylesheet" href="styles/style.css">
+    <link rel="stylesheet" href="styles/style-mundo.css">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg fixed-top navbar-calletano" aria-label="Navegación principal">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">Calletano</a>
+            <div class="ms-auto d-flex align-items-center">
+                <a class="btn btn-nav-carta" href="carta.html">NUESTRA CARTA</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="legal-hero">
+        <div class="container text-center">
+            <span class="legal-badge"><i class="fas fa-book me-2" aria-hidden="true"></i>Libro de Reclamaciones</span>
+            <h1 class="legal-hero-title">Libro de Reclamaciones</h1>
+            <p class="legal-hero-sub">Conforme a la Ley N° 29571 y el D.S. N° 011-2011-PCM</p>
+        </div>
+    </header>
+
+    <main class="legal-main">
+        <div class="container">
+            <div class="legal-card">
+
+                <section class="legal-sec">
+                    <div class="legal-num">01</div>
+                    <div class="legal-body">
+                        <h2>Información del establecimiento</h2>
+                        <ul>
+                            <li><strong>Razón social / nombre:</strong> Calletano Restaurant</li>
+                            <li><strong>RUC:</strong> <em>(en trámite — se completará al formalizar la empresa)</em></li>
+                            <li><strong>Dirección:</strong> Máncora, Piura, Perú</li>
+                        </ul>
+                        <p>
+                            Si tienes un <strong>reclamo</strong> (disconformidad con un bien o servicio contratado) o
+                            una <strong>queja</strong> (malestar por la atención), puedes registrarlo aquí. Te
+                            responderemos en un plazo máximo de <strong>quince (15) días hábiles</strong>, prorrogable
+                            por única vez por quince (15) días hábiles adicionales (artículo 152 de la Ley N° 29571).
+                        </p>
+                    </div>
+                </section>
+
+                <section class="legal-sec">
+                    <div class="legal-num">02</div>
+                    <div class="legal-body">
+                        <h2>Registra tu reclamo o queja</h2>
+                        <form id="form-reclamo" novalidate>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Tipo de hoja *</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="tipo" id="tipo-reclamo" value="RECLAMO" checked>
+                                        <label class="form-check-label" for="tipo-reclamo">Reclamo (disconformidad con el bien o servicio)</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="tipo" id="tipo-queja" value="QUEJA">
+                                        <label class="form-check-label" for="tipo-queja">Queja (malestar por la atención)</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="mt-4 mb-3" style="color:#8A7060;font-weight:800;text-transform:uppercase;font-size:.8rem;letter-spacing:1px">Datos del consumidor</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nombre completo *</label>
+                                    <input type="text" class="form-control" id="r-nombre" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Documento (DNI / CE) *</label>
+                                    <input type="text" class="form-control" id="r-dni" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Correo electrónico</label>
+                                    <input type="email" class="form-control" id="r-correo">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Teléfono *</label>
+                                    <input type="tel" class="form-control" id="r-telefono" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Domicilio</label>
+                                    <input type="text" class="form-control" id="r-domicilio">
+                                </div>
+                            </div>
+
+                            <h6 class="mt-4 mb-3" style="color:#8A7060;font-weight:800;text-transform:uppercase;font-size:.8rem;letter-spacing:1px">Identificación del bien o servicio</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Fecha del hecho *</label>
+                                    <input type="date" class="form-control" id="r-fecha" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">N° de boleta o comprobante (si aplica)</label>
+                                    <input type="text" class="form-control" id="r-boleta">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Descripción del bien o servicio contratado *</label>
+                                    <input type="text" class="form-control" id="r-bien" placeholder="Ej.: menú del día, plato a la carta, servicio de delivery" required>
+                                </div>
+                            </div>
+
+                            <h6 class="mt-4 mb-3" style="color:#8A7060;font-weight:800;text-transform:uppercase;font-size:.8rem;letter-spacing:1px">Detalle y pedido</h6>
+                            <div class="mb-3">
+                                <label class="form-label">Detalle del reclamo o queja *</label>
+                                <textarea class="form-control" id="r-detalle" rows="4" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Pedido concreto del consumidor *</label>
+                                <textarea class="form-control" id="r-pedido" rows="2" placeholder="Ej.: devolución del importe, reemplazo del plato, rectificación de la boleta" required></textarea>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="r-veraz" required>
+                                <label class="form-check-label" for="r-veraz" style="font-size:.85rem">
+                                    Declaro bajo juramento que los datos consignados son veraces. Conozco que puedo
+                                    acudir al INDECOPI si el proveedor no responde en el plazo legal.
+                                </label>
+                            </div>
+
+                            <div id="r-msg" class="alert d-none" role="alert"></div>
+
+                            <button type="submit" class="btn btn-dark w-100" style="background:#120B06;border:2px solid #D4A843;font-weight:800;padding:12px;border-radius:10px">
+                                <i class="fab fa-whatsapp me-2"></i>Enviar reclamo por WhatsApp
+                            </button>
+                            <p class="mt-2 mb-0" style="font-size:.75rem;color:#8A7060">
+                                Al enviar, se abrirá WhatsApp con el reclamo redactado hacia el +51 952 606 435.
+                                Guárdalo para tu constancia. También puedes presentarlo presencialmente en nuestro local.
+                            </p>
+                        </form>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer-calletano">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-7">
+                    <h3 class="footer-brand">Calletano Restaurant</h3>
+                    <p class="footer-tagline">El mejor sabor de Máncora</p>
+                    <p class="footer-desc">
+                        Pescados, mariscos y el mejor menú criollo del distrito, hechos con el mejor sabor norteño.
+                    </p>
+                </div>
+            </div>
+            <div class="footer-legal text-center">
+                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="terminos.html"><i class="fas fa-file-contract me-1" aria-hidden="true"></i>Términos de uso</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="reclamaciones.html"><i class="fas fa-book me-1" aria-hidden="true"></i>Libro de reclamaciones</a>
+            </div>
+            <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
+        </div>
+    </footer>
+
+    <script>
+        // 📖 Libro de Reclamaciones — arma el texto estructurado y lo abre en WhatsApp.
+        // (Al no haber backend, WhatsApp queda como medio de recepción; conserva una
+        // copia del mensaje para tu constancia.)
+        document.getElementById('form-reclamo').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var msg = document.getElementById('r-msg');
+            var val = function (id) { return document.getElementById(id).value.trim(); };
+
+            var nombre = val('r-nombre'), dni = val('r-dni'), telefono = val('r-telefono'),
+                fecha = val('r-fecha'), bien = val('r-bien'), detalle = val('r-detalle'),
+                pedido = val('r-pedido');
+            var veraz = document.getElementById('r-veraz').checked;
+
+            if (!nombre || !dni || !telefono || !fecha || !bien || !detalle || !pedido) {
+                msg.className = 'alert alert-danger';
+                msg.textContent = 'Completa todos los campos obligatorios (*) antes de enviar.';
+                msg.classList.remove('d-none');
+                return;
+            }
+            if (!veraz) {
+                msg.className = 'alert alert-danger';
+                msg.textContent = 'Debes marcar la declaración de veracidad para enviar el reclamo.';
+                msg.classList.remove('d-none');
+                return;
+            }
+
+            var tipo = document.querySelector('input[name="tipo"]:checked').value;
+            var lineas = [
+                '📖 LIBRO DE RECLAMACIONES — Calletano Restaurant',
+                '---------------------------------------------',
+                'Tipo: ' + tipo,
+                'Fecha del hecho: ' + fecha,
+                'Consumidor: ' + nombre + ' (' + dni + ')',
+                'Teléfono: ' + telefono,
+                val('r-correo') ? 'Correo: ' + val('r-correo') : '',
+                val('r-domicilio') ? 'Domicilio: ' + val('r-domicilio') : '',
+                val('r-boleta') ? 'Comprobante: ' + val('r-boleta') : '',
+                'Bien o servicio: ' + bien,
+                'Detalle: ' + detalle,
+                'Pedido: ' + pedido,
+                '---------------------------------------------',
+                'Declaro que los datos son veraces.'
+            ].filter(function (l) { return l !== ''; }).join('\n');
+
+            window.open('https://wa.me/51952606435?text=' + encodeURIComponent(lineas), '_blank');
+            msg.className = 'alert alert-success';
+            msg.textContent = 'Se abrió WhatsApp con tu reclamo redactado. Envíalo y guarda una copia para tu constancia.';
+            msg.classList.remove('d-none');
+        });
+    </script>
+
+</body>
+</html>
