@@ -4,7 +4,7 @@
 // - El cliente crea su tarjeta en Firestore (club_miembros/{documento})
 // - La configuración del club (meta, premio, consumo) es FIJA: ya no se
 //   lee de Firestore (contenido/clubConfig fue eliminado).
-import { doc, getDoc, setDoc } from './lib/firebase-bundle.js?v=5';
+import { doc, getDoc, setDoc } from './lib/firebase-bundle.js?v=4';
 import { db, track } from './firebase-config.js';
 
 // 🔒 PRIVACIDAD: los datos personales (correo, teléfono, preferencias) NO van

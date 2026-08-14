@@ -85,16 +85,6 @@ service cloud.firestore {
         && (t == '' || t.matches('^[0-9]{9,12}$'));
     }
 
-    function esWebVerificada() {
-      // ✅ App Check (reCAPTCHA v3): las CREACIONES desde la web pública solo
-      // se aceptan si el navegador presentó un token de App Check VÁLIDO.
-      // Bloquea bots/scripts sueltos sin afectar a la tablet (no hace create
-      // en estas colecciones) ni al backend (Admin SDK ignora las reglas).
-      return request.app != null
-        && request.app.token != null
-        && request.app.token.verify() == true;
-    }
-
     // =========================================================
     // 2. POLÍTICA DE DENEGACIÓN POR DEFECTO (OWASP)
     // =========================================================
@@ -165,8 +155,7 @@ service cloud.firestore {
       // mapeo en club_tokens/{token}.
       // 🛡️ ENDURECIDO: DNI = 8 dígitos exactos, CE = 9-12 dígitos (esDocValido);
       // creado_en debe ser una fecha ISO real (esIsoFecha) para mantener datos consistentes.
-      allow create: if esWebVerificada()
-        && request.resource.data.documento == documento
+      allow create: if request.resource.data.documento == documento
         && esDocValido(documento, request.resource.data.tipo_documento)
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() >= 2
@@ -203,8 +192,7 @@ service cloud.firestore {
     // envía la web) y documento con formato DNI/CE.
     match /club_contacto/{documento} {
       allow get, list: if isSystem();
-      allow create: if esWebVerificada()
-        && request.resource.data.documento == documento
+      allow create: if request.resource.data.documento == documento
         && esDocFormato(documento)
         && request.resource.data.nombre is string
         && request.resource.data.nombre.size() >= 2
@@ -241,8 +229,7 @@ service cloud.firestore {
     match /club_tokens/{token} {
       allow get: if true;
       allow list: if isSystem();
-      allow create: if esWebVerificada()
-        && token.matches('^[A-Z0-9]{8,40}$')
+      allow create: if token.matches('^[A-Z0-9]{8,40}$')
         && esDocFormato(request.resource.data.documento)
         && esIsoFecha(request.resource.data.creado_en);
       // (Sin exists() de club_miembros: el token se escribe antes que la tarjeta

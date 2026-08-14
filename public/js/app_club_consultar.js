@@ -6,7 +6,7 @@
 //   (la app del mozo lo escaneará para registrar visitas)
 // - La configuración del club (meta, premio, consumo) es FIJA: ya no se
 //   lee de Firestore (contenido/clubConfig fue eliminado).
-import { doc, getDoc } from './lib/firebase-bundle.js?v=5';
+import { doc, getDoc } from './lib/firebase-bundle.js?v=4';
 import { db, track } from './firebase-config.js';
 import {
     normalizarDocumento,

@@ -9,7 +9,7 @@
 // ⚠️ NO se puede leer club_contacto desde la web (reglas: solo isSystem) y
 // el bundle de Firebase no exporta updateDoc: usamos setDoc con { merge: true }
 // para actualizar SOLO el campo promociones.
-import { doc, setDoc } from './lib/firebase-bundle.js?v=5';
+import { doc, setDoc } from './lib/firebase-bundle.js?v=4';
 import { db } from './firebase-config.js';
 import { normalizarDocumento, validarDocumento } from './clubHelpers.js';
 

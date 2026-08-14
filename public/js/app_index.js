@@ -1,5 +1,5 @@
-import { doc, getDoc, getDocs, collection, query, where, getDocFromServer } from './lib/firebase-bundle.js?v=5';
-import { db, track } from "./firebase-config.js?v=5";
+import { doc, getDoc, getDocs, collection, query, where, getDocFromServer } from './lib/firebase-bundle.js?v=4';
+import { db, track } from "./firebase-config.js?v=4";
 import { renderMenuDiario } from './menuRenderer.js?v=4';
 
 // ============================================
