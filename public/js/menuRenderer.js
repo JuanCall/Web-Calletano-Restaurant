@@ -38,6 +38,19 @@ function estaAgotado(item) {
     return !Number.isNaN(n) && n <= 0;
 }
 
+// 🛡️ Escapa texto antes de insertarlo con innerHTML (previene XSS).
+// El menú del día viene de Firestore (contenido/menuDiario): títulos, nombres
+// de platos y acompañamientos podrían contener HTML malicioso o que rompa el
+// layout, así que todo lo que se interpola en innerHTML pasa por aquí.
+export function esc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // 🏷️ Badge visual para los platos sin stock (Bootstrap 5.3)
 const BADGE_AGOTADO = '<span class="badge bg-danger-subtle text-danger-emphasis border border-danger-subtle rounded-pill ms-2 small fw-bold" style="vertical-align: middle;">AGOTADO</span>';
 
@@ -58,7 +71,7 @@ export function renderMenuDiario(d, elements) {
         // Título
         if (titleEl) {
             titleEl.innerHTML = (d.titulo && typeof d.titulo === 'string')
-                ? d.titulo
+                ? esc(d.titulo)
                 : '<i class="fas fa-utensils me-2" aria-hidden="true"></i> Menú del Día';
         }
 
@@ -72,12 +85,12 @@ export function renderMenuDiario(d, elements) {
                             const agotado = estaAgotado(e);
                             const iconoClase = agotado ? 'fa-circle-xmark text-danger' : 'fa-check text-warning';
                             const nombreClase = agotado ? 'text-decoration-line-through text-muted' : '';
-                            return `<li class="fs-5 fw-bold text-dark border-bottom border-warning-subtle py-2"><i class="fas ${iconoClase} me-2 small" aria-hidden="true"></i><span class="${nombreClase}">${e.nombre}</span>${agotado ? BADGE_AGOTADO : ''}</li>`;
+                            return `<li class="fs-5 fw-bold text-dark border-bottom border-warning-subtle py-2"><i class="fas ${iconoClase} me-2 small" aria-hidden="true"></i><span class="${nombreClase}">${esc(e.nombre)}</span>${agotado ? BADGE_AGOTADO : ''}</li>`;
                         })
                         .join('');
                     listaEntradas.innerHTML = html || '<li class="fs-5 fw-bold text-dark text-center">Por definir</li>';
                 } else {
-                    listaEntradas.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${(d.entrada && typeof d.entrada === 'string') ? d.entrada : 'Por definir'}</li>`;
+                    listaEntradas.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${(d.entrada && typeof d.entrada === 'string') ? esc(d.entrada) : 'Por definir'}</li>`;
                 }
             } catch (e) {
                 console.warn('renderMenuDiario: error en entradas', e);
@@ -110,20 +123,20 @@ export function renderMenuDiario(d, elements) {
                             const borderClass = (isLast && hasAcomp) ? '' : 'border-bottom border-danger-subtle pb-2';
                             const iconoClase = agotado ? 'fa-circle-xmark text-danger opacity-50' : 'fa-check text-danger';
                             const nombreClase = agotado ? 'text-decoration-line-through text-muted' : '';
-                            htmlSegundos += `<li class="pt-2 ${borderClass}"><div class="fs-5 fw-bold text-dark"><i class="fas ${iconoClase} me-2 small" aria-hidden="true"></i><span class="${nombreClase}">${nombre}</span>${agotado ? BADGE_AGOTADO : ''}</div></li>`;
+                            htmlSegundos += `<li class="pt-2 ${borderClass}"><div class="fs-5 fw-bold text-dark"><i class="fas ${iconoClase} me-2 small" aria-hidden="true"></i><span class="${nombreClase}">${esc(nombre)}</span>${agotado ? BADGE_AGOTADO : ''}</div></li>`;
                         });
 
                         if (acomp !== '' && platos.length > 0) {
                             let textoPrefijo = 'Con:';
                             if (gruposKeys.length === 1 && platos.length > 1) textoPrefijo = 'Todos salen con:';
                             else if (platos.length > 1) textoPrefijo = 'Salen con:';
-                            htmlSegundos += `<li class="pb-2 mb-2 border-bottom border-danger-subtle"><div class="d-inline-block bg-danger bg-opacity-10 rounded px-2 py-1 mt-1 ms-4 border border-danger-subtle shadow-sm"><span class="small text-danger fw-bold fst-italic"><i class="fas fa-utensils me-1" aria-hidden="true"></i>${textoPrefijo} ${acomp}</span></div></li>`;
+                            htmlSegundos += `<li class="pb-2 mb-2 border-bottom border-danger-subtle"><div class="d-inline-block bg-danger bg-opacity-10 rounded px-2 py-1 mt-1 ms-4 border border-danger-subtle shadow-sm"><span class="small text-danger fw-bold fst-italic"><i class="fas fa-utensils me-1" aria-hidden="true"></i>${textoPrefijo} ${esc(acomp)}</span></div></li>`;
                         }
                     });
 
                     listaSegundos.innerHTML = htmlSegundos || '<li class="fs-5 fw-bold text-dark text-center">Por definir</li>';
                 } else {
-                    listaSegundos.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${(d.segundo && typeof d.segundo === 'string') ? d.segundo : 'Por definir'}</li>`;
+                    listaSegundos.innerHTML = `<li class="fs-5 fw-bold text-dark text-center">${(d.segundo && typeof d.segundo === 'string') ? esc(d.segundo) : 'Por definir'}</li>`;
                 }
             } catch (e) {
                 console.warn('renderMenuDiario: error en segundos', e);

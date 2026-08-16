@@ -1,6 +1,18 @@
 import { doc, getDoc, getDocFromServer } from './lib/firebase-bundle.js?v=4';
 import { db, track } from "./firebase-config.js?v=4";
 
+// 🛡️ Escapa texto antes de insertarlo con innerHTML (previene XSS en la carta).
+// La carta viene de Firestore (contenido/cartaCompleta): nombres, descripciones,
+// precios y columnas son editables y podrían contener HTML malicioso.
+function esc(v) {
+    return String(v == null ? '' : v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // ============================================
 // SCROLL REVEAL - Intersection Observer
 // ============================================
@@ -65,23 +77,23 @@ cargarCartaDesdeServidor()
 
     categorias.forEach((cat, index) => {
         const catId = `cat-${index}`;
-        navHTML += `<a href="#${catId}" class="nav-btn">${cat.nombre}</a>`;
+        navHTML += `<a href="#${catId}" class="nav-btn">${esc(cat.nombre)}</a>`;
         
         let headerHTML = "";
-        if (cat.col1 || cat.col2) headerHTML = `<div class="price-header"><div class="ph-col">${cat.col1 || ''}</div><div class="ph-col">${cat.col2 || ''}</div></div>`;
+        if (cat.col1 || cat.col2) headerHTML = `<div class="price-header"><div class="ph-col">${esc(cat.col1)}</div><div class="ph-col">${esc(cat.col2)}</div></div>`;
 
         let itemsHTML = "";
         cat.items.forEach(item => {
             let preciosHTML = "";
-            if (item.precio2) { preciosHTML = `<div class="price-val">${item.precio}</div><div class="price-val">${item.precio2}</div>`; } 
+            if (item.precio2) { preciosHTML = `<div class="price-val">${esc(item.precio)}</div><div class="price-val">${esc(item.precio2)}</div>`; } 
             else {
-                if (cat.col1 || cat.col2) { preciosHTML = `<div class="price-val">${item.precio}</div><div class="price-val"></div>`; } 
-                else { preciosHTML = `<div class="price-val">${item.precio}</div>`; }
+                if (cat.col1 || cat.col2) { preciosHTML = `<div class="price-val">${esc(item.precio)}</div><div class="price-val"></div>`; } 
+                else { preciosHTML = `<div class="price-val">${esc(item.precio)}</div>`; }
             }
-            const descHTML = item.desc ? `<div class="item-desc">${item.desc}</div>` : '';
-            itemsHTML += `<div class="item-wrapper"><div class="item-row"><div class="item-info"><span class="item-name">${item.nombre}</span><span class="dots"></span></div><div class="price-wrapper">${preciosHTML}</div></div>${descHTML}</div>`;
+            const descHTML = item.desc ? `<div class="item-desc">${esc(item.desc)}</div>` : '';
+            itemsHTML += `<div class="item-wrapper"><div class="item-row"><div class="item-info"><span class="item-name">${esc(item.nombre)}</span><span class="dots"></span></div><div class="price-wrapper">${preciosHTML}</div></div>${descHTML}</div>`;
         });
-        bodyHTML += `<div id="${catId}" class="menu-card"><h3 class="cat-title">${cat.nombre} <i class="fas fa-utensils" style="font-size:1rem; opacity:0.3;"></i></h3>${headerHTML}${itemsHTML}</div>`;
+        bodyHTML += `<div id="${catId}" class="menu-card"><h3 class="cat-title">${esc(cat.nombre)} <i class="fas fa-utensils" style="font-size:1rem; opacity:0.3;"></i></h3>${headerHTML}${itemsHTML}</div>`;
     });
     if (navContainer) navContainer.innerHTML = navHTML;
     if (mainContainer) {

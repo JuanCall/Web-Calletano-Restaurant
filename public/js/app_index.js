@@ -1,6 +1,6 @@
 import { doc, getDoc, getDocs, collection, query, where, getDocFromServer } from './lib/firebase-bundle.js?v=4';
 import { db, track } from "./firebase-config.js?v=4";
-import { renderMenuDiario } from './menuRenderer.js?v=4';
+import { renderMenuDiario, esc } from './menuRenderer.js?v=4';
 
 // ============================================
 // NAVBAR — SCROLL STATE & TOGGLE (vanilla JS)
@@ -359,8 +359,8 @@ async function cargarResenas() {
             return lista.map(d => `
                 <div class="review-card">
                     <div class="review-stars">${generarEstrellasHTML(d.estrellas || 5)}</div>
-                    <p class="review-text">"${d.mensaje || ''}"</p>
-                    <div class="review-author">${d.autor || 'Anónimo'}</div>
+                    <p class="review-text">"${esc(d.mensaje)}"</p>
+                    <div class="review-author">${esc(d.autor) || 'Anónimo'}</div>
                 </div>
             `).join('');
         }
