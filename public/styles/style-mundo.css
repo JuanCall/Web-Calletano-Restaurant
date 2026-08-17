@@ -1066,3 +1066,70 @@ footer:not(.footer-calletano) .footer-legal-links .footer-sep { color: rgba(255,
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--turquesa); }
 html { scrollbar-width: thin; scrollbar-color: var(--carmesi) var(--mar-mas-osc); }
+
+/* ═══════════ CARTA — contenido textual (SEO) ═══════════
+   Bloques de texto reales bajo el menú: presentación + preguntas frecuentes.
+   Mismo mundo visual que las tarjetas de la carta (papel, borde mar, esquina). */
+.carta-intro,
+.carta-faq {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 28px 26px;
+    background: var(--crema-papel);
+    border-radius: 10px;
+    border: 2px solid var(--mar);
+    box-shadow: 0 12px 32px rgba(26, 38, 12, 0.12);
+    position: relative;
+    overflow: hidden;
+    color: var(--content-secondary);
+    font-size: 0.98rem;
+    line-height: 1.7;
+}
+.carta-intro { margin-top: 10px; }
+.carta-faq { margin-top: 30px; }
+/* esquina de caja de pescado, igual que .menu-card */
+.carta-intro::after,
+.carta-faq::after {
+    content: '';
+    position: absolute; top: -1px; right: -1px;
+    width: 34px; height: 34px;
+    background: linear-gradient(225deg, var(--crema-papel) 0%, var(--crema-papel) 48%, var(--dorado) 50%, var(--dorado) 100%);
+    border-bottom-left-radius: 8px;
+}
+.carta-intro-title,
+.carta-faq-title {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    font-size: 1.5rem;
+    color: var(--mar);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--dorado);
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+}
+.carta-intro p { margin-bottom: 12px; }
+.carta-intro strong { color: var(--tinta); }
+.carta-intro a,
+.carta-faq a {
+    color: var(--carmesi-osc);
+    font-weight: 700;
+    text-decoration-thickness: 2px;
+}
+.carta-faq-item {
+    padding: 12px 0;
+    border-bottom: 1px dashed rgba(32, 45, 15, 0.25);
+}
+.carta-faq-item:last-child { border-bottom: none; }
+.carta-faq-item h3 {
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--mar);
+    margin-bottom: 4px;
+}
+.carta-faq-item p { margin: 0; color: var(--content-secondary); }
+
+@media (max-width: 480px) {
+    .carta-intro, .carta-faq { padding: 22px 18px; }
+}
