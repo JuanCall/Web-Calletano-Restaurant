@@ -1045,3 +1045,24 @@ footer:not(.footer-calletano) .footer-legal-links .footer-sep { color: rgba(255,
     .skeleton { animation: none; background: var(--skeleton-base); }
     .club-tarjeta-wrap:hover .club-tarjeta { transform: none; }
 }
+
+/* ═══════════ SCROLL PREMIUM — parallax y scrollbar ═══════════
+   Mismo mundo que la landing (kit web-scrolling): parallax del hero
+   de la carta + scrollbar personalizada. Este CSS se carga en la carta
+   y en todas las páginas secundarias (club, legales, 404). */
+
+/* El hero de la carta se anima por JS (app_carta.js): el contenido
+   se eleva/atenúa al salir y las olas "se quedan" un instante. */
+.hero-header .hero-content { will-change: transform, opacity; }
+.hero-header .wave-container { will-change: transform; }
+
+/* Scrollbar personalizada del mundo */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--mar-mas-osc); }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--carmesi) 0%, var(--dorado) 100%);
+    border-radius: 6px;
+    border: 3px solid var(--mar-mas-osc);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--turquesa); }
+html { scrollbar-width: thin; scrollbar-color: var(--carmesi) var(--mar-mas-osc); }

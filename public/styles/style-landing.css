@@ -181,8 +181,10 @@ header {
 
 .hero-bg-img {
     position: absolute; inset: 0; width: 100%; height: 100%;
+    top: -8%; height: 116%;   /* bleed superior/inferior para el parallax sin huecos */
     object-fit: cover; z-index: 0;
     filter: brightness(0.45) saturate(1.15);
+    will-change: transform;
 }
 
 /* Tinte marino + textura de hielo sutil */
@@ -726,4 +728,84 @@ section::after { display: none; } /* sin gradientes fantasmas: fondos del mundo 
 @media (max-width: 768px) {
     header { min-height: 78vh; }
     section { padding: 64px 0; }
+}
+
+/* ═══════════ SCROLL PREMIUM — parallax, progreso e indicador ═══════════
+   Efectos del kit web-scrolling integrados al mundo "Mercado de Pescado".
+   Solo aplican a la landing (este CSS solo se carga en index.html). */
+
+/* Barra de progreso de lectura: hilo carmesí→dorado en el borde superior */
+#scroll-progress {
+    position: fixed; top: 0; left: 0;
+    height: 3px; width: 0%;
+    background: linear-gradient(90deg, var(--carmesi) 0%, var(--dorado) 100%);
+    z-index: 2000;
+    pointer-events: none;
+}
+
+/* Indicador de scroll del hero: ratón con punto descendente */
+.scroll-hint {
+    position: absolute; bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    display: flex; flex-direction: column; align-items: center;
+    opacity: 1;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+}
+.scroll-hint.is-hidden { opacity: 0; }
+.scroll-hint span {
+    display: block; width: 24px; height: 38px;
+    border: 2px solid var(--amarillo);
+    border-radius: 14px;
+    position: relative;
+}
+.scroll-hint span::after {
+    content: '';
+    position: absolute; top: 7px; left: 50%;
+    width: 4px; height: 8px; margin-left: -2px;
+    border-radius: 3px;
+    background: var(--amarillo);
+    animation: hintDot 1.8s ease-in-out infinite;
+}
+@keyframes hintDot {
+    0%   { transform: translateY(0); opacity: 1; }
+    70%  { transform: translateY(11px); opacity: 0; }
+    100% { transform: translateY(11px); opacity: 0; }
+}
+
+/* Peces decorativos con parallax (aria-hidden, no interactivos) */
+#favoritos, #resenas, #visitanos { isolation: isolate; }
+.fish-deco {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    will-change: transform;
+}
+.fish-deco svg { display: block; width: 100%; height: auto; }
+#favoritos .fish-deco { top: 48px; right: 4%; width: 64px; opacity: 0.35; }
+#resenas .fish-deco   { top: 36px; left: 3%;  width: 52px; opacity: 0.30; }
+#visitanos .fish-deco { bottom: 110px; left: 6%; width: 74px; opacity: 0.50; }
+
+/* Scrollbar personalizada del mundo (solo la landing) */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--mar-mas-osc); }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--carmesi) 0%, var(--dorado) 100%);
+    border-radius: 6px;
+    border: 3px solid var(--mar-mas-osc);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--turquesa); }
+html { scrollbar-width: thin; scrollbar-color: var(--carmesi) var(--mar-mas-osc); }
+
+/* Respeto a prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+    .hero-bg-img { top: 0; height: 100%; }  /* framing original, sin recorte */
+    .scroll-hint span::after { animation: none; }
+}
+
+/* Móviles pequeños: sin peces ni indicador para no saturar */
+@media (max-width: 576px) {
+    .fish-deco { display: none; }
+    .scroll-hint { display: none; }
 }

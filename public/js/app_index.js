@@ -418,3 +418,71 @@ function rastrearClicksLanding() {
     if (btnClubConsultar) btnClubConsultar.addEventListener('click', () => track('click_club', { accion: 'consultar' }));
 }
 rastrearClicksLanding();
+
+// ============================================
+// SCROLL PREMIUM — parallax, progreso e indicador
+// (kit web-scrolling integrado al mundo existente)
+// ============================================
+(function () {
+    'use strict';
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const hero = document.querySelector('header');
+    const heroBg = document.querySelector('.hero-bg-img');
+    const heroContent = document.querySelector('header .container');
+    const progressBar = document.getElementById('scroll-progress');
+    const scrollHint = document.getElementById('scroll-hint');
+    const fishes = Array.prototype.slice.call(document.querySelectorAll('.fish-deco'));
+
+    let ticking = false;
+
+    function update() {
+        const sy = window.pageYOffset || document.documentElement.scrollTop || 0;
+        const vh = window.innerHeight || 0;
+
+        // Barra de progreso de lectura (informativa, siempre activa)
+        if (progressBar) {
+            const max = (document.documentElement.scrollHeight || 0) - vh;
+            progressBar.style.width = (max > 0 ? Math.min(sy / max, 1) * 100 : 0) + '%';
+        }
+
+        // Indicador de scroll del hero: se oculta al bajar
+        if (scrollHint) {
+            scrollHint.classList.toggle('is-hidden', sy > 80);
+        }
+
+        if (reduceMotion) return;
+
+        // Parallax del hero: el fondo se mueve más lento que el contenido
+        if (hero && heroBg) {
+            const rect = hero.getBoundingClientRect();
+            const scrolled = Math.max(0, -rect.top);
+            const maxShift = rect.height * 0.06; // cabe dentro del bleed del 8%
+            const shift = Math.min(scrolled * 0.35, maxShift);
+            heroBg.style.transform = 'translate3d(0, ' + shift.toFixed(1) + 'px, 0)';
+
+            // El contenido se eleva y atenúa suavemente al salir del viewport
+            if (heroContent) {
+                const p = Math.min(scrolled / (rect.height * 0.4), 1);
+                heroContent.style.transform = 'translate3d(0, ' + (-p * 36).toFixed(1) + 'px, 0)';
+                heroContent.style.opacity = String(1 - p * 0.85);
+            }
+        }
+
+        // Peces decorativos con parallax por sección
+        fishes.forEach(function (f) {
+            const speed = parseFloat(f.getAttribute('data-parallax')) || 0.15;
+            const r = f.getBoundingClientRect();
+            const delta = ((r.top + r.height / 2) - vh / 2) * speed;
+            f.style.transform = 'translate3d(0, ' + delta.toFixed(1) + 'px, 0)';
+        });
+    }
+
+    window.addEventListener('scroll', function () {
+        if (!ticking) {
+            requestAnimationFrame(function () { update(); ticking = false; });
+            ticking = true;
+        }
+    }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+})();

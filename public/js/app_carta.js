@@ -127,3 +127,45 @@ function rastrearClicksCarta() {
     }
 }
 rastrearClicksCarta();
+
+// ============================================
+// SCROLL PREMIUM — parallax del hero
+// (kit web-scrolling integrado al mundo existente)
+// ============================================
+(function () {
+    'use strict';
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const hero = document.querySelector('.hero-header');
+    const heroContent = document.querySelector('.hero-header .hero-content');
+    const waves = document.querySelector('.hero-header .wave-container');
+
+    let ticking = false;
+
+    function update() {
+        if (reduceMotion || !hero) return;
+        const rect = hero.getBoundingClientRect();
+        const scrolled = Math.max(0, -rect.top);
+
+        // Contenido: se eleva y atenúa suavemente al salir del viewport
+        if (heroContent) {
+            const p = Math.min(scrolled / (rect.height * 0.5), 1);
+            heroContent.style.transform = 'translate3d(0, ' + (-p * 24).toFixed(1) + 'px, 0)';
+            heroContent.style.opacity = String(1 - p * 0.8);
+        }
+
+        // Olas: se quedan un instante (lag) mientras el hero se va
+        if (waves) {
+            const p = Math.min(scrolled / rect.height, 1);
+            waves.style.transform = 'translate3d(0, ' + (p * 40).toFixed(1) + 'px, 0)';
+        }
+    }
+
+    window.addEventListener('scroll', function () {
+        if (!ticking) {
+            requestAnimationFrame(function () { update(); ticking = false; });
+            ticking = true;
+        }
+    }, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+})();
