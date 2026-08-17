@@ -105,6 +105,43 @@ cargarCartaDesdeServidor()
             revealObserver.observe(card);
         });
     }
+
+    // 🍽️ Schema Menu (datos REALES de Firestore) para rich results de menú en Google.
+    // Se genera dinámicamente con los mismos datos que pinta la carta: nada inventado.
+    try {
+        const menuSections = categorias.map((cat) => {
+            const items = (cat.items || [])
+                .map((item) => {
+                    const ofertas = [];
+                    const p1 = parseFloat(String(item.precio || '').replace(/[^0-9.,]/g, '').replace(',', '.'));
+                    if (!isNaN(p1)) ofertas.push({ '@type': 'Offer', price: p1, priceCurrency: 'PEN' });
+                    const p2 = parseFloat(String(item.precio2 || '').replace(/[^0-9.,]/g, '').replace(',', '.'));
+                    if (!isNaN(p2)) ofertas.push({ '@type': 'Offer', price: p2, priceCurrency: 'PEN' });
+                    const mi = { '@type': 'MenuItem', name: item.nombre };
+                    if (item.desc) mi.description = item.desc;
+                    if (ofertas.length === 1) mi.offers = ofertas[0];
+                    else if (ofertas.length > 1) mi.offers = ofertas;
+                    return mi;
+                })
+                .filter((mi) => mi && mi.name);
+            return { '@type': 'MenuSection', name: cat.nombre, hasMenuItem: items };
+        });
+
+        const menuJsonLd = {
+            '@context': 'https://schema.org',
+            '@type': 'Menu',
+            name: 'Carta de Calletano Restaurant',
+            inLanguage: 'es',
+            hasMenuSection: menuSections
+        };
+        const scriptLd = document.createElement('script');
+        scriptLd.type = 'application/ld+json';
+        scriptLd.id = 'schema-carta-menu';
+        scriptLd.textContent = JSON.stringify(menuJsonLd);
+        document.head.appendChild(scriptLd);
+    } catch (err) {
+        console.warn('No se pudo generar el schema de menú:', err);
+    }
 }).catch(e => {
     console.error("Error cargando carta:", e);
     if (mainContainer) mainContainer.innerHTML = "<p style='text-align:center; padding:20px;' class='text-muted'>Error al cargar la carta. <br><small>Verifica tu conexión a internet.</small></p>";
