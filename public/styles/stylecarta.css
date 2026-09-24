@@ -3,7 +3,10 @@
    Diseño: Playa Máncora / Colores Logo
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&display=swap');
+/* Tipografías (Playfair Display + Montserrat): se cargan con etiqueta link en el
+   head de cada pagina, no con @import. Un @import obliga al navegador a bajar
+   primero este CSS, parsearlo y recién despues pedir las fuentes: una cadena de
+   3 viajes antes de que aparezca el texto. */
 
 :root {
     --cyan-logo: #0ff1f3;

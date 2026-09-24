@@ -439,10 +439,13 @@ rastrearClicksLanding();
         const sy = window.pageYOffset || document.documentElement.scrollTop || 0;
         const vh = window.innerHeight || 0;
 
-        // Barra de progreso de lectura (informativa, siempre activa)
+        // Barra de progreso de lectura (informativa, siempre activa).
+        // Se escribe scaleX en vez de width: width recalcularía layout en cada
+        // frame de scroll; el transform lo resuelve el compositor.
         if (progressBar) {
             const max = (document.documentElement.scrollHeight || 0) - vh;
-            progressBar.style.width = (max > 0 ? Math.min(sy / max, 1) * 100 : 0) + '%';
+            const avance = max > 0 ? Math.min(sy / max, 1) : 0;
+            progressBar.style.transform = 'scaleX(' + avance + ')';
         }
 
         // Indicador de scroll del hero: se oculta al bajar

@@ -24,7 +24,10 @@
    Tipografía: Anton (letrero) + Karla (cuerpo).
    ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&display=swap');
+/* Tipografías (Anton + Karla, y Playfair + Montserrat heredadas de style.css):
+   se cargan con etiqueta link en el head de cada pagina, no con @import. Un
+   @import obliga al navegador a bajar primero este CSS, parsearlo y recién
+   despues pedir las fuentes: una cadena de 3 viajes antes del texto. */
 
 /* ── Tokens del mundo (idénticos a la landing) ── */
 :root {
@@ -1132,4 +1135,33 @@ html { scrollbar-width: thin; scrollbar-color: var(--carmesi) var(--mar-mas-osc)
 
 @media (max-width: 480px) {
     .carta-intro, .carta-faq { padding: 22px 18px; }
+}
+
+/* ═══════════ INTERACCIÓN EN TÁCTIL ═══════════
+   Mismo motivo que en la landing: con :hover pegajoso, tocar cualquier campo del
+   formulario del Club levanta la tarjeta entera 5px y no baja hasta tocar otra
+   parte. Se anulan solo las transformaciones de hover (los cambios de color se
+   conservan: no desplazan nada).
+
+   Aquí importa de verdad: en club-crear.html el .club-card envuelve el formulario,
+   así que el salto ocurre mientras el usuario escribe su documento. */
+@media (hover: none), (pointer: coarse) {
+    .btn-nav-carta:hover,
+    .btn-hero:hover,
+    .club-card:hover,
+    .club-btn:hover:not(:disabled),
+    .nav-btn:hover,
+    .footer-legal a:hover,
+    footer:not(.footer-calletano) .footer-legal-links a:hover {
+        transform: none;
+    }
+}
+
+/* Pulsación: .club-btn y .nav-btn ya la tenían; el resto de botones de estas
+   páginas no, así que en móvil se tocaban sin ninguna respuesta visual. */
+.btn-hero:active,
+.btn-nav-carta:active,
+.footer-legal a:active {
+    transform: scale(0.97);
+    transition: transform 120ms ease-out;
 }
