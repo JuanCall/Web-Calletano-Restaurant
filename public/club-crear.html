@@ -10,6 +10,22 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+
+    <!-- ✍️ Fuentes: un solo pedido, descubierto al parsear el HTML. Antes viajaban
+         por @import dentro de los CSS (HTML → CSS → CSS de fuentes → .woff2), una
+         cadena de 3 viajes antes de que apareciera el texto. -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&display=swap">
+
+    <!-- 📦 El navegador descubre los imports recién despues de bajar y parsear
+         app_club_crear.js. Adelantarlos quita un viaje en móvil: firebase-bundle.js
+         pesa ~540 KB y es el cuello de botella del arranque. -->
+    <link rel="modulepreload" href="js/lib/firebase-bundle.js?v=4">
+    <link rel="modulepreload" href="js/firebase-config.js">
+    <link rel="modulepreload" href="js/clubHelpers.js">
+    <link rel="modulepreload" href="js/consent.js">
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
@@ -84,6 +100,23 @@
             box-shadow: 0 10px 24px rgba(16, 185, 129, 0.35);
         }
 
+        /* ═══ Validación por campo (accesible) ═══
+           WCAG 1.4.1: el error nunca depende solo del color — suma texto junto
+           al campo y aria-invalid. El borde marca el input y el texto lo explica.
+           Se activa desde app_club_crear.js con la clase .club-field-error. */
+        .club-field-error .club-input {
+            border-color: #B3261E;
+            box-shadow: 0 0 0 3px rgba(179, 38, 30, 0.14);
+        }
+        .club-field-err {
+            display: none;
+            margin: 0.35rem 0 0;
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #8C1D18;   /* 10.7:1 sobre --crema-papel */
+        }
+        .club-field-error .club-field-err { display: block; }
+
     </style>
     <link rel="stylesheet" href="styles/style-mundo.css">
 </head>
@@ -103,7 +136,7 @@
                 <div class="col-lg-6">
                     <div class="club-card h-100">
                         <span class="club-badge" style="margin: 0 0 1rem;"><i class="fas fa-user-plus me-2" aria-hidden="true"></i>Únete al Club</span>
-                        <h3 class="club-card-title mb-2">Tu tarjeta digital, siempre contigo</h3>
+                        <h3 class="club-card-title mb-2">10 visitas. Tu plato de carta, gratis.</h3>
                         <p class="club-card-sub">Solo necesitas tu DNI y tu nombre. Tu tarjeta digital se abre al instante, con tu QR y el conteo de tus visitas.</p>
 
                         <form id="club-form" novalidate>
@@ -113,25 +146,30 @@
                                     <button type="button" class="club-doc-btn active" data-tipo="DNI">DNI</button>
                                     <button type="button" class="club-doc-btn" data-tipo="CE">CE</button>
                                 </div>
-                                <input type="text" id="club-num-doc" class="club-input" inputmode="numeric" autocomplete="off" placeholder="Ej: 12345678" maxlength="8">
+                                <input type="text" id="club-num-doc" class="club-input" inputmode="numeric" autocomplete="off" placeholder="Ej: 12345678" maxlength="12" aria-describedby="club-num-doc-hint club-num-doc-err">
+                                <p class="club-nota mt-1 mb-0" id="club-num-doc-hint">DNI: 8 dígitos · Carné de Extranjería: 9 a 12 dígitos</p>
+                                <p class="club-field-err" id="club-num-doc-err"></p>
                             </div>
 
                             <div class="club-field">
                                 <label for="club-nombre">Nombre</label>
-                                <input type="text" id="club-nombre" class="club-input" placeholder="Tu nombre completo" autocomplete="name">
+                                <input type="text" id="club-nombre" class="club-input" placeholder="Tu nombre completo" autocomplete="name" aria-describedby="club-nombre-err">
+                                <p class="club-field-err" id="club-nombre-err"></p>
                             </div>
 
                             <div class="row g-3">
                                 <div class="col-sm-6">
                                     <div class="club-field">
                                         <label for="club-telefono">Teléfono (opcional)</label>
-                                        <input type="tel" id="club-telefono" class="club-input" inputmode="numeric" placeholder="987654321">
+                                        <input type="tel" id="club-telefono" class="club-input" inputmode="numeric" placeholder="987654321" autocomplete="tel" aria-describedby="club-telefono-err">
+                                        <p class="club-field-err" id="club-telefono-err"></p>
                                     </div>
                                 </div>
                                 <div class="col-sm-6">
                                     <div class="club-field">
                                         <label for="club-correo">Correo (opcional)</label>
-                                        <input type="email" id="club-correo" class="club-input" placeholder="tucorreo@ejemplo.com">
+                                        <input type="email" id="club-correo" class="club-input" placeholder="tucorreo@ejemplo.com" autocomplete="email" aria-describedby="club-correo-err">
+                                        <p class="club-field-err" id="club-correo-err"></p>
                                     </div>
                                 </div>
                             </div>
@@ -140,7 +178,7 @@
                                 <input type="checkbox" id="club-acepta">
                                 <span>Acepto el uso de mis datos para el programa de fidelización.</span>
                             </label>
-                            <p class="club-nota">Usamos tu DNI y tu nombre solo para identificar tu tarjeta y contar tus visitas. No compartimos tus datos con terceros.</p>
+                            <p class="club-nota">Usamos tu DNI y tu nombre solo para identificar tu tarjeta y contar tus visitas. No compartimos tus datos con terceros. Lee la <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>.</p>
 
                             <label class="club-check">
                                 <input type="checkbox" id="club-promos">
@@ -149,7 +187,7 @@
 
                             <div id="club-form-msg" class="club-msg" role="status"></div>
 
-                            <button type="submit" id="club-crear-btn" class="club-btn">Crear mi tarjeta</button>
+                            <button type="submit" id="club-crear-btn" class="club-btn">Crear mi tarjeta gratis</button>
                         </form>
 
                         <!-- ✅ Éxito: tarjeta creada -->
@@ -207,6 +245,8 @@
                 <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
                 <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="club-baja.html"><i class="fas fa-bell-slash me-1" aria-hidden="true"></i>Baja de promociones</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
                 <a href="terminos.html"><i class="fas fa-file-contract me-1" aria-hidden="true"></i>Términos de uso</a>
                 <span class="footer-sep" aria-hidden="true">·</span>

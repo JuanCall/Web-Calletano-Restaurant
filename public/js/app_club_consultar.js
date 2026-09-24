@@ -52,6 +52,15 @@ function mostrarVista(vista) {
     const tarjeta = document.getElementById('club-vista-tarjeta');
     if (consulta) consulta.style.display = vista === 'consulta' ? '' : 'none';
     if (tarjeta) tarjeta.classList.toggle('show', vista === 'tarjeta');
+    // Al volver a la consulta se limpia el estado del intento anterior: si no,
+    // el enlace de recuperación y el mensaje de la búsqueda previa quedarían
+    // pegados a la vista aunque el usuario ya haya abierto su tarjeta.
+    if (vista === 'consulta') {
+        const link = document.getElementById('club-consulta-link');
+        if (link) link.classList.add('d-none');
+        const msg = document.getElementById('club-consulta-msg');
+        if (msg) { msg.className = 'club-msg'; msg.textContent = ''; }
+    }
 }
 
 // ── Render de la tarjeta digital ──────────────────────────────
@@ -137,8 +146,10 @@ function renderTarjeta(miembro, codigoEntrada) {
                 </div>`;
             premio.className = 'club-premio club-premio-completado';
         } else {
-            // Aún no llega al premio: mostramos cómo registrar la visita
-            premio.textContent = 'Preséntala en caja al pagar: el personal la escanea y tu visita queda registrada.';
+            // Aún no llega al premio: se dice CUÁNTO FALTA (el motivo para volver)
+            // y además cómo se registra la visita.
+            const faltan = prog.restantes;
+            premio.innerHTML = `<strong>Te faltan ${faltan} ${faltan === 1 ? 'visita' : 'visitas'}</strong> para tu premio: ${esc(CLUB_CONFIG.premio)}. Preséntala en caja al pagar y el personal la escanea.`;
             premio.className = 'club-premio';
         }
     }
@@ -200,6 +211,11 @@ async function consultarProgreso() {
     const btn = document.getElementById('club-consulta-btn');
     const input = document.getElementById('club-consulta-doc');
     if (msg) msg.className = 'club-msg';
+    // El enlace de recuperación ("Crear mi tarjeta gratis") solo debe existir en
+    // el resultado "no tienes tarjeta". Se oculta al iniciar cada intento y se
+    // vuelve a mostrar únicamente en esa rama.
+    const enlaceCrear = document.getElementById('club-consulta-link');
+    if (enlaceCrear) enlaceCrear.classList.add('d-none');
 
     const docNum = normalizarDocumento(input.value);
     if (!validarDocumento('AUTO', docNum)) {
@@ -211,8 +227,7 @@ async function consultarProgreso() {
         const snap = await getDoc(doc(db, 'club_miembros', docNum));
         if (!snap.exists()) {
             mostrarMsg(msg, 'error', 'Aún no tienes tarjeta del club. ¡Créala gratis en la página de registro!');
-            const link = document.getElementById('club-consulta-link');
-            if (link) link.classList.remove('d-none');
+            if (enlaceCrear) enlaceCrear.classList.remove('d-none');
         } else {
             renderTarjeta(snap.data(), docNum);
             mostrarVista('tarjeta');

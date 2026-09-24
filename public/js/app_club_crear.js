@@ -18,6 +18,62 @@ import {
 
 let tipoActual = 'DNI'; // DNI | CE
 
+// ── Validación por campo (accesible) ──────────────────────────
+// Cada campo tiene su <p class="club-field-err" id="<id>-err">, declarado en el
+// aria-describedby del input. Al fallar: se escribe el error JUNTO al campo, se
+// marca el contenedor (.club-field-error) y se pone aria-invalid, para que el
+// error no dependa solo del color ni del aviso global del formulario.
+const CAMPOS_VALIDABLES = ['club-num-doc', 'club-nombre', 'club-telefono', 'club-correo'];
+
+function marcarErrorCampo(input, texto) {
+    const err = document.getElementById(`${input.id}-err`);
+    const campo = input.closest('.club-field');
+    if (err) err.textContent = texto;
+    if (campo) campo.classList.add('club-field-error');
+    input.setAttribute('aria-invalid', 'true');
+}
+
+function limpiarErrorCampo(input) {
+    const err = document.getElementById(`${input.id}-err`);
+    const campo = input.closest('.club-field');
+    if (err) err.textContent = '';
+    if (campo) campo.classList.remove('club-field-error');
+    input.removeAttribute('aria-invalid');
+}
+
+function limpiarErrores() {
+    CAMPOS_VALIDABLES.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) limpiarErrorCampo(el);
+    });
+}
+
+// Devuelve true si el campo es válido; si no, marca el error junto al campo.
+function validarCampo(input) {
+    const raw = input.value.trim();
+    let texto = '';
+    if (input.id === 'club-num-doc') {
+        if (!validarDocumento('AUTO', normalizarDocumento(raw))) {
+            texto = 'Ingresa un DNI (8 dígitos) o Carné de Extranjería (9 a 12 dígitos), sin puntos ni guiones.';
+        }
+    } else if (input.id === 'club-nombre') {
+        if (raw.length < 2) texto = 'Escribe tu nombre completo.';
+        else if (raw.length > 80) texto = 'El nombre es demasiado largo.';
+    } else if (input.id === 'club-telefono') {
+        if (raw && !/^\d{9,12}$/.test(raw.replace(/[\s-]/g, ''))) {
+            texto = 'El teléfono no parece válido: solo números, 9 a 12 dígitos.';
+        }
+    } else if (input.id === 'club-correo') {
+        if (raw && !/^\S+@\S+\.\S+$/.test(raw)) texto = 'El correo no parece válido.';
+    }
+    if (texto) {
+        marcarErrorCampo(input, texto);
+        return false;
+    }
+    limpiarErrorCampo(input);
+    return true;
+}
+
 // ── Pequeños helpers ──────────────────────────────────────────
 function mostrarMsg(el, tipo, texto) {
     if (!el) return;
@@ -32,7 +88,7 @@ function setLoading(btn, on) {
         btn.dataset.label = btn.dataset.label || btn.textContent.trim();
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>Procesando…';
     } else {
-        btn.innerHTML = btn.dataset.label || 'Crear mi tarjeta';
+        btn.innerHTML = btn.dataset.label || 'Crear mi tarjeta gratis';
     }
 }
 
@@ -48,20 +104,33 @@ async function crearTarjeta(e) {
     const nombre = document.getElementById('club-nombre').value.trim();
     const telefono = document.getElementById('club-telefono').value.trim();
     const correo = document.getElementById('club-correo').value.trim();
-    const acepta = document.getElementById('club-acepta').checked;
+    const aceptaInput = document.getElementById('club-acepta');
+    const acepta = aceptaInput ? aceptaInput.checked : false;
 
-    if (!validarDocumento(tipoActual, docNum)) {
-        return mostrarMsg(msg, 'error', `El ${tipoActual} debe tener ${tipoActual === 'CE' ? 'entre 9 y 12 dígitos' : '8 dígitos'}, sin puntos ni guiones.`);
+    // ✅ Validación por campo: cada error queda junto a su campo (aria-invalid +
+    // aria-describedby) y el foco va al primero con problema. El aviso global se
+    // reserva para "revisa los campos marcados" y para los fallos de red.
+    limpiarErrores();
+    const invalidos = [];
+    CAMPOS_VALIDABLES.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && !validarCampo(el)) invalidos.push(el);
+    });
+    if (invalidos.length) {
+        mostrarMsg(msg, 'error', 'Revisa los campos marcados.');
+        invalidos[0].focus();
+        return;
     }
-    if (nombre.length < 2) return mostrarMsg(msg, 'error', 'Escribe tu nombre completo.');
-    if (nombre.length > 80) return mostrarMsg(msg, 'error', 'El nombre es demasiado largo.');
-    if (telefono && !/^\d{9,12}$/.test(telefono.replace(/[\s-]/g, ''))) {
-        return mostrarMsg(msg, 'error', 'El teléfono no parece válido (solo números).');
+    // 🔎 Tipo efectivo según el largo: 8 = DNI, 9-12 = CE
+    const tipoDoc = docNum.length === 8 ? 'DNI' : 'CE';
+    if (!acepta) {
+        if (aceptaInput) {
+            aceptaInput.setAttribute('aria-invalid', 'true');
+            aceptaInput.focus();
+        }
+        return mostrarMsg(msg, 'error', 'Debes aceptar el uso de tus datos para crear tu tarjeta.');
     }
-    if (correo && !/^\S+@\S+\.\S+$/.test(correo)) {
-        return mostrarMsg(msg, 'error', 'El correo no parece válido.');
-    }
-    if (!acepta) return mostrarMsg(msg, 'error', 'Debes aceptar el uso de tus datos para crear tu tarjeta.');
+    if (aceptaInput) aceptaInput.removeAttribute('aria-invalid');
 
     setLoading(btn, true);
     try {
@@ -94,7 +163,7 @@ async function crearTarjeta(e) {
         // 🎫 Tarjeta pública (sin datos personales)
         await setDoc(ref, {
             documento: docNum,
-            tipo_documento: tipoActual,
+            tipo_documento: tipoDoc,
             nombre,
             acepta_datos: true,
             sede_registro: CLUB_CONFIG.sede,
@@ -160,16 +229,36 @@ function initClub() {
             if (!btnEl) return;
             tipoActual = btnEl.dataset.tipo || 'DNI';
             tipoCont.querySelectorAll('.club-doc-btn').forEach((b) => b.classList.toggle('active', b === btnEl));
+            // ⚠️ maxLength queda fijo en 12 (HTML) y NO se borra lo escrito:
+            // recortar a 8 rompía el CE y limpiar obligaba a reescribir el documento.
             if (numDocInput) {
-                numDocInput.maxLength = tipoActual === 'CE' ? 12 : 8;
                 numDocInput.placeholder = tipoActual === 'CE' ? 'Ej: 123456789' : 'Ej: 12345678';
-                numDocInput.value = '';
             }
         });
     }
 
     const form = document.getElementById('club-form');
     if (form) form.addEventListener('submit', crearTarjeta);
+
+    // Validación inline: al salir del campo se valida; al escribir, solo se
+    // refresca un error YA mostrado (no se regaña mientras se teclea la primera vez).
+    CAMPOS_VALIDABLES.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('blur', () => {
+            // Un campo VACÍO no se marca al salir: pulsar el botón CE o tabular
+            // hacia adelante no debe disparar "falta el documento". Lo obligatorio
+            // se reclama al enviar, no mientras el usuario explora el formulario.
+            if (el.value.trim()) validarCampo(el);
+            else limpiarErrorCampo(el);
+        });
+        el.addEventListener('input', () => {
+            if (el.getAttribute('aria-invalid') === 'true') validarCampo(el);
+        });
+    });
+    // El consentimiento también se marca y se limpia al marcarlo.
+    const aceptaEl = document.getElementById('club-acepta');
+    if (aceptaEl) aceptaEl.addEventListener('change', () => aceptaEl.removeAttribute('aria-invalid'));
 
     // ⚙️ Config hardcodeada (ya no se lee de Firestore)
     const metaEl = document.getElementById('club-meta-text');
