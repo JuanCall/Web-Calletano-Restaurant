@@ -162,7 +162,7 @@ section::after { display: none; }
     letter-spacing: 2px;
     text-transform: uppercase;
 }
-.club-topbar .brand i { color: var(--amarillo); margin-right: 8px; }
+.club-topbar .brand .ico { color: var(--amarillo); margin-right: 8px; }
 .club-topbar .link-back {
     color: rgba(255, 255, 255, 0.92);  /* 11.8:1+ */
     font-weight: 700;
@@ -424,7 +424,7 @@ section::after { display: none; }
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
-.club-card-title i { color: var(--carmesi) !important; }
+.club-card-title .ico { color: var(--carmesi) !important; }
 .club-card-sub {
     color: var(--content-secondary);
     font-size: 0.95rem;
@@ -579,7 +579,7 @@ section::after { display: none; }
 }
 .club-info-list li:last-child { border-bottom: none; }
 .club-info-list strong { color: var(--content-primary); }
-.club-info-list i { color: var(--carmesi) !important; }
+.club-info-list .ico { color: var(--carmesi) !important; }
 
 .club-como-list { color: var(--content-secondary); font-size: 0.95rem; line-height: 1.7; padding-left: 1.2rem; display: grid; gap: 0.6rem; }
 .club-como-list strong { color: var(--content-primary); }

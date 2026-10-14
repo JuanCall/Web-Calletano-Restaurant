@@ -238,10 +238,19 @@
             <div id="status-restaurante" class="d-inline-block mb-4"></div>
 
             <h1 class="fw-bold mb-2">Calletano Restaurant</h1>
-            <p class="lead mb-4">EL MEJOR SABOR DE MÁNCORA</p>
-            <a href="carta.html" class="btn btn-hero">
-                <svg class="ico fa-utensils me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-utensils"></use></svg> VER CARTA Y PRECIOS
-            </a>
+            <p class="lead mb-3">EL MEJOR SABOR DE MÁNCORA</p>
+            <!-- CRO: en 5 segundos hay que responder qué es, dónde y cuándo.
+                 El lema de marca no lo dice; esta línea sí, con datos reales. -->
+            <p class="hero-promesa">Pescados, mariscos y comida criolla en Máncora. Menú del día todos los días de 11:00 a 18:00.</p>
+            <div class="hero-acciones">
+                <a href="carta.html" class="btn btn-hero">
+                    <svg class="ico fa-utensils me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-utensils"></use></svg> VER CARTA Y PRECIOS
+                </a>
+                <!-- Segundo camino, para quien ya está decidido y andando: llegar. -->
+                <a href="https://maps.app.goo.gl/9eViDnE7AuAue1f77" target="_blank" rel="noopener noreferrer" class="btn btn-hero-sec">
+                    <svg class="ico fa-location-dot me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-location-dot"></use></svg> CÓMO LLEGAR
+                </a>
+            </div>
         </div>
 
         <!-- 🖱️ Indicador de scroll: desaparece al bajar -->
@@ -283,6 +292,15 @@
             <div class="mt-5" data-reveal data-reveal-delay="300">
                 <h4 class="bebida-label text-muted text-uppercase small ls-2 fw-bold mb-3">Bebida Incluida</h4>
                 <p class="display-6 mt-2" id="menu-refresco">Refresco de temporada</p>
+            </div>
+
+            <!-- CRO: el CTA va justo donde se toma la decisión (ya vio el menú
+                 de hoy). Antes el visitante tenía que buscar la boya para pedir. -->
+            <div class="menu-cta" data-reveal data-reveal-delay="350">
+                <a href="https://wa.me/51952606435?text=Hola%2C%20quiero%20hacer%20un%20pedido" target="_blank" rel="noopener noreferrer" class="btn btn-menu-cta btn-menu-wsp">
+                    <svg class="ico fa-whatsapp me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#brands-whatsapp"></use></svg> PEDIR POR WHATSAPP
+                </a>
+                <a href="carta.html" class="btn btn-menu-cta btn-menu-carta">VER CARTA COMPLETA</a>
             </div>
         </div>
     </section>

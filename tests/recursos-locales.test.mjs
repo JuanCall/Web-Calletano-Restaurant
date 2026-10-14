@@ -169,3 +169,122 @@ test('cada página enlaza Bootstrap, las fuentes y los iconos locales', () => {
         assert.ok(html.includes('styles/iconos.css'), `${pagina} sin los iconos locales`);
     }
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// Lo de abajo cubre los fallos que SI se escaparon al migrar de FontAwesome a
+// iconos propios y de Google Fonts a fuentes propias. Los tests de arriba solo
+// miraban bytes y enlaces, asi que no vieron ninguno de estos.
+// ════════════════════════════════════════════════════════════════════════════
+
+/** CSS de los archivos de estilo MÁS el de los bloques <style> de los HTML. */
+const todoElCss = () => {
+    const deHtml = paginas
+        .map((f) => [...leer(f).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join('\n'))
+        .join('\n');
+    const deArchivos = hojas.map((f) => leer(`styles/${f}`)).join('\n');
+    return deArchivos + '\n' + deHtml;
+};
+
+/** Primer nombre de familia de una declaración de font-family ('Karla', sans-serif → Karla). */
+const primeraFamilia = (valor) => {
+    const m = String(valor).trim().match(/^['"]?([^'",]+)['"]?/);
+    return m ? m[1].trim() : null;
+};
+
+// Un selector usa <i> como elemento si aparece una `i` suelta: ni pegada a otra
+// letra (.infinite-carousel, .club-check input) ni como parte de una clase.
+const SELECTOR_DE_ICONO = /(^|[\s>+~,])i(?=[\s>+~,.:#[]|$)/;
+
+test('ninguna regla CSS apunta al viejo <i> ni carga la fuente de FontAwesome', () => {
+    const css = todoElCss();
+
+    // 1) La fuente de iconos ya no se sirve: declararla da glifos rotos.
+    for (const m of css.matchAll(/font-family\s*:\s*["']([^"']+)["']/gi)) {
+        assert.ok(
+            !/font ?awesome/i.test(m[1]),
+            `el CSS todavía usa la fuente "${m[1]}" para dibujar iconos`,
+        );
+    }
+
+    // 2) Los iconos son <svg class="ico">, no <i>: un selector `i` ya no aplica
+    //    a nada y deja el icono sin color ni separación.
+    const sinComentarios = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const huerfanos = [];
+    for (const m of sinComentarios.matchAll(/([^{}]+)\{/g)) {
+        for (const sel of m[1].split(',')) {
+            const s = sel.trim();
+            if (s && SELECTOR_DE_ICONO.test(s)) huerfanos.push(s);
+        }
+    }
+    assert.deepEqual(huerfanos, [], `selectores que ya no aplican a ningún elemento: ${huerfanos.join(' | ')}`);
+});
+
+test('cada familia tipográfica del sitio tiene su @font-face local', () => {
+    const css = todoElCss();
+
+    // Fuentes declaradas en fuentes.css.
+    const declaradas = new Set(
+        [...leer('styles/fuentes.css').matchAll(/@font-face\s*\{[^}]*?font-family\s*:\s*['"]([^'"]+)['"]/g)].map((m) => m[1]),
+    );
+    assert.ok(declaradas.size >= 4, `fuentes.css solo declara ${declaradas.size} familias`);
+
+    // Variables del tipo --font-body: 'Montserrat', sans-serif;
+    const porVariable = new Map();
+    for (const m of css.matchAll(/--[a-z-]*font[a-z-]*\s*:\s*([^;}]+)/gi)) {
+        porVariable.set(m[0].split(':')[0].trim(), primeraFamilia(m[1]));
+    }
+
+    const genericas = new Set([
+        'inherit', 'initial', 'unset', 'revert', 'revert-layer', 'sans-serif', 'serif',
+        'monospace', 'cursive', 'fantasy', 'system-ui', 'ui-monospace', 'ui-sans-serif',
+        'ui-serif', 'ui-rounded', 'math', 'emoji', 'fangsong',
+    ]);
+
+    const usadas = new Set();
+    for (const m of css.matchAll(/font-family\s*:\s*([^;}]+)/gi)) {
+        const valor = m[1].trim();
+        const variable = valor.match(/^var\(\s*(--[a-z-]+)\s*\)$/i);
+        const familia = variable ? porVariable.get(variable[1]) : primeraFamilia(valor);
+        if (!familia) continue;
+        if (genericas.has(familia.toLowerCase())) continue;
+        usadas.add(familia);
+    }
+
+    assert.ok(usadas.size >= 4, `se esperaban al menos 4 familias en uso, hay ${usadas.size}`);
+    for (const familia of usadas) {
+        assert.ok(
+            declaradas.has(familia),
+            `el CSS usa '${familia}' pero fuentes.css no la declara: el texto cae al fallback del sistema y la página se ve distinta`,
+        );
+    }
+});
+
+test('ningún peso se sirve con el archivo de otro peso', () => {
+    const css = leer('styles/fuentes.css');
+    const bloques = [...css.matchAll(/@font-face\s*\{([^}]*)\}/g)].map((m) => ({
+        familia: (m[1].match(/font-family\s*:\s*['"]([^'"]+)['"]/) || [])[1],
+        peso: (m[1].match(/font-weight\s*:\s*([^;]+);/) || [])[1]?.trim(),
+        url: (m[1].match(/url\(['"]?([^'")]+)/) || [])[1],
+    }));
+    assert.ok(bloques.length >= 4 && bloques.every((b) => b.familia && b.peso && b.url), 'fuentes.css tiene bloques incompletos');
+
+    const porFamilia = {};
+    for (const b of bloques) (porFamilia[b.familia] = porFamilia[b.familia] || []).push(b);
+
+    for (const [familia, lista] of Object.entries(porFamilia)) {
+        const archivoPorPeso = new Map();
+        for (const b of lista) {
+            const pesoPrevio = archivoPorPeso.get(b.url);
+            assert.ok(
+                pesoPrevio === undefined || pesoPrevio === b.peso,
+                `'${familia}' sirve el peso ${b.peso} y el ${pesoPrevio} con el mismo archivo (${b.url}): el navegador no sintetiza la negrita y el texto sale fino`,
+            );
+            archivoPorPeso.set(b.url, b.peso);
+        }
+    }
+
+    // Y todo archivo declarado debe existir de verdad.
+    for (const b of bloques) {
+        assert.ok(existsSync(path.join(PUBLIC, 'fonts', path.basename(b.url))), `falta ${b.url}`);
+    }
+});

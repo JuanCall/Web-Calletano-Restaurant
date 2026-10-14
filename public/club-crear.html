@@ -43,7 +43,7 @@
             text-decoration: none;
             letter-spacing: 1px;
         }
-        .club-topbar .brand i { color: var(--amarillo-suave); margin-right: 8px; }
+        .club-topbar .brand .ico { color: var(--amarillo-suave); margin-right: 8px; }
         .club-topbar .link-back {
             color: #fff;
             font-weight: 700;
@@ -112,6 +112,19 @@
         }
         .club-field-error .club-field-err { display: block; }
 
+        /* CRO: "(opcional)" en el check de promociones, para que no se lea como
+           un requisito más. Mismo peso visual que el grupo opcional de campos. */
+        .club-opcional {
+            font-weight: 600;
+            opacity: 0.8;
+        }
+
+        /* CRO: la tranquilidad va pegada al botón, donde aparece la duda. */
+        .club-nota-cta {
+            text-align: center;
+            margin: 0.7rem 0 0;
+        }
+
     </style>
     <link rel="stylesheet" href="styles/style-mundo.css">
 </head>
@@ -175,14 +188,20 @@
                             </label>
                             <p class="club-nota">Usamos tu DNI y tu nombre solo para identificar tu tarjeta y contar tus visitas. No compartimos tus datos con terceros. Lee la <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>.</p>
 
+                            <!-- CRO: los campos de teléfono y correo ya dicen "(opcional)".
+                                 Este check no lo decía y parecía obligatorio: el visitante
+                                 dudaba antes de enviar. Se marca igual que los campos. -->
                             <label class="club-check">
                                 <input type="checkbox" id="club-promos">
-                                <span>Quiero recibir promociones y novedades.</span>
+                                <span>Quiero recibir promociones y novedades <span class="club-opcional">(opcional)</span>.</span>
                             </label>
 
                             <div id="club-form-msg" class="club-msg" role="status"></div>
 
                             <button type="submit" id="club-crear-btn" class="club-btn">Crear mi tarjeta gratis</button>
+
+                            <!-- CRO: quita la duda justo antes de pulsar "crear". -->
+                            <p class="club-nota club-nota-cta">Sin costo y sin contraseñas: tu tarjeta se abre al instante con tu DNI.</p>
                         </form>
 
                         <!-- ✅ Éxito: tarjeta creada -->

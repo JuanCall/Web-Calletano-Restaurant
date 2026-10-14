@@ -148,8 +148,12 @@ function renderTarjeta(miembro, codigoEntrada) {
         } else {
             // Aún no llega al premio: se dice CUÁNTO FALTA (el motivo para volver)
             // y además cómo se registra la visita.
+            // El icono va dentro del HTML (antes era un ::before con la fuente de
+            // FontAwesome, que ya no se carga y dejaba un glifo roto).
+            // El texto va envuelto en un <span>: .club-premio es flex con gap, así
+            // que hijos sueltos meterían una separación de 8px en medio de la frase.
             const faltan = prog.restantes;
-            premio.innerHTML = `<strong>Te faltan ${faltan} ${faltan === 1 ? 'visita' : 'visitas'}</strong> para tu premio: ${esc(CLUB_CONFIG.premio)}. Preséntala en caja al pagar y el personal la escanea.`;
+            premio.innerHTML = `<svg class="ico fa-grip-lines-vertical" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-grip-lines-vertical"></use></svg><span><strong>Te faltan ${faltan} ${faltan === 1 ? 'visita' : 'visitas'}</strong> para tu premio: ${esc(CLUB_CONFIG.premio)}. Preséntala en caja al pagar y el personal la escanea.</span>`;
             premio.className = 'club-premio';
         }
     }

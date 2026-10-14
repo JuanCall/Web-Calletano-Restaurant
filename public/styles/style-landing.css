@@ -262,6 +262,55 @@ header .lead {
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
+/* CRO — promesa concreta bajo el lema de marca.
+   El lema dice quién somos; esto dice qué se come, dónde y a qué hora, que es
+   lo que el visitante necesita para decidir en los primeros segundos. */
+header .hero-promesa {
+    font-family: 'Karla', sans-serif;
+    font-weight: 600;
+    font-size: clamp(0.95rem, 1.9vw, 1.15rem);
+    line-height: 1.45;
+    color: #fff;
+    max-width: 34ch;
+    margin: 0 auto;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.65);
+}
+
+/* Un CTA primario y uno secundario, no dos iguales: la jerarquía tiene que
+   leerse de un vistazo. El secundario es la acción de quien ya viene andando. */
+header .hero-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 1.5rem;
+}
+
+.btn-hero-sec {
+    /* 0.72 (no 0.6): sobre la foto del hero el blanco necesita este fondo para
+       quedar por encima de 4.5:1 con cualquier brillo de imagen. */
+    background: rgba(7, 43, 51, 0.72);
+    color: #fff !important;
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    border: 2px solid var(--amarillo);
+    border-radius: 6px;
+    padding: 16px 28px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1),
+                background-color 180ms ease;
+}
+.btn-hero-sec:hover {
+    background: var(--mar);
+    color: #fff !important;
+    transform: translateY(-3px);
+}
+
 /* CTA hero: caja de pescado carmesí con sello */
 .btn-hero {
     background: var(--carmesi);
@@ -284,6 +333,49 @@ header .lead {
     transform: translateY(-3px);
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
 }
+
+/* CRO — CTAs del menú del día: aparecen justo después de ver qué se come hoy,
+   que es el momento en que el visitante decide. */
+.menu-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 2.5rem;
+}
+
+.btn-menu-cta {
+    font-family: 'Karla', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 1.5px;
+    border-radius: 6px;
+    padding: 14px 28px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1),
+                background-color 180ms ease, box-shadow 180ms ease;
+}
+.btn-menu-cta:hover { transform: translateY(-3px); }
+
+/* WhatsApp: verde de la boya, para que se lea como el mismo camino de pedido. */
+.btn-menu-wsp {
+    background: #128C4A;
+    color: #fff !important;
+    border: 2px solid var(--amarillo);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+}
+.btn-menu-wsp:hover { background: #0E7A40; color: #fff !important; }
+
+.btn-menu-carta {
+    background: var(--crema-papel);
+    color: var(--carmesi-osc) !important;   /* 5.9:1 sobre papel */
+    border: 2px solid var(--mar);
+    box-shadow: 0 6px 18px rgba(7, 43, 51, 0.2);
+}
+.btn-menu-carta:hover { background: #fff; color: var(--mar) !important; }
 
 /* Etiqueta decorativa flotante: "pesca del día" */
 .hero-tag {
@@ -732,7 +824,7 @@ section::after { display: none; } /* sin gradientes fantasmas: fondos del mundo 
 
 /* ═══════════ MODAL CERRADO ═══════════ */
 .modal-content { border-radius: 12px !important; border: 2px solid var(--mar) !important; }
-.modal-body i.text-danger { color: var(--carmesi-osc) !important; }
+.modal-body .ico.text-danger { color: var(--carmesi-osc) !important; }
 .modal-body h3 { color: var(--mar) !important; }
 
 /* ═══════════ RESPONSIVE ═══════════ */
@@ -844,6 +936,20 @@ html { scrollbar-width: thin; scrollbar-color: var(--carmesi) var(--mar-mas-osc)
     .scroll-hint { display: none; }
 }
 
+/* CRO — en móvil (donde llega casi todo el tráfico) los CTAs nuevos se apilan a
+   ancho completo: se aciertan mejor con el pulgar y no compiten entre sí. */
+@media (max-width: 768px) {
+    header .hero-acciones,
+    .menu-cta {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    header .hero-acciones .btn,
+    .menu-cta .btn-menu-cta {
+        width: 100%;
+    }
+}
+
 /* ═══════════ INTERACCIÓN TÁCTIL Y DE PULSACIÓN ═══════════
    En táctil :hover es "pegajoso": el tap lo activa y no se suelta hasta tocar
    otra parte. Al tocar una tarjeta esta sube 5-8px y se queda arriba (la del
@@ -860,6 +966,8 @@ html { scrollbar-width: thin; scrollbar-color: var(--carmesi) var(--mar-mas-osc)
 @media (hover: none), (pointer: coarse) {
     .btn-nav-carta:hover,
     .btn-hero:hover,
+    .btn-hero-sec:hover,
+    .btn-menu-cta:hover,
     .menu-dia-card:hover,
     .dish-card:hover,
     .dish-card:hover .card-img-top,

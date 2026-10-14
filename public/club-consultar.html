@@ -41,7 +41,7 @@
             text-decoration: none;
             letter-spacing: 1px;
         }
-        .club-topbar .brand i { color: var(--amarillo-suave); margin-right: 8px; }
+        .club-topbar .brand .ico { color: var(--amarillo-suave); margin-right: 8px; }
         .club-topbar .link-back {
             color: #fff;
             font-weight: 700;
@@ -161,7 +161,7 @@
             color: #fff8ec;
             text-shadow: 0 1px 2px rgba(0,0,0,0.15);
         }
-        .club-tarjeta-logo i { color: var(--amarillo-suave, #ffd166); }
+        .club-tarjeta-logo .ico { color: var(--amarillo-suave, #ffd166); }
 
         .club-tarjeta-sede {
             margin-top: 4px;
@@ -171,10 +171,9 @@
             text-transform: uppercase;
             color: rgba(255,255,255,0.95);
         }
-        .club-tarjeta-sede::before {
-            content: "\f3c5";
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
+        /* El icono es un <svg> real del sprite (antes era un ::before con la
+           fuente de FontAwesome, que ya no se carga: salia un glifo roto). */
+        .club-tarjeta-sede .ico {
             margin-right: 5px;
             color: var(--mar-turquesa);
         }
@@ -238,12 +237,7 @@
             font-size: 0.92rem;
             color: #fff;
         }
-        .club-tarjeta-visitas::before {
-            content: "\f2e7";
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
-            color: var(--mar-turquesa);
-        }
+        .club-tarjeta-visitas .ico { color: var(--mar-turquesa); }
 
         /* Barra de progreso: del dorado del amanecer al turquesa del mar */
         .club-progress { margin-top: 0.8rem; }
@@ -330,10 +324,7 @@
             line-height: 1.35;
             color: #fff8ec;
         }
-        .club-premio::before {
-            content: "\f7a5";
-            font-family: "Font Awesome 6 Free";
-            font-weight: 900;
+        .club-premio .ico {
             font-size: 1rem;
             flex-shrink: 0;
             color: var(--amarillo-suave, #ffd166);
@@ -485,7 +476,7 @@
                         <div class="club-tarjeta-top">
                             <div>
                                 <div class="club-tarjeta-logo"><svg class="ico fa-id-card me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>CLUB CALLETANO</div>
-                                <div class="club-tarjeta-sede" id="club-tarjeta-sede">Máncora</div>
+                                <div class="club-tarjeta-sede"><svg class="ico fa-location-dot" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-location-dot"></use></svg><span id="club-tarjeta-sede">Máncora</span></div>
                             </div>
                             <div class="club-tarjeta-estado" id="club-tarjeta-pct">0%</div>
                         </div>
@@ -494,7 +485,7 @@
                             <div class="club-tarjeta-info">
                                 <div class="club-tarjeta-nombre" id="club-tarjeta-nombre">—</div>
                                 <div class="club-tarjeta-doc" id="club-tarjeta-doc">—</div>
-                                <div class="club-tarjeta-visitas" id="club-tarjeta-visitas">0 de 10 visitas</div>
+                                <div class="club-tarjeta-visitas"><svg class="ico fa-utensils" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-utensils"></use></svg><span id="club-tarjeta-visitas">0 de 10 visitas</span></div>
 
                                 <div class="club-progress">
                                     <div class="club-progress-track">
@@ -505,7 +496,7 @@
                                 <!-- 🎯 Sellos de visitas: un círculo por visita acumulada -->
                                 <div class="club-sellos" id="club-sellos" role="img" aria-label="Progreso de tus visitas"></div>
 
-                                <div id="club-tarjeta-premio" class="club-premio">Preséntala en caja al pagar: el personal la escanea y tu visita queda registrada.</div>
+                                <div id="club-tarjeta-premio" class="club-premio"><svg class="ico fa-grip-lines-vertical" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-grip-lines-vertical"></use></svg><span>Preséntala en caja al pagar: el personal la escanea y tu visita queda registrada.</span></div>
                             </div>
 
                             <div class="club-tarjeta-qr-box">

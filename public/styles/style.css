@@ -938,7 +938,7 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
     justify-content: center;
     flex-shrink: 0;
 }
-.notif-banner-icon i {
+.notif-banner-icon .ico {
     font-size: 1.5rem;
     color: var(--naranja-logo);
 }
@@ -1652,7 +1652,7 @@ footer { background: var(--naranja-logo); color: white; padding: 25px 0; border-
     gap: 0.35rem;
 }
 
-.ccp-label i {
+.ccp-label .ico {
     color: var(--naranja-logo);
 }
 
