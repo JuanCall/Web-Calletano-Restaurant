@@ -320,7 +320,15 @@ section::after {
 .section-title {
     color: var(--brand-deep); /* naranja oscuro: AA sobre crema (antes ~2.8:1) */
     position: relative;
-    display: inline-block;
+    /* Se centra por sí mismo. Antes era inline-block y solo quedaba centrado si
+       el PADRE tenía text-align:center: en las secciones que no lo tenían, la
+       caja se encogía al ancho del texto y se quedaba pegada a la izquierda.
+       width: fit-content conserva ese ancho (el subrayado ::after mide igual
+       que el título) y los márgenes automáticos centran la caja. */
+    display: block;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 50px;
     font-size: clamp(2rem, 3vw, 2.8rem);
 }

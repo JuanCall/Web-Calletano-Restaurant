@@ -383,7 +383,11 @@ section::after { display: none; }
     text-transform: uppercase;
     letter-spacing: 1px;
     position: relative;
-    display: inline-block;
+    /* Se centra por sí mismo (ver style.css). */
+    display: block;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 24px;
 }
 .club-page-main .section-title::after {

@@ -1,10 +1,16 @@
 /* 🎨 Iconos locales (sprite en img/iconos.svg).
    Sustituye a FontAwesome servido desde CDN.
 
+   ⚠️ El ancho va declarado a mano, y es a propósito: el <svg> que lleva el
+   <use> NO tiene viewBox propio (el viewBox vive en el <symbol> del sprite), así
+   que el navegador no le conoce proporción intrínseca. Con `width: auto` cae al
+   ancho por defecto de un elemento reemplazado, 300px, y cada icono empujaba el
+   texto de al lado (la web entera salía descuadrada). Con 1em × 1em el símbolo
+   se escala con preserveAspectRatio (xMidYMid meet), conservando su proporción
+   dentro de una caja cuadrada, igual que hacía el glifo de la fuente.
+
    Reglas equivalentes a las del kit SVG oficial de FontAwesome:
-   - el icono mide 1em de alto, así que sigue respondiendo a font-size
-     como lo hacía la fuente (p. ej. .error-icon { font-size: 5rem });
-   - ancho automático: cada símbolo conserva su proporción (viewBox);
+   - 1em de alto → sigue respondiendo a font-size (.error-icon { font-size: 5rem });
    - fill: currentColor → hereda el color del texto, igual que el glifo;
    - vertical-align: -.125em, el mismo ajuste óptico del kit oficial.
 
@@ -13,8 +19,8 @@
    sigan funcionando. */
 .ico {
     display: inline-block;
+    width: 1em;
     height: 1em;
-    width: auto;
     overflow: visible;
     vertical-align: -0.125em;
     fill: currentColor;

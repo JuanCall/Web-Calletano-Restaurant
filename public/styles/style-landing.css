@@ -429,7 +429,12 @@ section::after { display: none; } /* sin gradientes fantasmas: fondos del mundo 
     text-transform: uppercase;
     letter-spacing: 1px;
     position: relative;
-    display: inline-block;
+    /* Se centra por sí mismo (ver style.css): con inline-block solo se centraba
+       si el padre tenía text-align:center, y en el resto quedaba a la izquierda. */
+    display: block;
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
     margin-bottom: 40px;
 }
 .section-title::after {

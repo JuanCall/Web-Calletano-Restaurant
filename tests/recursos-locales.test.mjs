@@ -288,3 +288,39 @@ test('ningún peso se sirve con el archivo de otro peso', () => {
         assert.ok(existsSync(path.join(PUBLIC, 'fonts', path.basename(b.url))), `falta ${b.url}`);
     }
 });
+
+test('los iconos declaran su ancho en em y no dejan que el navegador lo invente', () => {
+    // Por qué: el <svg> que lleva el <use href="iconos.svg#…"> no tiene viewBox
+    // propio (el viewBox vive en el <symbol>), así que no tiene proporción
+    // intrínseca. Con `width: auto` el navegador usa el ancho por defecto de un
+    // elemento reemplazado, 300px, y entonces CADA icono empuja el texto de al
+    // lado: el cartel de "pesca del día" se estira, los botones dejan de quedar
+    // centrados y la página entera parece desfasada. Pasó en producción.
+    const css = sinComentarios(leer('styles/iconos.css'));
+    const bloque = css.match(/\.ico\s*\{([^}]*)\}/);
+    assert.ok(bloque, 'iconos.css ya no define .ico');
+
+    assert.ok(!/width\s*:\s*auto/.test(bloque[1]), '`width: auto` en .ico devuelve los iconos a 300px de ancho');
+    assert.match(bloque[1], /width\s*:\s*1em/, '.ico debe fijar width: 1em (el ancho por defecto de un <svg> es 300px)');
+    assert.match(bloque[1], /height\s*:\s*1em/, '.ico debe fijar height: 1em para escalar con el font-size del texto');
+});
+
+test('los títulos de sección se centran solos, sin depender de que el padre lo haga', () => {
+    // Por qué: con `display: inline-block` la caja se encoge al ancho del texto
+    // y solo se centra si el PADRE tiene text-align:center. Los títulos que
+    // llevan la clase text-center en sí mismos quedaban pegados a la izquierda
+    // (Nuestros Platos Favoritos, Especiales de Domingo, Opiniones de Clientes).
+    for (const hoja of hojas) {
+        const css = sinComentarios(leer(`styles/${hoja}`));
+        for (const m of css.matchAll(/([^{}]*\.section-title)\s*\{([^}]*)\}/g)) {
+            if (m[1].includes('::after')) continue;
+            // Las reglas que solo retocan el color (p. ej. el título dorado sobre
+            // fondo mar) no repiten el modelo de caja: no son su responsabilidad.
+            if (!/display\s*:/.test(m[2])) continue;
+            assert.match(m[2], /width\s*:\s*fit-content/, `${hoja}: ${m[1].trim()} debe usar width: fit-content para conservar el ancho del texto`);
+            assert.match(m[2], /margin-left\s*:\s*auto/, `${hoja}: ${m[1].trim()} debe centrarse con margin-left: auto`);
+            assert.match(m[2], /margin-right\s*:\s*auto/, `${hoja}: ${m[1].trim()} debe centrarse con margin-right: auto`);
+            assert.ok(!/display\s*:\s*inline-block/.test(m[2]), `${hoja}: ${m[1].trim()} con inline-block solo se centra si el padre lo hace`);
+        }
+    }
+});
