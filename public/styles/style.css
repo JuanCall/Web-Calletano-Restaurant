@@ -433,7 +433,12 @@ section::after {
     background: var(--cyan-logo);
 }
 
-.dish-card .card-body h5 {
+/* Los títulos de plato son h3 (jerarquía h2 de sección → h3 de plato); h5/h6
+   quedan por compatibilidad con páginas antiguas que aún los usen. */
+.dish-card .card-body h3,
+.dish-card .card-body h4,
+.dish-card .card-body h5,
+.dish-card .card-body h6 {
     font-family: 'Playfair Display', serif;
     font-weight: 800;
     color: var(--content-primary);

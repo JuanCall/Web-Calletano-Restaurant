@@ -83,9 +83,18 @@
                 </div>
                 <h1 class="error-code">404</h1>
                 <h2 class="fw-bold mb-3 display-5">¡Ups! Este plato no existe</h2>
-                <p class="lead mb-5 fw-bold text-light" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.5);">
+                <p class="lead mb-4 fw-bold text-light" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.5);">
                     Parece que la marea te llevó a un lugar desconocido.<br>
                     Esa página no está en nuestro menú.
+                </p>
+
+                <!-- 🧭 Nota para agentes y crawlers: el error es un 404 real (no una
+                     página que existe). Aquí están las fuentes legibles por máquina. -->
+                <p class="small text-light mb-4" style="text-shadow: 1px 1px 4px rgba(0,0,0,0.5);">
+                    Error 404: la ruta solicitada no existe en este sitio. Si eres un agente o un
+                    rastreador, el listado de páginas está en
+                    <a href="/sitemap.xml" class="link-light">/sitemap.xml</a> y el resumen para
+                    asistentes en <a href="/llms.txt" class="link-light">/llms.txt</a>.
                 </p>
                 
                 <a href="index.html" class="btn btn-hero btn-lg">

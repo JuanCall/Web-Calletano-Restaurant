@@ -129,6 +129,46 @@
     }
     </script>
 
+    <!-- 🏢 Identidad del negocio (Organization): contacto verificable y dirección
+         postal. Es el bloque que los agentes/IA usan para confirmar que el
+         negocio es real y responder consultas de contacto. -->
+    <script type="application/ld+json" id="schema-organization">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "@id": "https://calletano-restaurant.web.app/#organization",
+      "name": "Calletano Restaurant",
+      "alternateName": "Restaurante Calletano",
+      "description": "Restaurante de pescados, mariscos y comida criolla en Máncora (Piura, Perú): menú del día, especiales de domingo, carta completa con precios y Club Calletano.",
+      "url": "https://calletano-restaurant.web.app/",
+      "logo": "https://calletano-restaurant.web.app/img/logo.webp",
+      "image": "https://calletano-restaurant.web.app/img/fondo.webp",
+      "email": "joseeliseocalle@gmail.com",
+      "telephone": "+51952606435",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Ampliación La Molina, Barrio Nicaragua S/N",
+        "addressLocality": "Máncora",
+        "addressRegion": "Piura",
+        "addressCountry": "PE"
+      },
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "contactType": "customer service",
+          "telephone": "+51952606435",
+          "email": "joseeliseocalle@gmail.com",
+          "availableLanguage": ["es", "Spanish"],
+          "areaServed": "PE"
+        }
+      ],
+      "sameAs": [
+        "https://www.facebook.com/calletanorestaurant",
+        "https://maps.app.goo.gl/9eViDnE7AuAue1f77"
+      ]
+    }
+    </script>
+
 </head>
 <body>
 
@@ -246,7 +286,7 @@
             </div>
 
             <div class="mt-5" data-reveal data-reveal-delay="300">
-                <h5 class="text-muted text-uppercase small ls-2 fw-bold mb-3">Bebida Incluida</h5>
+                <h4 class="bebida-label text-muted text-uppercase small ls-2 fw-bold mb-3">Bebida Incluida</h4>
                 <p class="display-6 mt-2" id="menu-refresco">Refresco de temporada</p>
             </div>
         </div>
@@ -271,7 +311,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/espagueti-alfredo.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Espagueti al alfredo" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Espagueti al alfredo</h5>
+                                    <h3 class="fw-bold">Espagueti al alfredo</h3>
                                     <p class="text-muted small">Espagueti en una cremosa salsa Alfredo, suave y llena de sabor.</p>
                                 </div>
                             </div>
@@ -279,7 +319,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/trio-criollo.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Trio criollo" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Trio criollo</h5>
+                                    <h3 class="fw-bold">Trio criollo</h3>
                                     <p class="text-muted small">Combinación tradicional que incluye seco de chavelo, majado de yuca con costillas de cerdo y carne seca, llena de sabor norteño.</p>
                                 </div>
                             </div>
@@ -287,7 +327,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/ronda-marina.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Ronda marina" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Ronda marina</h5>
+                                    <h3 class="fw-bold">Ronda marina</h3>
                                     <p class="text-muted small">Selección marina que incluye ceviche de mixto, arroz con mariscos, causa de pulpo al olivo, chicharrón de pescado, tequeños de langostino. Incluye Cerveza</p>
                                 </div>
                             </div>
@@ -295,7 +335,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/alitas-bbq.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Alitas BBQ" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Alitas BBQ</h5>
+                                    <h3 class="fw-bold">Alitas BBQ</h3>
                                     <p class="text-muted small">Alitas de pollo crocantes bañadas en salsa BBQ, jugosas y llenas de sabor, aacompañadas de papas fritas.</p>
                                 </div>
                             </div>
@@ -303,7 +343,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/patacones-rellenos.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Patacones rellenos" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Patacones rellenos</h5>
+                                    <h3 class="fw-bold">Patacones rellenos</h3>
                                     <p class="text-muted small">Patacones crujientes rellenos y bañados en una sabrosa salsa de mariscos con calamar, pulpo y langostino.</p>
                                 </div>
                             </div>
@@ -311,7 +351,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/causa-langostinos.webp" class="card-img-top img-blur" style="height:150px;object-fit:cover;" alt="Causa de langostinos" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Causa de langostinos</h5>
+                                    <h3 class="fw-bold">Causa de langostinos</h3>
                                     <p class="text-muted small">Causa limeña rellena de langostinos, fresca, cremosa y llena de sabor marino.</p>
                                 </div>
                             </div>
@@ -329,7 +369,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/gallina-horno.webp" class="card-img-top img-blur" style="height:200px;object-fit:cover;" alt="Gallina al horno" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Gallina al horno</h5>
+                                    <h3 class="fw-bold">Gallina al horno</h3>
                                     <p class="text-muted small">Gallina al horno jugosa y bien sazonada, acompañada de tallarines verdes cremosos con queso parmesano y papa a la huancaína.</p>
                                 </div>
                             </div>
@@ -337,7 +377,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/copus-cabrito.webp" class="card-img-top img-blur" style="height:200px;object-fit:cover;" alt="Copus de cabrito" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Copus de cabrito</h5>
+                                    <h3 class="fw-bold">Copus de cabrito</h3>
                                     <p class="text-muted small">Cabrito cocido lentamente en aderezo tradicional, acompañado de arroz blanco, plátano y camote asados, humita y sarza criolla.</p>
                                 </div>
                             </div>
@@ -345,7 +385,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/cabrito-nortena.webp" class="card-img-top img-blur" style="height:200px;object-fit:cover;" alt="Cabrito a la norteña" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Cabrito a la norteña</h5>
+                                    <h3 class="fw-bold">Cabrito a la norteña</h3>
                                     <p class="text-muted small">Cabrito tierno y bien sazonado, acompañado de arroz, frejol, humita y sarza criolla.</p>
                                 </div>
                             </div>
@@ -353,7 +393,7 @@
                             <div class="card dish-card h-100 border-0 shadow-sm">
                                 <img src="img/pato-horno.webp" class="card-img-top img-blur" style="height:200px;object-fit:cover;" alt="Pato al horno" loading="lazy" onerror="this.style.display='none'">
                                 <div class="card-body text-center">
-                                    <h5 class="fw-bold">Pato al horno</h5>
+                                    <h3 class="fw-bold">Pato al horno</h3>
                                     <p class="text-muted small">Pato al horno jugoso y bien sazonado, acompañado de arroz a la jardinera y papa a la huancaína.</p>
                                 </div>
                             </div>
@@ -512,6 +552,10 @@
                 </div>
             </div>
             <div class="footer-legal text-center">
+                <a href="/about"><i class="fas fa-store me-1" aria-hidden="true"></i>Sobre nosotros</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
+                <a href="/contact"><i class="fas fa-envelope me-1" aria-hidden="true"></i>Contacto</a>
+                <span class="footer-sep" aria-hidden="true">·</span>
                 <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
                 <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>

@@ -458,7 +458,12 @@ section::after { display: none; } /* sin gradientes fantasmas: fondos del mundo 
     width: 40px; height: 3px; border-radius: 3px;
     background: linear-gradient(90deg, var(--carmesi), var(--dorado));
 }
-.dish-card .card-body h5 {
+/* Los títulos de plato son h3 (jerarquía h2 de sección → h3 de plato, sin
+   saltos de nivel); h5/h6 quedan por si una página antigua aún los usa. */
+.dish-card .card-body h3,
+.dish-card .card-body h4,
+.dish-card .card-body h5,
+.dish-card .card-body h6 {
     font-family: 'Anton', sans-serif;
     font-weight: 400;
     letter-spacing: 0.5px;
@@ -466,6 +471,10 @@ section::after { display: none; } /* sin gradientes fantasmas: fondos del mundo 
     text-transform: uppercase;
     color: var(--mar);
 }
+
+/* Rótulo "Bebida Incluida": es h4 (nivel correcto bajo las h3 de ENTRADAS y
+   SEGUNDOS) pero conserva la tipografía de cuerpo que tenía cuando era h5. */
+#menu-dia .bebida-label { font-family: inherit; }
 .dish-card .card-body .text-muted { color: var(--content-secondary) !important; }
 
 /* Botón "Déjanos tu opinión": carmesí del mundo (reemplaza outline-primary de Bootstrap) */

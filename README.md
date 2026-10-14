@@ -44,6 +44,16 @@ Los datos se obtienen en vivo desde Firebase Firestore, por lo que cualquier cam
 - Terminos del Club (`terminos-club.html`)
 - Consentimiento de datos del usuario (`consent.js`)
 
+### Paginas de Confianza
+- Sobre nosotros (`about.html`, servida tambien en `/about`)
+- Contacto y pedidos (`contact.html`, servida tambien en `/contact`)
+- Privacidad en la ruta limpia `/privacy` (rewrite a `privacidad.html`)
+
+### Para agentes IA
+- `llms.txt` en la raiz del sitio (resumen, seccion *When to use this* y como consumirlo)
+- 404 real (HTTP 404) para rutas inexistentes, con enlaces a `/sitemap.xml` y `/llms.txt`
+- JSON-LD `Restaurant`, `WebSite` y `Organization` (contactPoint, PostalAddress, sameAs)
+
 ### Funcionalidades del Sistema
 - Sincronizacion en tiempo real con Firebase Firestore
 - SEO optimizado con Schema.org
@@ -76,10 +86,27 @@ El sitio esta hosteado en Firebase Hosting.
 firebase deploy --only hosting
 ```
 
+> ⚠️ **No volver a agregar el rewrite comodin** (`"source": "**" → /index.html`) en
+> `firebase.json`: convertia cada ruta inexistente en un soft-404 (HTTP 200 con la portada) y
+> rompia el comportamiento que esperan los agentes IA. El sitio es multipagina, no una SPA: las
+> rutas que no existen deben responder 404 con `public/404.html`. Las unicas rutas reescritas son
+> `/about`, `/contact` y `/privacy`.
+
 Para desplegar tambien las reglas de Firestore:
 
 ```bash
 firebase deploy --only firestore:rules
+```
+
+## Tests
+
+Se ejecutan sin dependencias (solo Node) y fijan los comportamientos de preparacion para agentes:
+404 real, jerarquia de encabezados y contenido sin JavaScript, JSON-LD de identidad, `llms.txt`,
+paginas de confianza, integridad de los HTML y del `sitemap.xml`, y coherencia de horarios.
+
+```bash
+cd calletano-web
+npm test        # node --test "tests/**/*.test.mjs"
 ```
 
 ---
