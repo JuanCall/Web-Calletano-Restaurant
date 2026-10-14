@@ -9,14 +9,10 @@
     <meta name="description" content="Consulta el progreso de tu tarjeta del Club Calletano: visitas acumuladas, cuánto te falta para tu premio y tu código QR.">
     <link rel="icon" href="img/fondo.webp" type="image/webp">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 
     <!-- ✍️ Una sola petición de fuentes (Space Mono incluida: antes iba aparte),
          descubierta al parsear el HTML en vez de esperar al @import del CSS. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap">
+<link rel="stylesheet" href="styles/fuentes.css">
 
     <!-- 📦 Adelanta los imports del módulo (firebase-bundle.js pesa ~540 KB). -->
     <link rel="modulepreload" href="js/lib/firebase-bundle.js?v=4">
@@ -24,9 +20,8 @@
     <link rel="modulepreload" href="js/clubHelpers.js">
     <link rel="modulepreload" href="js/consent.js">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+<link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="styles/iconos.css">
 
     <link rel="stylesheet" href="styles/style.css">
 
@@ -444,15 +439,15 @@
 
     <div class="club-topbar">
         <div class="container d-flex justify-content-between align-items-center">
-            <a href="index.html" class="brand"><i class="fas fa-id-card" aria-hidden="true"></i>Club Calletano</a>
-            <a href="club-crear.html" class="link-back"><i class="fas fa-user-plus me-1" aria-hidden="true"></i>¿No tienes tarjeta? Crea la tuya</a>
+            <a href="index.html" class="brand"><svg class="ico fa-id-card" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Club Calletano</a>
+            <a href="club-crear.html" class="link-back"><svg class="ico fa-user-plus me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-user-plus"></use></svg>¿No tienes tarjeta? Crea la tuya</a>
         </div>
     </div>
 
     <main class="club-page-main">
         <div class="container">
             <div class="text-center mb-4">
-                <span class="club-badge"><i class="fas fa-id-card me-2" aria-hidden="true"></i>Club Calletano</span>
+                <span class="club-badge"><svg class="ico fa-id-card me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Club Calletano</span>
                 <h2 class="section-title mb-2" style="margin-bottom: 12px;">Tu tarjeta digital, siempre contigo</h2>
                 <p class="club-lead mx-auto" id="club-meta-text-prox">Consulta tus visitas y mira cuánto te falta para tu premio.</p>
             </div>
@@ -460,7 +455,7 @@
             <!-- VISTA 1: CONSULTA -->
             <div id="club-vista-consulta">
                 <div class="club-card club-consulta-form">
-                    <h3 class="club-card-title"><i class="fas fa-search me-2" style="color: var(--naranja-logo);" aria-hidden="true"></i>Consulta tu progreso</h3>
+                    <h3 class="club-card-title"><svg class="ico fa-search me-2" aria-hidden="true" focusable="false" style="color: var(--naranja-logo);"><use href="img/iconos.svg#solid-magnifying-glass"></use></svg>Consulta tu progreso</h3>
                     <p class="club-card-sub">Ingresa tu DNI (8 dígitos) o tu Carné de Extranjería (9 a 12 dígitos), sin puntos ni guiones.</p>
 
                     <div class="club-field">
@@ -476,7 +471,7 @@
                          el documento consultado todavía no tiene tarjeta. -->
                     <a href="club-crear.html" id="club-consulta-link" class="club-btn club-btn-outline d-none"
                         style="margin-top: 0.75rem; display: block; text-align: center; text-decoration: none;">
-                        <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Crear mi tarjeta gratis
+                        <svg class="ico fa-user-plus me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-user-plus"></use></svg>Crear mi tarjeta gratis
                     </a>
                 </div>
             </div>
@@ -489,7 +484,7 @@
                         <div class="club-confetti" id="club-confetti" aria-hidden="true"></div>
                         <div class="club-tarjeta-top">
                             <div>
-                                <div class="club-tarjeta-logo"><i class="fas fa-id-card me-2" aria-hidden="true"></i>CLUB CALLETANO</div>
+                                <div class="club-tarjeta-logo"><svg class="ico fa-id-card me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>CLUB CALLETANO</div>
                                 <div class="club-tarjeta-sede" id="club-tarjeta-sede">Máncora</div>
                             </div>
                             <div class="club-tarjeta-estado" id="club-tarjeta-pct">0%</div>
@@ -523,7 +518,7 @@
                     <div class="text-center mt-4">
                         <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center gap-2">
                             <a href="#" id="club-wsp-btn" class="club-btn club-btn-wsp d-none" target="_blank" rel="noopener">
-                                <i class="fab fa-whatsapp" aria-hidden="true"></i> Compartir por WhatsApp
+                                <svg class="ico fa-whatsapp" aria-hidden="true" focusable="false"><use href="img/iconos.svg#brands-whatsapp"></use></svg> Compartir por WhatsApp
                             </a>
                             <button type="button" id="club-volver-btn" class="club-btn club-btn-outline" style="width:auto; padding: 0.7rem 1.6rem;">← Consultar otra tarjeta</button>
                         </div>
@@ -538,15 +533,15 @@
             <h3 class="footer-brand">Calletano Restaurant</h3>
             <p class="footer-tagline">El mejor sabor de Máncora</p>
             <div class="footer-legal">
-                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <a href="terminos-club.html"><svg class="ico fa-id-card me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Términos del club</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+                <a href="privacidad.html"><svg class="ico fa-shield-alt me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-shield-halved"></use></svg>Política de privacidad</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="club-baja.html"><i class="fas fa-bell-slash me-1" aria-hidden="true"></i>Baja de promociones</a>
+                <a href="club-baja.html"><svg class="ico fa-bell-slash me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-bell-slash"></use></svg>Baja de promociones</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="terminos.html"><i class="fas fa-file-contract me-1" aria-hidden="true"></i>Términos de uso</a>
+                <a href="terminos.html"><svg class="ico fa-file-contract me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-file-contract"></use></svg>Términos de uso</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="reclamaciones.html"><i class="fas fa-book me-1" aria-hidden="true"></i>Libro de reclamaciones</a>
+                <a href="reclamaciones.html"><svg class="ico fa-book me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-book"></use></svg>Libro de reclamaciones</a>
             </div>
             <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
         </div>

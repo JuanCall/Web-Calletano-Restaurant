@@ -93,7 +93,7 @@ cargarCartaDesdeServidor()
             const descHTML = item.desc ? `<div class="item-desc">${esc(item.desc)}</div>` : '';
             itemsHTML += `<div class="item-wrapper"><div class="item-row"><div class="item-info"><span class="item-name">${esc(item.nombre)}</span><span class="dots"></span></div><div class="price-wrapper">${preciosHTML}</div></div>${descHTML}</div>`;
         });
-        bodyHTML += `<div id="${catId}" class="menu-card"><h3 class="cat-title">${esc(cat.nombre)} <i class="fas fa-utensils" style="font-size:1rem; opacity:0.3;"></i></h3>${headerHTML}${itemsHTML}</div>`;
+        bodyHTML += `<div id="${catId}" class="menu-card"><h3 class="cat-title">${esc(cat.nombre)} <svg class="ico fa-utensils" aria-hidden="true" focusable="false" style="font-size:1rem; opacity:0.3;"><use href="img/iconos.svg#solid-utensils"></use></svg></h3>${headerHTML}${itemsHTML}</div>`;
     });
     if (navContainer) navContainer.innerHTML = navHTML;
     if (mainContainer) {

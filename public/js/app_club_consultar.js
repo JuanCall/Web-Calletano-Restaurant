@@ -126,7 +126,7 @@ function renderTarjeta(miembro, codigoEntrada) {
             sello.setAttribute('aria-hidden', 'true');
             if (i < prog.visitas) {
                 sello.className = 'club-sello lleno';
-                sello.innerHTML = '<i class="fas fa-check"></i>';
+                sello.innerHTML = '<svg class="ico fa-check" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-check"></use></svg>';
                 sello.style.animationDelay = `${i * 0.06}s`;
             } else {
                 sello.className = 'club-sello';
@@ -139,7 +139,7 @@ function renderTarjeta(miembro, codigoEntrada) {
         if (prog.completado) {
             const premioTexto = CLUB_CONFIG.premio ? `<em>${esc(CLUB_CONFIG.premio)}</em>` : 'tu premio';
             premio.innerHTML = `
-                <div class="club-premio-celebra"><i class="fas fa-trophy" aria-hidden="true"></i></div>
+                <div class="club-premio-celebra"><svg class="ico fa-trophy" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-trophy"></use></svg></div>
                 <div>
                     <strong>¡Tu premio está listo! 🎉</strong>
                     <span class="d-block mt-1">Pásate por caja con tu <strong>DNI físico</strong> (mayores de 18) y reclama: ${premioTexto}.</span>

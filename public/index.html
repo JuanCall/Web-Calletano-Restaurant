@@ -58,19 +58,14 @@
     
     <link rel="icon" href="img/fondo.webp" type="image/webp">
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 
     <!-- ✍️ Fuentes: un solo pedido, descubierto al parsear el HTML. Antes viajaban
          por @import dentro de los CSS (HTML → CSS → CSS de fuentes → .woff2). -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="styles/fuentes.css">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
     
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+<link rel="stylesheet" href="styles/iconos.css">
     
     <link rel="stylesheet" href="styles/style.css">
     <!-- 🐟 Mundo visual "Mercado de Pescado" (rediseño Impeccable): carga después de style.css
@@ -239,13 +234,13 @@
         >
 
         <div class="container position-relative z-2 text-center">
-            <span class="hero-tag mb-4"><i class="fas fa-fish me-2" aria-hidden="true"></i> Pesca del día</span>
+            <span class="hero-tag mb-4"><svg class="ico fa-fish me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-fish"></use></svg> Pesca del día</span>
             <div id="status-restaurante" class="d-inline-block mb-4"></div>
 
             <h1 class="fw-bold mb-2">Calletano Restaurant</h1>
             <p class="lead mb-4">EL MEJOR SABOR DE MÁNCORA</p>
             <a href="carta.html" class="btn btn-hero">
-                <i class="fas fa-utensils me-2"></i> VER CARTA Y PRECIOS
+                <svg class="ico fa-utensils me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-utensils"></use></svg> VER CARTA Y PRECIOS
             </a>
         </div>
 
@@ -255,7 +250,7 @@
 
     <section id="menu-dia" data-reveal>
         <div class="container text-center">
-            <h2 id="main-menu-title" class="section-title"><i class="fas fa-utensils me-2" aria-hidden="true"></i> Menú del Día</h2>
+            <h2 id="main-menu-title" class="section-title"><svg class="ico fa-utensils me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-utensils"></use></svg> Menú del Día</h2>
             
             <div class="row justify-content-center g-4">
                 <div id="col-entradas" class="col-md-5" data-reveal data-reveal-delay="100">
@@ -408,7 +403,7 @@
     <section id="club" class="club-section" data-reveal>
         <div class="container">
             <div class="text-center">
-                <span class="club-badge"><i class="fas fa-id-card me-2" aria-hidden="true"></i>Club Calletano</span>
+                <span class="club-badge"><svg class="ico fa-id-card me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Club Calletano</span>
                 <h2 class="section-title" style="margin-bottom: 1rem;">Programa de Fidelización</h2>
                 <p class="club-lead mx-auto mb-5">
                     Cada boleta que supere el consumo mínimo suma un sello a tu tarjeta digital.
@@ -421,12 +416,12 @@
                 <div class="col-md-5" data-reveal data-reveal-delay="100">
                     <div class="club-card h-100 text-center">
                         <div class="club-premio-celebra mx-auto mb-3">
-                            <i class="fas fa-user-plus" aria-hidden="true"></i>
+                            <svg class="ico fa-user-plus" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-user-plus"></use></svg>
                         </div>
                         <h3 class="club-card-title mb-2">¿Aún no eres socio?</h3>
                         <p class="club-card-sub mb-4">Crea tu tarjeta digital gratis con tu DNI y empieza a sumar sellos desde tu primera visita.</p>
                         <a href="club-crear.html" class="club-btn d-inline-block" style="width: auto; min-width: 200px; text-decoration: none;">
-                            <i class="fas fa-user-plus me-2" aria-hidden="true"></i>Regístrate gratis
+                            <svg class="ico fa-user-plus me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-user-plus"></use></svg>Regístrate gratis
                         </a>
                     </div>
                 </div>
@@ -434,12 +429,12 @@
                 <div class="col-md-5" data-reveal data-reveal-delay="200">
                     <div class="club-card h-100 text-center">
                         <div class="club-premio-celebra mx-auto mb-3">
-                            <i class="fas fa-search" aria-hidden="true"></i>
+                            <svg class="ico fa-search" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-magnifying-glass"></use></svg>
                         </div>
                         <h3 class="club-card-title mb-2">¿Ya eres socio?</h3>
                         <p class="club-card-sub mb-4">Consulta tus sellos, mira cuánto te falta para el premio y muestra tu tarjeta con QR.</p>
                         <a href="club-consultar.html" class="club-btn club-btn-outline d-inline-block" style="width: auto; min-width: 200px; text-decoration: none;">
-                            <i class="fas fa-search me-2" aria-hidden="true"></i>Ver mi progreso
+                            <svg class="ico fa-search me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-magnifying-glass"></use></svg>Ver mi progreso
                         </a>
                     </div>
                 </div>
@@ -447,7 +442,7 @@
 
             <p class="text-center mt-5 mb-0">
                 <!-- color lo posee .club-section a[href="terminos-club.html"] en style-landing.css -->
-                <a href="terminos-club.html" style="font-weight: 700;"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <a href="terminos-club.html" style="font-weight: 700;"><svg class="ico fa-id-card me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Términos del club</a>
             </p>
         </div>
     </section>
@@ -473,7 +468,7 @@
 
             <div class="text-center mt-5">
                 <a href="https://g.page/r/CWgDl1hLH4UtEBM/review" target="_blank" rel="noopener noreferrer" class="btn btn-outline-primary rounded-pill px-4 py-3 fw-bold">
-                    <i class="fab fa-google me-2"></i> Déjanos tu opinión
+                    <svg class="ico fa-google me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#brands-google"></use></svg> Déjanos tu opinión
                 </a>
             </div>
         </div>
@@ -494,11 +489,11 @@
             <div class="row justify-content-center mb-4">
                 <div class="col-md-8">
                     <p class="fs-5">
-                        <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                        <svg class="ico fa-map-marker-alt text-danger me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-location-dot"></use></svg>
                         <strong>Dirección:</strong> Ampliación La Molina, Barrio Nicaragua S/N, Máncora, Perú
                     </p>
                     <p class="fs-5">
-                        <i class="fas fa-phone text-success me-2"></i>
+                        <svg class="ico fa-phone text-success me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-phone"></use></svg>
                         <strong>Pedidos:</strong> +51 952 606 435
                     </p>
                 </div>
@@ -510,13 +505,13 @@
 
             <div class="d-flex justify-content-center gap-3 flex-wrap mb-4">
                 <a id="link-fb" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-social btn-outline-fb">
-                    <i class="fab fa-facebook me-2"></i> Facebook
+                    <svg class="ico fa-facebook me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#brands-facebook"></use></svg> Facebook
                 </a>
                 <a id="link-ig" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-social btn-outline-ig">
-                    <i class="fab fa-instagram me-2"></i> Instagram
+                    <svg class="ico fa-instagram me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#brands-instagram"></use></svg> Instagram
                 </a>
                 <a href="https://maps.app.goo.gl/9eViDnE7AuAue1f77" target="_blank" rel="noopener noreferrer" class="btn btn-social btn-mapa">
-                    <i class="fas fa-map-marker-alt me-2"></i> Cómo llegar
+                    <svg class="ico fa-map-marker-alt me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-location-dot"></use></svg> Cómo llegar
                 </a>
             </div>
         </div>
@@ -527,7 +522,7 @@
             <div class="modal-content text-center border-0 shadow-lg" style="border-radius: 20px;">
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 <div class="modal-body p-5">
-                    <i class="fas fa-store-slash text-danger mb-3" style="font-size: 4rem; animation: float 3s infinite ease-in-out;"></i>
+                    <svg class="ico fa-store-slash text-danger mb-3" aria-hidden="true" focusable="false" style="font-size: 4rem; animation: float 3s infinite ease-in-out;"><use href="img/iconos.svg#solid-store-slash"></use></svg>
                     <h3 class="fw-bold mb-3" id="modalCerradoLabel" style="color: var(--brand-deep);">Hoy no atendemos</h3>
                     <p class="text-muted mb-4 fs-5">
                         Estamos recargando energías para ofrecerte el mejor sabor. ¡Te esperamos mañana!
@@ -552,17 +547,17 @@
                 </div>
             </div>
             <div class="footer-legal text-center">
-                <a href="/about"><i class="fas fa-store me-1" aria-hidden="true"></i>Sobre nosotros</a>
+                <a href="/about"><svg class="ico fa-store me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-store"></use></svg>Sobre nosotros</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="/contact"><i class="fas fa-envelope me-1" aria-hidden="true"></i>Contacto</a>
+                <a href="/contact"><svg class="ico fa-envelope me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-envelope"></use></svg>Contacto</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <a href="terminos-club.html"><svg class="ico fa-id-card me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Términos del club</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+                <a href="privacidad.html"><svg class="ico fa-shield-alt me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-shield-halved"></use></svg>Política de privacidad</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="terminos.html"><i class="fas fa-file-contract me-1" aria-hidden="true"></i>Términos de uso</a>
+                <a href="terminos.html"><svg class="ico fa-file-contract me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-file-contract"></use></svg>Términos de uso</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="reclamaciones.html"><i class="fas fa-book me-1" aria-hidden="true"></i>Libro de reclamaciones</a>
+                <a href="reclamaciones.html"><svg class="ico fa-book me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-book"></use></svg>Libro de reclamaciones</a>
             </div>
             <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
         </div>
@@ -570,7 +565,7 @@
 
     <div class="fixed-bottom p-3 d-flex justify-content-end">
         <a id="btn-wsp" href="https://wa.me/51952606435" target="_blank" rel="noopener noreferrer" aria-label="Contactar por WhatsApp">
-            <i class="fab fa-whatsapp"></i>
+            <svg class="ico fa-whatsapp" aria-hidden="true" focusable="false"><use href="img/iconos.svg#brands-whatsapp"></use></svg>
         </a>
     </div>
 
@@ -578,7 +573,7 @@
     <!-- Por decisión del dueño, no se envían notificaciones push a clientes -->
     <!-- <div id="notif-banner" class="notif-banner d-none">... </div> -->
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="vendor/bootstrap/bootstrap.bundle.min.js" defer></script>
     
     <!-- 🚫 [DESACTIVADO] Service Worker Registration para notificaciones push -->
     <!-- <script>

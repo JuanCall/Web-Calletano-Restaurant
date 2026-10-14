@@ -72,8 +72,8 @@ Los datos se obtienen en vivo desde Firebase Firestore, por lo que cualquier cam
 | Firebase Firestore| Base de datos NoSQL en tiempo real |
 | Firebase Hosting  | Hosting y deploy              |
 | Firestore Rules   | Control de acceso a los datos del Club |
-| Bootstrap 5       | CSS Framework responsivo      |
-| FontAwesome 6     | Iconografia                   |
+| Bootstrap 5       | CSS Framework responsivo (copia local en `public/vendor/`) |
+| FontAwesome 6     | Iconografia, como sprite SVG local (`public/img/iconos.svg`) |
 | Vanilla JS (ES6+) | Logica del frontend           |
 
 ---
@@ -97,6 +97,36 @@ Para desplegar tambien las reglas de Firestore:
 ```bash
 firebase deploy --only firestore:rules
 ```
+
+## Recursos locales (sin CDNs)
+
+Bootstrap, las fuentes y los iconos se sirven desde el propio hosting. El sitio **no hace
+ninguna peticion a un tercero** para pintarse: eso quita tres handshakes DNS/TLS por visita,
+no filtra la IP del visitante a otras empresas y permite una CSP estricta.
+
+| Recurso | Archivo | Como se mantiene |
+|---|---|---|
+| Bootstrap 5.3 | `public/vendor/bootstrap/` | Copia local; al actualizar, reemplazar ambos archivos |
+| Fuentes (Anton, Karla, Montserrat, Playfair) | `public/fonts/*.woff2` + `public/styles/fuentes.css` | Solo el subset `latin` y los pesos que el sitio usa |
+| Iconos | `public/img/iconos.svg` + `public/styles/iconos.css` | Generado por `tools/generar-iconos.cjs` |
+
+Los tests de `tests/recursos-locales.test.mjs` fallan si alguien vuelve a enlazar una CDN, si
+un simbolo del sprite no existe, o si queda un `<i class="fas fa-...">`.
+
+### Regenerar el sprite de iconos
+
+Los SVG salen del paquete `@fortawesome/fontawesome-free` ya instalado (sin red). El generador
+detecta los iconos usados buscando las referencias `iconos.svg#solid-<nombre>` en `public/`.
+
+```bash
+cd calletano-web && node tools/generar-iconos.cjs
+```
+
+> ⚠️ Si el generador reporta **0 iconos**, aborta con error y **no toca el sprite**. Es a
+> proposito: sobrescribirlo con un archivo vacio dejaba el sitio entero sin iconos. Si ves ese
+> error, revisa las regex de `recolectarIconos()` — el sitio dejo de usar la forma esperada.
+
+---
 
 ## Tests
 

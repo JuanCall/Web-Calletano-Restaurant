@@ -67,3 +67,6 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Caché del generador de iconos (los SVG fuente, no el sprite)
+tools/.cache-iconos/

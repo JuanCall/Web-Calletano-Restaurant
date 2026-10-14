@@ -9,17 +9,12 @@
     <meta name="robots" content="noindex">
     <link rel="icon" href="img/fondo.webp" type="image/webp">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 
     <!-- ✍️ Fuentes: un solo pedido al parsear el HTML, no por @import del CSS. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="styles/fuentes.css">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+<link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="styles/iconos.css">
 
     <link rel="stylesheet" href="styles/style.css">
 
@@ -71,7 +66,7 @@
 
     <div class="club-topbar">
         <div class="container d-flex justify-content-between align-items-center">
-            <a href="index.html" class="brand"><i class="fas fa-id-card" aria-hidden="true"></i>Club Calletano</a>
+            <a href="index.html" class="brand"><svg class="ico fa-id-card" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Club Calletano</a>
             <a href="club-consultar.html" class="link-back" style="color:rgba(255,255,255,0.92); font-weight:700; font-size:0.9rem; text-decoration:none;">← Mi tarjeta</a>
         </div>
     </div>
@@ -79,14 +74,14 @@
     <main class="club-page-main">
         <div class="container">
             <div class="text-center mb-4">
-                <span class="club-badge"><i class="fas fa-shield-alt me-2" aria-hidden="true"></i>Club Calletano</span>
+                <span class="club-badge"><svg class="ico fa-shield-alt me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-shield-halved"></use></svg>Club Calletano</span>
                 <h2 class="section-title mb-2" style="margin-bottom: 12px;">Preferencias de promociones</h2>
                 <p class="club-lead mx-auto">Elige si quieres seguir recibiendo promociones y novedades en tu correo.</p>
             </div>
 
             <div class="club-card club-baja-card">
                 <div class="text-center">
-                    <div class="baja-icon"><i class="fas fa-envelope-open-text" aria-hidden="true"></i></div>
+                    <div class="baja-icon"><svg class="ico fa-envelope-open-text" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-envelope-open-text"></use></svg></div>
 
                     <!-- ESTADO 1: confirmación -->
                     <div id="baja-vista-confirmar">
@@ -96,14 +91,14 @@
                         <div id="baja-msg" class="club-msg" role="status"></div>
 
                         <button type="button" id="baja-btn" class="club-btn" style="background:#c62828; color:#fff;">
-                            <i class="fas fa-times-circle me-2" aria-hidden="true"></i>Sí, darme de baja
+                            <svg class="ico fa-times-circle me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-circle-xmark"></use></svg>Sí, darme de baja
                         </button>
                         <a href="club-consultar.html" class="club-btn club-btn-outline" style="width:100%; margin-top:0.6rem; text-align:center; text-decoration:none;">No, seguir recibiendo promociones</a>
                     </div>
 
                     <!-- ESTADO 2: éxito -->
                     <div id="baja-vista-exito" style="display:none;">
-                        <div class="baja-sello"><i class="fas fa-check me-2" aria-hidden="true"></i>Promociones desactivadas</div>
+                        <div class="baja-sello"><svg class="ico fa-check me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-check"></use></svg>Promociones desactivadas</div>
                         <h3 class="club-card-title" style="justify-content:center;">Listo, te diste de baja</h3>
                         <p class="club-card-sub">Ya no recibirás correos promocionales del Club Calletano. Tu tarjeta y tus visitas siguen intactas.</p>
                         <a href="club-consultar.html" class="club-btn" style="width:100%; text-align:center; text-decoration:none;">Ver mi tarjeta</a>
@@ -111,7 +106,7 @@
 
                     <!-- ESTADO 3: error -->
                     <div id="baja-vista-error" style="display:none;">
-                        <div class="baja-sello baja-sello--off"><i class="fas fa-exclamation-triangle me-2" aria-hidden="true"></i>No se pudo procesar</div>
+                        <div class="baja-sello baja-sello--off"><svg class="ico fa-exclamation-triangle me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-triangle-exclamation"></use></svg>No se pudo procesar</div>
                         <h3 class="club-card-title" style="justify-content:center;">Algo salió mal</h3>
                         <p class="club-card-sub" id="baja-error-text">Verifica que el enlace sea correcto o inténtalo de nuevo. Si el problema continúa, avísanos en caja.</p>
                         <a href="club-consultar.html" class="club-btn" style="width:100%; text-align:center; text-decoration:none;">Volver al club</a>
@@ -126,13 +121,13 @@
             <h3 class="footer-brand">Calletano Restaurant</h3>
             <p class="footer-tagline">El mejor sabor de Máncora</p>
             <div class="footer-legal">
-                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <a href="terminos-club.html"><svg class="ico fa-id-card me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Términos del club</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+                <a href="privacidad.html"><svg class="ico fa-shield-alt me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-shield-halved"></use></svg>Política de privacidad</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="terminos.html"><i class="fas fa-file-contract me-1" aria-hidden="true"></i>Términos de uso</a>
+                <a href="terminos.html"><svg class="ico fa-file-contract me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-file-contract"></use></svg>Términos de uso</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="reclamaciones.html"><i class="fas fa-book me-1" aria-hidden="true"></i>Libro de reclamaciones</a>
+                <a href="reclamaciones.html"><svg class="ico fa-book me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-book"></use></svg>Libro de reclamaciones</a>
             </div>
             <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
         </div>

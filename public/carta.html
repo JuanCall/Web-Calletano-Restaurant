@@ -36,15 +36,15 @@
         })();
     </script>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+
+    <!-- 🅱️ Bootstrap local (mismo 5.3.x que servia jsDelivr): sin CDN no hay
+         conexion extra a un tercero ni IP del visitante filtrada. -->
+    <link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
 
     <!-- ✍️ Fuentes: un solo pedido al parsear el HTML, no por @import del CSS. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&display=swap">
+    <link rel="stylesheet" href="styles/fuentes.css">
 
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+    <link rel="stylesheet" href="styles/iconos.css">
     
     <link rel="stylesheet" href="styles/stylecarta.css">
     <link rel="stylesheet" href="styles/style-mundo.css">
@@ -72,7 +72,7 @@
 
     <header class="hero-header">
         <div class="hero-content">
-            <img src="img/logo.webp" alt="Logo Calletano Restaurant" class="hero-logo" width="140" height="140" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3448/3448609.png'">
+            <img src="img/logo.webp" alt="Logo Calletano Restaurant" class="hero-logo" width="140" height="140" onerror="this.style.display='none'">
             <h1 class="hero-title">Calletano</h1>
             <p class="hero-subtitle">Restaurant</p>
             <div style="font-size: 0.9rem; opacity: 0.9;">Máncora - Perú</div>
@@ -141,15 +141,15 @@
     <div class="fab-container">
         
         <a href="index.html" class="fab fab-back" title="Volver al inicio" aria-label="Volver al inicio">
-            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            <svg class="ico fa-arrow-left" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-arrow-left"></use></svg>
         </a>
 
         <a href="https://wa.me/51949523901" target="_blank" rel="noopener noreferrer" class="fab fab-wsp" title="Pedir por WhatsApp" aria-label="Pedir por WhatsApp">
-            <i class="fab fa-whatsapp" aria-hidden="true"></i>
+            <svg class="ico fa-whatsapp" aria-hidden="true" focusable="false"><use href="img/iconos.svg#brands-whatsapp"></use></svg>
         </a>
 
         <a href="#" class="fab fab-top" title="Subir" onclick="window.scrollTo({top:0,behavior:'smooth'}); return false;" aria-label="Volver arriba">
-            <i class="fas fa-arrow-up" aria-hidden="true"></i>
+            <svg class="ico fa-arrow-up" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-arrow-up"></use></svg>
         </a>
     </div>
 

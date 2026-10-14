@@ -115,8 +115,13 @@ function setHref(id, v) {
 }
 
 function generarEstrellasHTML(pts) {
+    // ⭐ Iconos locales (sprite img/iconos.svg): relleno para las estrellas que
+    // corresponden y contorno (regular) para las que faltan, igual que antes con
+    // fas/far de FontAwesome.
+    const estrella = (llena) =>
+        `<svg class="ico fa-star" aria-hidden="true" focusable="false"><use href="img/iconos.svg#${llena ? 'solid' : 'regular'}-star"></use></svg>`;
     let h = "";
-    for (let i = 1; i <= 5; i++) h += `<i class="${i <= pts ? 'fas' : 'far'} fa-star" aria-hidden="true"></i>`;
+    for (let i = 1; i <= 5; i++) h += estrella(i <= pts);
     return h;
 }
 

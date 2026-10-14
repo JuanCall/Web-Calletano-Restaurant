@@ -8,15 +8,11 @@
     <meta name="description" content="Crea tu tarjeta digital del Club Calletano gratis: acumula visitas y gana tu premio. Restaurante en Máncora.">
     <link rel="icon" href="img/fondo.webp" type="image/webp">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://cdn.jsdelivr.net">
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 
     <!-- ✍️ Fuentes: un solo pedido, descubierto al parsear el HTML. Antes viajaban
          por @import dentro de los CSS (HTML → CSS → CSS de fuentes → .woff2), una
          cadena de 3 viajes antes de que apareciera el texto. -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Karla:wght@400;500;600;700;800&family=Playfair+Display:wght@700;900&family=Montserrat:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="styles/fuentes.css">
 
     <!-- 📦 El navegador descubre los imports recién despues de bajar y parsear
          app_club_crear.js. Adelantarlos quita un viaje en móvil: firebase-bundle.js
@@ -26,9 +22,8 @@
     <link rel="modulepreload" href="js/clubHelpers.js">
     <link rel="modulepreload" href="js/consent.js">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"></noscript>
+<link rel="stylesheet" href="vendor/bootstrap/bootstrap.min.css">
+<link rel="stylesheet" href="styles/iconos.css">
 
     <link rel="stylesheet" href="styles/style.css">
 
@@ -124,8 +119,8 @@
 
     <div class="club-topbar">
         <div class="container d-flex justify-content-between align-items-center">
-            <a href="index.html" class="brand"><i class="fas fa-id-card" aria-hidden="true"></i>Club Calletano</a>
-            <a href="club-consultar.html" class="link-back"><i class="fas fa-search me-1" aria-hidden="true"></i>¿Ya eres socio? Ver mi progreso</a>
+            <a href="index.html" class="brand"><svg class="ico fa-id-card" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Club Calletano</a>
+            <a href="club-consultar.html" class="link-back"><svg class="ico fa-search me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-magnifying-glass"></use></svg>¿Ya eres socio? Ver mi progreso</a>
         </div>
     </div>
 
@@ -135,7 +130,7 @@
 
                 <div class="col-lg-6">
                     <div class="club-card h-100">
-                        <span class="club-badge" style="margin: 0 0 1rem;"><i class="fas fa-user-plus me-2" aria-hidden="true"></i>Únete al Club</span>
+                        <span class="club-badge" style="margin: 0 0 1rem;"><svg class="ico fa-user-plus me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-user-plus"></use></svg>Únete al Club</span>
                         <h3 class="club-card-title mb-2">10 visitas. Tu plato de carta, gratis.</h3>
                         <p class="club-card-sub">Solo necesitas tu DNI y tu nombre. Tu tarjeta digital se abre al instante, con tu QR y el conteo de tus visitas.</p>
 
@@ -192,17 +187,17 @@
 
                         <!-- ✅ Éxito: tarjeta creada -->
                         <div class="club-success-box mt-4" id="club-exito">
-                            <div class="club-success-icon"><i class="fas fa-check" aria-hidden="true"></i></div>
+                            <div class="club-success-icon"><svg class="ico fa-check" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-check"></use></svg></div>
                             <h4 class="club-card-title mb-2">🎉 ¡Tu tarjeta digital está lista!</h4>
                             <p class="club-card-sub">Ya puedes sumar visitas en Calletano. Muestra tu tarjeta (o tu DNI) al pagar y el personal la escaneará.</p>
 
                             <a href="club-consultar.html" id="club-exito-link" class="club-btn club-btn-outline mt-3" style="display:inline-block; text-decoration:none;">Ver mi tarjeta y progreso</a>
 
                             <a href="#" id="club-exito-wsp" class="club-btn club-btn-wsp d-none mt-2" target="_blank" rel="noopener">
-                                <i class="fab fa-whatsapp me-2" aria-hidden="true"></i>Compartir mi tarjeta por WhatsApp
+                                <svg class="ico fa-whatsapp me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#brands-whatsapp"></use></svg>Compartir mi tarjeta por WhatsApp
                             </a>
                             <p class="club-card-sub mt-2 mb-0" style="font-size:0.72rem; color:#8a7060;">
-                                <i class="fas fa-shield-alt me-1" aria-hidden="true"></i>
+                                <svg class="ico fa-shield-alt me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-shield-halved"></use></svg>
                                 No compartas tu tarjeta en redes públicas: el enlace de tu tarjeta contiene tu documento.
                             </p>
                         </div>
@@ -211,14 +206,14 @@
 
                 <div class="col-lg-4">
                     <div class="club-card h-100">
-                        <h3 class="club-card-title"><i class="fas fa-gift me-2" style="color: var(--naranja-logo);" aria-hidden="true"></i>Así funciona</h3>
+                        <h3 class="club-card-title"><svg class="ico fa-gift me-2" aria-hidden="true" focusable="false" style="color: var(--naranja-logo);"><use href="img/iconos.svg#solid-gift"></use></svg>Así funciona</h3>
                         <p class="club-card-sub">Las condiciones son fijas y siempre vigentes:</p>
                         <ul class="club-info-list mt-3">
-                            <li><i class="fas fa-star me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Meta: <strong id="club-meta-text">10 visitas</strong> para tu premio</span></li>
-                            <li><i class="fas fa-trophy me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Premio: <strong id="club-premio-text">1 plato de carta personal</strong></span></li>
-                            <li><i class="fas fa-utensils me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Consumo mínimo: <strong id="club-consumo-min">S/ 80</strong> por boleta (menú, domingo o carta)</span></li>
-                            <li><i class="fas fa-users me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Cuando tu mesa llega al mínimo, <strong>una persona</strong> registra su visita</span></li>
-                            <li><i class="fas fa-info-circle me-1" style="color: var(--naranja-logo);" aria-hidden="true"></i><span>Máximo <strong>1 visita por día</strong> por socio</span></li>
+                            <li><svg class="ico fa-star me-1" aria-hidden="true" focusable="false" style="color: var(--naranja-logo);"><use href="img/iconos.svg#solid-star"></use></svg><span>Meta: <strong id="club-meta-text">10 visitas</strong> para tu premio</span></li>
+                            <li><svg class="ico fa-trophy me-1" aria-hidden="true" focusable="false" style="color: var(--naranja-logo);"><use href="img/iconos.svg#solid-trophy"></use></svg><span>Premio: <strong id="club-premio-text">1 plato de carta personal</strong></span></li>
+                            <li><svg class="ico fa-utensils me-1" aria-hidden="true" focusable="false" style="color: var(--naranja-logo);"><use href="img/iconos.svg#solid-utensils"></use></svg><span>Consumo mínimo: <strong id="club-consumo-min">S/ 80</strong> por boleta (menú, domingo o carta)</span></li>
+                            <li><svg class="ico fa-users me-1" aria-hidden="true" focusable="false" style="color: var(--naranja-logo);"><use href="img/iconos.svg#solid-users"></use></svg><span>Cuando tu mesa llega al mínimo, <strong>una persona</strong> registra su visita</span></li>
+                            <li><svg class="ico fa-info-circle me-1" aria-hidden="true" focusable="false" style="color: var(--naranja-logo);"><use href="img/iconos.svg#solid-circle-info"></use></svg><span>Máximo <strong>1 visita por día</strong> por socio</span></li>
                         </ul>
                         <ol class="club-como-list mt-3">
                             <li>Cuando tu boleta suma <strong>S/ 80 o más</strong> (menú, almuerzo de domingo, platos de carta y bebidas; solo envases/taper no suman), puedes registrar tu visita.</li>
@@ -242,15 +237,15 @@
             <h3 class="footer-brand">Calletano Restaurant</h3>
             <p class="footer-tagline">El mejor sabor de Máncora</p>
             <div class="footer-legal">
-                <a href="terminos-club.html"><i class="fas fa-id-card me-1" aria-hidden="true"></i>Términos del club</a>
+                <a href="terminos-club.html"><svg class="ico fa-id-card me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-id-card"></use></svg>Términos del club</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="privacidad.html"><i class="fas fa-shield-alt me-1" aria-hidden="true"></i>Política de privacidad</a>
+                <a href="privacidad.html"><svg class="ico fa-shield-alt me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-shield-halved"></use></svg>Política de privacidad</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="club-baja.html"><i class="fas fa-bell-slash me-1" aria-hidden="true"></i>Baja de promociones</a>
+                <a href="club-baja.html"><svg class="ico fa-bell-slash me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-bell-slash"></use></svg>Baja de promociones</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="terminos.html"><i class="fas fa-file-contract me-1" aria-hidden="true"></i>Términos de uso</a>
+                <a href="terminos.html"><svg class="ico fa-file-contract me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-file-contract"></use></svg>Términos de uso</a>
                 <span class="footer-sep" aria-hidden="true">·</span>
-                <a href="reclamaciones.html"><i class="fas fa-book me-1" aria-hidden="true"></i>Libro de reclamaciones</a>
+                <a href="reclamaciones.html"><svg class="ico fa-book me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-book"></use></svg>Libro de reclamaciones</a>
             </div>
             <p class="footer-copy text-center mb-0">© 2026 Calletano Restaurant · Máncora, Perú</p>
         </div>

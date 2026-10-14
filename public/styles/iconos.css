@@ -1,0 +1,22 @@
+/* 🎨 Iconos locales (sprite en img/iconos.svg).
+   Sustituye a FontAwesome servido desde CDN.
+
+   Reglas equivalentes a las del kit SVG oficial de FontAwesome:
+   - el icono mide 1em de alto, así que sigue respondiendo a font-size
+     como lo hacía la fuente (p. ej. .error-icon { font-size: 5rem });
+   - ancho automático: cada símbolo conserva su proporción (viewBox);
+   - fill: currentColor → hereda el color del texto, igual que el glifo;
+   - vertical-align: -.125em, el mismo ajuste óptico del kit oficial.
+
+   La clase `fa-<nombre>` se mantiene en el elemento para que las reglas del
+   sitio que dan color a un icono concreto (.fa-check, .fa-circle-xmark…)
+   sigan funcionando. */
+.ico {
+    display: inline-block;
+    height: 1em;
+    width: auto;
+    overflow: visible;
+    vertical-align: -0.125em;
+    fill: currentColor;
+    flex-shrink: 0;
+}

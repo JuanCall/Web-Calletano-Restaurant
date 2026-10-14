@@ -72,7 +72,7 @@ export function renderMenuDiario(d, elements) {
         if (titleEl) {
             titleEl.innerHTML = (d.titulo && typeof d.titulo === 'string')
                 ? esc(d.titulo)
-                : '<i class="fas fa-utensils me-2" aria-hidden="true"></i> Menú del Día';
+                : '<svg class="ico fa-utensils me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-utensils"></use></svg> Menú del Día';
         }
 
         // Entradas
@@ -84,8 +84,9 @@ export function renderMenuDiario(d, elements) {
                         .map(e => {
                             const agotado = estaAgotado(e);
                             const iconoClase = agotado ? 'fa-circle-xmark text-danger' : 'fa-check text-warning';
+                            const iconoSimbolo = agotado ? 'solid-circle-xmark' : 'solid-check';
                             const nombreClase = agotado ? 'text-decoration-line-through text-muted' : '';
-                            return `<li class="fs-5 fw-bold text-dark border-bottom border-warning-subtle py-2"><i class="fas ${iconoClase} me-2 small" aria-hidden="true"></i><span class="${nombreClase}">${esc(e.nombre)}</span>${agotado ? BADGE_AGOTADO : ''}</li>`;
+                            return `<li class="fs-5 fw-bold text-dark border-bottom border-warning-subtle py-2"><svg class="ico small ${iconoClase} me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#${iconoSimbolo}"></use></svg><span class="${nombreClase}">${esc(e.nombre)}</span>${agotado ? BADGE_AGOTADO : ''}</li>`;
                         })
                         .join('');
                     listaEntradas.innerHTML = html || '<li class="fs-5 fw-bold text-dark text-center">Por definir</li>';
@@ -122,15 +123,16 @@ export function renderMenuDiario(d, elements) {
                             const hasAcomp = (acomp !== '');
                             const borderClass = (isLast && hasAcomp) ? '' : 'border-bottom border-danger-subtle pb-2';
                             const iconoClase = agotado ? 'fa-circle-xmark text-danger opacity-50' : 'fa-check text-danger';
+                            const iconoSimbolo = agotado ? 'solid-circle-xmark' : 'solid-check';
                             const nombreClase = agotado ? 'text-decoration-line-through text-muted' : '';
-                            htmlSegundos += `<li class="pt-2 ${borderClass}"><div class="fs-5 fw-bold text-dark"><i class="fas ${iconoClase} me-2 small" aria-hidden="true"></i><span class="${nombreClase}">${esc(nombre)}</span>${agotado ? BADGE_AGOTADO : ''}</div></li>`;
+                            htmlSegundos += `<li class="pt-2 ${borderClass}"><div class="fs-5 fw-bold text-dark"><svg class="ico small ${iconoClase} me-2" aria-hidden="true" focusable="false"><use href="img/iconos.svg#${iconoSimbolo}"></use></svg><span class="${nombreClase}">${esc(nombre)}</span>${agotado ? BADGE_AGOTADO : ''}</div></li>`;
                         });
 
                         if (acomp !== '' && platos.length > 0) {
                             let textoPrefijo = 'Con:';
                             if (gruposKeys.length === 1 && platos.length > 1) textoPrefijo = 'Todos salen con:';
                             else if (platos.length > 1) textoPrefijo = 'Salen con:';
-                            htmlSegundos += `<li class="pb-2 mb-2 border-bottom border-danger-subtle"><div class="d-inline-block bg-danger bg-opacity-10 rounded px-2 py-1 mt-1 ms-4 border border-danger-subtle shadow-sm"><span class="small text-danger fw-bold fst-italic"><i class="fas fa-utensils me-1" aria-hidden="true"></i>${textoPrefijo} ${esc(acomp)}</span></div></li>`;
+                            htmlSegundos += `<li class="pb-2 mb-2 border-bottom border-danger-subtle"><div class="d-inline-block bg-danger bg-opacity-10 rounded px-2 py-1 mt-1 ms-4 border border-danger-subtle shadow-sm"><span class="small text-danger fw-bold fst-italic"><svg class="ico fa-utensils me-1" aria-hidden="true" focusable="false"><use href="img/iconos.svg#solid-utensils"></use></svg>${textoPrefijo} ${esc(acomp)}</span></div></li>`;
                         }
                     });
 
